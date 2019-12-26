@@ -1,5 +1,11 @@
+require('dotenv').config()
+
+console.log(process.env)
+
+
 const cli = require('commander');
-const { delayedRequire, logToUserSuccess } = require('./utils');
+const { delayedRequire } = require('./utils');
+
 
 const lazyHandlers = [
 
@@ -31,7 +37,7 @@ cli
     .command('query <subject_id>')
     .description('Query the FitBit API for a given subject')
     .option('-w, --window-size <windowSize>', 'window size')
-    .option('-r, --force-refresh','force token refresh')
+    .option('-r, --refresh','refresh oauth token')
     .option('-d, --dates <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', s => s.split('..'))
     .action(query);
 
@@ -65,15 +71,14 @@ cli
     .description('Update fbtrack')
     .action(update);
 
-if (!process.argv.slice(2).length) {
-
-    cli.outputHelp((helpText) => {
-        return helpText;
-    });
-}
 
 module.exports = exports = {
     start: function() {
+
+      if (!process.argv.slice(2).length)
+        cli.outputHelp(helpText => helpText);
+      else
         cli.parse(process.argv);
+
     }
 };

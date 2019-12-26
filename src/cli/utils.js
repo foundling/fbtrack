@@ -1,8 +1,7 @@
-'use strict';
-
 const colors = require('colors');
 const moment = require('moment');
 const fs = require('fs');
+const util = require('fs');
 
 const delayedRequire = function(dependencyPath) { 
 
@@ -71,7 +70,7 @@ const generateDateRange = (startDateString, stopDateString) => {
 const generateQueryPaths = (dates) => {
 
     /*
-     * Return a windowSize * endpoints dimensional array of query paths.
+     * Return array of query paths for each date in dates.
      */
 
     const endpoints = {

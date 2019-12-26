@@ -1,10 +1,30 @@
-'use strict';
+require('dotenv').config() 
 
-const async = require('async');
-const colors = require('colors');
+const {
+  CLIENT_ID,
+  CLIENT_SECRET,
+  LOGS_PATH,
+  DB_PATH,
+  DATA_PATH
+} = process.env
+
+
 const fs = require('fs');
+const util = require('util');
 const moment = require('moment');
-const config = require(__dirname + '/../../config');
+
+const readdirPromise = util.promisify(fs.readdir);
+const writeFilePromise = util.promisify(fs.writeFile);
+const Logger = require('./logger');
+const logger = new Logger({
+  logDir: LOGS_PATH,
+  config: {
+    info: false,
+    warn: false,
+    error: false,
+    success: false
+  }
+});
 
 const { 
 
@@ -17,17 +37,13 @@ const {
     generateQueryPaths,
     generateDateRange,
     inDateRange,
-    logToUserInfo, 
-    logToUserSuccess, 
-    logToUserFail, 
-    logToFile, 
     matchesSubjectId,
     parseDateRange,
     toDateString,
     toHeartRateMetric,
     ymdFormat, 
 
-} = require(config.paths.utils);
+} = require('./utils');
 
 const isValidDataset = (day) => !!day['activities-heart-intraday'].dataset.length;
 const toStatusCodeString = (day) => day[1][1].statusCode.toString();
@@ -35,16 +51,16 @@ const isErrorResponse = (day) => day.some(metric => metric[0].errors);
 const isDataResponse = (day) => day.some(metric => metric[0]['activities-heart-intraday']);
 const isClientError = (statusCode) => statusCode.startsWith('4');
 
-const { 
-
-    logErrors
-
-} = require(config.paths.reporting + '/queryMonitor');
+const { logErrors } = require('./reporting/queryMonitor');
 
 const FitBitClient = require('fitbit-node');
-const client = new FitBitClient(config.clientId, config.clientSecret);
-const Database = require(config.paths.db);
-const db = new Database(config.paths.store);
+const fbClient = new FitBitClient({ 
+  clientId: CLIENT_ID,
+  clientSecret: CLIENT_SECRET
+});
+
+const Database = require(DB_PATH);
+const db = new Database({ databaseFile: 'fbtest' });
 const commandOptions = { windowSize: null };
 const todaysDateString = moment().format(ymdFormat);
 
@@ -59,35 +75,20 @@ function preQueryCheck(subjectData) {
         process.exit(0);
     }
 
-    getAllSubjectFiles(subjectData);
+    getFilenames(subjectData);
 
 }
 
-function getAllSubjectFiles(subjectData) {
+async function getFilenames({ filter, directory }) {
 
-    fs.readdir(config.paths.rawData, (err, filenames) => {
-        if (err) throw err;
+    try {
+      const filenames = await readdirPromise(directory)
+      const participantFiles = filenames.filter(filter)
+    } catch (e) {
+      throw new Error(e);
+    }
 
-        const allDatesCaptured = filenames
-            .filter(matchesSubjectId(subjectData.subjectId))
-            .map(toDateString);
-
-        let dateRange = null;
-
-        if (commandOptions.dates)
-            dateRange = commandOptions.dates.length === 1 ? [commandOptions.dates[0], commandOptions.dates[0]] : commandOptions.dates;
-                          
-        const { startDate, stopDate } = getDateBoundaries(
-            subjectData.signupDate, 
-            commandOptions.windowSize, 
-            dateRange
-        ); 
-
-        const uncapturedDates = findUncapturedDates(startDate, stopDate, allDatesCaptured); 
-
-        buildQueryPaths(uncapturedDates);
-
-    });
+    return participantFiles
 }
 
 function getDateBoundaries(signupDateString, windowSize, dateRange) {
@@ -129,6 +130,7 @@ function buildQueryPaths(dates) {
         process.exit(0);
     }
     const queryPaths = generateQueryPaths(dates);
+    
 
     toPromiseArray(queryPaths);
 }
@@ -153,46 +155,90 @@ function extractFitBitData(days) {
 }
 
 /* 
- *
  * Query Functions / Async Control Flow 
- *
- *
  */
 
-function main(subjectId, { windowSize, dates, forceRefresh }) {
+async function main(participantId, { windowSize=3, dates=[], refresh=false }) {
 
-    commandOptions.windowSize = dates ? null : windowSize;
-    commandOptions.dates = dates;
-    commandOptions.forceRefresh = forceRefresh;
+    await db.init()
 
-    if (!subjectId) {
-        logToUserFail('Error: no subject id provided. Exiting ...');
-        process.exit(1);
+    // get participant by id
+    try {
+      const participant = await db.getParticipantByParticipantId(participantId)
+      console.log(participant)
+      if (!participant) {
+          await logger.error(`subject [ ${ participantId } ] is not in the database.`);
+          return
+      }
+      // don't run if they signed up today
+      if (participant.registration_date === today()) {
+        await logger.success(`Subject ${ participant } was signed up today. No data to query.`);  
+        return
+      }
+    } catch (e) {
+      throw new Error(e)
     }
 
-    /* short circuit to autorefresh */
-    if (commandOptions.forceRefresh && ! refreshAccessToken.called) {
-        logToUserInfo(`forcing token refresh for subject [ ${ subjectId } ]`);
-        return db.fetchOneSubject(subjectId, (err, subjectData) => {
-            if (err) throw err;
-            if (!subjectData) return logToUserFail(`subject [ ${ subjectId } ] is not in the database.`);
-            return refreshAccessToken(subjectData);
-        });
+
+    // refresh token if needed -- add prop .refreshed to main? check against that?
+    if (refresh) {
+      await logger.info(`Running Fbtrack for subject ${participantId}`);
+      try {
+        const accessToken = await refreshAccessToken(participant)
+      } catch(e) {
+        throw new Error(e)
+      }
     }
 
-    logToUserInfo(`Running Fbtrack for subject ${ colors.white(subjectId) }`);
+    try {
 
-    db.fetchOneSubject(subjectId, (err, subjectData) => {
-        if (err) throw err;
-        preQueryCheck(subjectData);
-    }); 
+      const filenames = await getFilenames({ 
+        filter: fname => fname.startsWith(participantId),
+        directory: DATA_PATH 
+      })
+
+      let dateRange
+
+      if (dates.length === 1)
+        dateRange = [dates[0], date[0]]
+      else if (dates.length === 2)
+        dateRange = dates
+
+      const datesRequired = getDateBoundaries(participant.signup_date, windowSize, dateRange) 
+      const capturedDates = filenames.map(toDateString)
+      const missingDates = datesRequired.filter(date => !capturedDates.includes(date))
+
+    } catch (e) {
+      throw new Error(e)
+    }
+
+  /*
+    let dateRange
+    if (dates.length 
+        dateRange = dates.length === 1 ? [commandOptions.dates[0], commandOptions.dates[0]] : commandOptions.dates;
+                          
+    const { startDate, stopDate } = getDateBoundaries(
+        subjectData.signupDate,
+        commandOptions.windowSize,
+        dateRange
+    ); 
+
+    const uncapturedDates = findUncapturedDates(startDate, stopDate, allDatesCaptured); 
+
+    buildQueryPaths(uncapturedDates);
+    */
+
+
+    
+    // todo: flatten to 2d
+    //const pathsByDate = dates.map(date => metrics.map(metric => makeRequest({ date, metric })))
 
 }
 
-function restartQuery({ subjectId }) {
+async function restartQuery({ subjectId }) {
 
     if (!subjectId) {
-        logToUserFail(subjectId);
+        await logger.error(subjectId);
         throw new Error(`Trying to restart query after token refresh, but have no subject id!`);
     }
 
@@ -208,7 +254,7 @@ function toPromiseArray(queryPaths) {
 
     const requestGroups = queryPaths.map(queryPath => { 
         return queryPath.map(path => {
-            return client.get(path, db.sessionCache.get('accessToken')); 
+            return fbClient.get(path, db.sessionCache.get('accessToken')); 
         });
     });
 
@@ -216,13 +262,13 @@ function toPromiseArray(queryPaths) {
 
 }
 
-function queryAPI(requestGroups) {
+async function queryAPI(requestGroups) {
 
-    logToUserInfo(`Requesting the following data from the FitBitAPI: [ ${ colors.white( config.scope.split(',').join(', ') ) } ].`); 
+    await logger.info(`Requesting the following data from the FitBitAPI: [ ${ colors.white( config.scope.split(',').join(', ') ) } ].`); 
 
     Promise.all(requestGroups.map(requestGroup => Promise.all(requestGroup)))
-        .then(handleAPIResponse, (e) => { return logToUserFail(e); })
-        .catch(e => { logToUserFail('Something went wrong with the fitbit API query ... ', e); });
+        .then(handleAPIResponse, async (e) => { return await logger.info(e); })
+        .catch(async (e) => { await logger.info('Something went wrong with the fitbit API query ... ', e); });
 
 }
 
@@ -236,9 +282,11 @@ function handleAPIResponse(responseGroups) {
     const dataResponses = responseGroups.filter(isDataResponse);
     const validDatasets = extractFitBitData(dataResponses).filter(isValidDataset); 
 
-    logToUserInfo(`Status codes from request for subject ${ subjectId }: ${ colors.white(statusCodeStrings.join(',')) }.`);
-    logToUserInfo(`# valid datasets: ${ colors.white(validDatasets.length) }.`);
-    logToUserInfo(`# errors: ${ colors.white(errorResponses.length) }.`);
+  /*
+    logger.info(`Status codes from request for subject ${ subjectId }: ${ colors.white(statusCodeStrings.join(',')) }.`);
+    logger.info(`# valid datasets: ${ colors.white(validDatasets.length) }.`);
+    logger.info(`# errors: ${ colors.white(errorResponses.length) }.`);
+    */
 
     // this callback runs when all datasets are written. It runs regardless if there are datasets or not.
     writeDatasetsToFiles(subjectId, validDatasets, (err) => { 
@@ -256,7 +304,7 @@ function handleClientErrors(clientErrorCodes, refreshCallback) {
 
     const handleExpiredAuthToken = () => {
 
-        logToUserInfo(`Access Token for subject ${ db.sessionCache.get('subjectId') } has expired. Refreshing tokens ... `);
+        logger.info(`Access Token for subject ${ db.sessionCache.get('subjectId') } has expired. Refreshing tokens ... `);
 
         db.fetchOneSubject(db.sessionCache.get('subjectId'), (err, subjectData) => {
             if (err) throw err;
@@ -276,19 +324,16 @@ function handleClientErrors(clientErrorCodes, refreshCallback) {
 function refreshAccessToken(subjectData) {
 
     if (refreshAccessToken.called) {
-        logToUserFail(`Unexpected multiple token refresh attempts. Exiting ...`); 
+        logger.error(`Unexpected multiple token refresh attempts. Exiting ...`); 
         process.exit(1);
     } 
     refreshAccessToken.called = true;
 
-    client
+    fbClient
         .refreshAccessToken(subjectData.accessToken, subjectData.refreshToken, 3600)
         .then(updateTokens)
         .catch(e => {
-            logToUserFail(
-                `Token update failed. Contact Alex.`,
-                `Error details: ${ JSON.stringify(e.context.errors[0]) }`
-            );
+            logger.error(`Token update failed. Error details: ${ JSON.stringify(e.context.errors[0]) }`);
         });
 }
 
@@ -313,9 +358,10 @@ function updateTokens({ access_token, refresh_token }) {
 function writeDatasetsToFiles(subjectId, datasets, nextCb) {
 
     if (!datasets.length) return nextCb(null);
-    else logToUserInfo(`writing ${ datasets.length } datasets, each to a separate file in ${ config.paths.rawData } ...`);
+    else logger.info(`writing ${ datasets.length } datasets, each to a separate file in ${ config.paths.rawData } ...`);
 
-    async.each(datasets, (dataset, cb) => {
+    [].forEach(datasets, (dataset, cb) => {
+    //async.each(datasets, (dataset, cb) => {
 
         let serializedData = JSON.stringify(dataset, null, 4);
         let captureDate = dataset['activities-steps'][0]['dateTime'];
@@ -350,3 +396,5 @@ module.exports = exports = {
     writeDatasetsToFiles
     
 };
+
+main('001', { window: 3, })

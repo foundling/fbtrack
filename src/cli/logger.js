@@ -55,9 +55,3 @@ class Logger {
 }
 
 module.exports = exports = Logger
-
-const logger = new Logger({ logDir: './logs', config: {info: true}})
-logger.warn('hi')
-logger.info('hi')
-logger.success('hi')
-logger.error('hi')

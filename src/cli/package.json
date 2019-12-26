@@ -6,6 +6,8 @@
   "dependencies": {
     "colors": "^1.4.0",
     "commander": "^4.0.1",
+    "dotenv": "^8.2.0",
+    "fitbit-node": "^2.2.0",
     "moment": "^2.24.0"
   },
   "devDependencies": {
