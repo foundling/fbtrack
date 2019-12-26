@@ -1,0 +1,21 @@
+{
+  "name": "cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "commander": "^4.0.1",
+    "moment": "^2.24.0"
+  },
+  "devDependencies": {
+    "tap-spec": "^5.0.0",
+    "tape": "^4.12.1"
+  },
+  "scripts": {
+    "test": "tape ./**/*.test.js | tap-spec"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
