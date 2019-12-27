@@ -1,15 +1,15 @@
 require('dotenv').config() 
 
 const {
+  DB_PATH,
   CLIENT_ID,
   CLIENT_SECRET,
-  LOGS_PATH,
-  DB_PATH,
-  DATA_PATH
+  DATA_PATH,
+  LOGS_PATH
 } = process.env
 
+const { format, addDays, subDays, differenceInDays, isAfter, isBefore  } = require('date-fns')
 
-const { format, addDays, subDays, differenceInDays  } = require('date-fns')
 const fs = require('fs')
 const util = require('util')
 const moment = require('moment')
@@ -142,14 +142,15 @@ function extractFitBitData(days) {
 
 async function main(participantId, { dates=[], windowSize=null, refresh=false }) {
 
-    // make sure arguments don't conflict
+    // both window size and range, invalid
     if (dates.length > 0 && windowSize !== null) {
       logger.error('Provide a window size or a date range, but not both.')
       return
     }
 
     // if both values are missing, set default window size
-    if (!dates.length && windowSize === null) {
+    if (!dates.length && windowSize == null) {
+      logger.warn('no date range provided, no window size provided. using default window size of 3 days')
       windowSize = DEFAULT_WINDOW_SIZE
     }
     
@@ -207,38 +208,26 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
         directory: DATA_PATH 
       })
 
+      // get date range based on args
+      const [ rangeStart, rangeStop ] = windowSize ? 
+                        dateRangeFromWindowSize({ registrationDate, today, windowSize }) :
+                        dateRangeFromDateArgs({ dates }) 
 
-      // date range overrides window size
-      // signup date overrides any start date
-      // default window is 3 days
-      let dateRange
+      const expectedDates = datesFromRange({ start: rangeStart, stop: rangeStop })
+      const existingDates = filenames.map(filename => {
+        const [ id, dateString, extension ] = filename.split(/[_.]/)
+        return new Date(dateString)
+      }).filter(date => {
+        return date >= rangeStart && date <= rangeStop
+      })
+      const missingDates = expectedDates.filter(expectedDate => {
+        return !existingDates
+          .map(existingDate => format(existingDate, ymdFormat))
+          .includes(format(expectedDate, ymdFormat))
+      })
+      console.log({ expectedDates, existingDates, missingDates })
 
-      if (windowSize) {
 
-        const startDate = new Date(
-          Math.max(
-            subDays(today, windowSize),
-            registrationDate
-          )
-        )
-        dateRange = [ startDate, addDays(startDate, windowSize) ]
-
-      } else {
-
-        if (dates.length === 0) {
-          dateRange = [
-            Math.max(registrationDate, new Date(dates[0])),
-            new Date(dates[1])
-          ]
-        }
-        if (dates.length === 1)
-          // start = stop, just one day
-          dateRange = [new Date(dates[0]), new Date(dates[0])]
-        else if (dates.length === 2)
-          dateRange = dates.map(d => new Date(d))
-      }
-
-      console.log({ dateRange })
 
     } catch (e) {
       throw new Error(e)
@@ -258,6 +247,40 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
     
     // todo: flatten to 2d
     //const pathsByDate = dates.map(date => metrics.map(metric => makeRequest({ date, metric })))
+
+}
+
+function datesFromRange({ start, stop }) {
+  const dates = [start]
+  let currentDate = start
+  while (currentDate <= stop) {
+    currentDate = addDays(currentDate, 1)
+    dates.push(currentDate)
+  }
+  return dates
+}
+
+function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
+
+  const startDate = new Date(
+    Math.max(
+      subDays(today, windowSize),
+      registrationDate
+    )
+  )
+
+  const dateRange = [ startDate, addDays(startDate, windowSize) ]
+  return dateRange
+
+}
+
+function dateRangeFromDateArgs({ dates }) {
+
+  let dateRange
+
+  if (dates.length === 1) return [ new Date(dates[0]), new Date(dates[0]) ]
+  if (dates.length >= 2)  return [ new Date(dates[0]),  new Date(dates[1]) ]
+
 
 }
 
@@ -424,8 +447,7 @@ module.exports = exports = {
     
 }
 
+main('001', { dates: ['2019-12-22', '2019-12-28'] }).catch(console.log)
 //main('001', { dates: ['2019-01-01', '2019-01-09'] }).catch(console.log)
-main('001', { windowSize: 4 }).catch(console.log)
-main('001', { dates: ['2019-01-01', '2019-01-09'] }).catch(console.log)
-main('001', { dates: ['2019-01-01'] }).catch(console.log)
-main('001', {  }).catch(console.log)
+//main('001', { dates: ['2019-01-01'] }).catch(console.log)
+//main('001', {  }).catch(console.log)
