@@ -1,11 +1,7 @@
 require('dotenv').config()
 
-console.log(process.env)
-
-
 const cli = require('commander');
 const { delayedRequire } = require('./utils');
-
 
 const lazyHandlers = [
 
@@ -73,12 +69,12 @@ cli
 
 
 module.exports = exports = {
-    start: function() {
+  start: function() {
 
-      if (!process.argv.slice(2).length)
-        cli.outputHelp(helpText => helpText);
-      else
-        cli.parse(process.argv);
+    if (!process.argv.slice(2).length)
+      cli.outputHelp(helpText => helpText);
+    else
+      cli.parse(process.argv);
 
-    }
+  }
 };
