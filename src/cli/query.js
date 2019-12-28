@@ -140,26 +140,37 @@ function extractFitBitData(days) {
  * Query Functions / Async Control Flow 
  */
 
+function validateArgs(participantId, { dates=[], windowSize = null, refresh=false }) {
+
+   // both window size and range, invalid
+  if (dates.length > 0 && windowSize !== null) {
+    return { error: 'Provide a window size or a date range, but not both.' }
+  }
+
+  // check dates for validity
+  if (!dates.every(date => dateRE.test(date))) {
+    return { error: `invalid date format: ${dates.join('..')}` }
+  }
+
+  // if both values are missing, set default window size
+  if (!dates.length && windowSize == null) {
+    return { warning: 'no date range provided, no window size provided. using default window size of 3 days' }
+  }
+
+}
+
 async function main(participantId, { dates=[], windowSize=null, refresh=false }) {
 
-    // both window size and range, invalid
-    if (dates.length > 0 && windowSize !== null) {
-      logger.error('Provide a window size or a date range, but not both.')
-      return
-    }
+    const { error, warning } = validateArgs(participantId, { dates=[], windowSize=null, refresh=false })
 
-    // if both values are missing, set default window size
-    if (!dates.length && windowSize == null) {
-      logger.warn('no date range provided, no window size provided. using default window size of 3 days')
+    if (error)
+      return logger.error(error)
+
+    if (warning)
+      logger.warn(warning)
+
+    if (dates.length === 0 && windowSize == null)
       windowSize = DEFAULT_WINDOW_SIZE
-    }
-    
-    // check dates for validity
-    const invalid = !dates.every(date => dateRE.test(date))
-    if (invalid) {
-      logger.error(`invalid date format: ${dates.join('..')}`)
-      return
-    }
 
     await db.init()
 
@@ -448,6 +459,6 @@ module.exports = exports = {
 }
 
 main('001', { dates: ['2019-12-22', '2019-12-28'] }).catch(console.log)
-//main('001', { dates: ['2019-01-01', '2019-01-09'] }).catch(console.log)
-//main('001', { dates: ['2019-01-01'] }).catch(console.log)
-//main('001', {  }).catch(console.log)
+main('001', { dates: ['2019-01-01', '2019-01-09'] }).catch(console.log)
+main('001', { dates: ['2019-01-01'] }).catch(console.log)
+main('001', {  }).catch(console.log)
