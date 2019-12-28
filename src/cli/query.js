@@ -109,16 +109,6 @@ const findUncapturedDates = (startDate, stopDate, allDatesCaptured) => {
 
 }
 
-function buildQueryPaths(dates) {
-
-    const queryPaths = generateQueryPaths(dates)
-
-    return queryPaths
-    
-
-    toPromiseArray(queryPaths)
-}
-
 function extractFitBitData(days) {
     // need to take metrics for each day and flatten them into a single object
 
@@ -163,10 +153,9 @@ function validateArgs(participantId, { dates=[], windowSize = null, refresh=fals
 
 }
 
+// todo: write your own decorator to validate this stuff ?
 async function main(participantId, { dates=[], windowSize=null, refresh=false }) {
   
-    // todo: turn date metadata into a map, shouldn't have duplicates. makes missing calc faster
-
     const { error, warning } = validateArgs(participantId, { dates, windowSize, refresh })
 
     if (error)
@@ -219,19 +208,22 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
 
     try {
 
-      // filename, datestring, date
       const filenames = await getFiles({ 
         directory: DATA_PATH,
         criterion: fname => fname.startsWith(participantId),
       })
 
+      // todo: turn date metadata into a map, shouldn't have duplicates. makes missing calc faster
       const metadata = filenames.map(filename => {
+
         const [ participantId, dateString, extension ] = filename.split(/[_.]/)
+
         return { 
           filename,
           dateString,
           date: new Date(dateString)
         }
+
       })
 
       const [ start, stop ] = windowSize ? 
@@ -240,9 +232,29 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
 
       const expectedDates = datesFromRange({ start, stop })
       const capturedDates = metadata.map(md => md.date)
-      const missingDateStrings = expectedDates.filter(date => !capturedDates.includes(date)).map(date => format(date, ymdFormat))
-      const queryPaths = generateQueryPaths(missingDateStrings)
+      const missingDates = expectedDates.filter(date => !capturedDates.includes(date)).map(date => format(date, ymdFormat))
+
+      const metricUrls = {
+
+        // intraday timeseries
+        'steps':     '/activities/steps/date/%DATE%/1d/1min.json',
+        'calories':  '/activities/calories/date/%DATE%/1d/1min.json',
+        'distance':  '/activities/distance/date/%DATE%/1d/1min.json',
+        'heartrate': '/activities/heart/date/%DATE%/1d/1min.json',
+
+        // daily timeseries
+        'activities': '/activities/date/%DATE%.json',
+        'sleep':     '/sleep/date/%DATE%.json'
+
+     };
+
+      const queryPaths = generateQueryPaths({ 
+        dates: missingDates, 
+        metricEndpoints: metricUrls
+      })
+
       const requests = toPromiseArray(queryPaths)
+
       
     } catch (e) {
       throw new Error(e)
@@ -307,6 +319,7 @@ async function restartQuery({ subjectId }) {
 }
 
 function toPromiseArray(queryPaths) {
+  console.log({ queryPaths })
   return queryPaths.map(dates => { 
     return dates.map(metric => {
       return fbClient.get(metric, 'abc') //db.sessionCache.get('accessToken')); 
@@ -433,7 +446,6 @@ module.exports = exports = {
 
     main,
 
-    buildQueryPaths,
     extractFitBitData,
     findUncapturedDates,
     handleAPIResponse,

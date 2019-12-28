@@ -2,6 +2,8 @@ const colors = require('colors');
 const moment = require('moment');
 const fs = require('fs');
 const util = require('fs');
+const format = require('date-fns/format');
+
 
 const delayedRequire = function(dependencyPath) { 
 
@@ -67,38 +69,16 @@ const generateDateRange = (startDateString, stopDateString) => {
 
 };
 
-const generateQueryPaths = (dates) => {
+const generateQueryPaths = ({ dates, metricEndpoints }) => {
 
-    /*
-     * Return array of query paths for each date in dates.
-     */
+    // metric name -> path w/ date replaced
+    const metrics = Object.keys(metricEndpoints)
 
-    const endpoints = {
-
-        // intraday timeseries
-        'steps':     '/activities/steps/date/%DATE%/1d/1min.json', 
-        'calories':  '/activities/calories/date/%DATE%/1d/1min.json', 
-        'distance':  '/activities/distance/date/%DATE%/1d/1min.json',
-        'heartrate': '/activities/heart/date/%DATE%/1d/1min.json',
-
-        // interday timeseries
-        'activities': '/activities/date/%DATE%.json',
-        'sleep':     '/sleep/date/%DATE%.json'
-
-    };
-
-
-
-    return dates
-        .map(dateString => {
-
-            return Object.keys(endpoints).map(metric => {
-
-                return endpoints[metric].replace('%DATE%', dateString);
-
-            });
-
-        });
+    return dates.map(date => {
+      return metrics.map(metric => {
+        return metricEndpoints[metric].replace('%DATE%', format(date, ymdFormat));
+      })
+    })
 
 };
 
