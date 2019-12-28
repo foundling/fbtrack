@@ -69,12 +69,15 @@ cli
 
 
 module.exports = exports = {
+
   start: function() {
 
     if (!process.argv.slice(2).length)
       cli.outputHelp(helpText => helpText);
+
     else
       cli.parse(process.argv);
 
   }
+
 };

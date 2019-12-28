@@ -13,7 +13,7 @@ const { format, addDays, subDays, differenceInDays, isAfter, isBefore  } = requi
 const fs = require('fs')
 const util = require('util')
 const moment = require('moment')
-const DEFAULT_WINDOW_SIZE = 3
+const FitBitClient = require('fitbit-node')
 
 const readdirPromise = util.promisify(fs.readdir)
 const writeFilePromise = util.promisify(fs.writeFile)
@@ -55,7 +55,6 @@ const isClientError = (statusCode) => statusCode.startsWith('4')
 
 const { logErrors } = require('./reporting/queryMonitor')
 
-const FitBitClient = require('fitbit-node')
 const fbClient = new FitBitClient({ 
   clientId: CLIENT_ID,
   clientSecret: CLIENT_SECRET
@@ -66,6 +65,7 @@ const db = new Database({ databaseFile: 'fbtest' })
 const commandOptions = { windowSize: null }
 const todaysDateString = moment().format(ymdFormat)
 
+const DEFAULT_WINDOW_SIZE = 3
 
 function preQueryCheck(subjectData) {
 
@@ -77,17 +77,21 @@ function preQueryCheck(subjectData) {
         process.exit(0)
     }
 
-    getFilenames(subjectData)
+    getFiles(subjectData)
 
 }
 
-async function getFilenames({ filter, directory }) {
+async function getFiles({ criterion, directory }) {
 
     try {
+
       const filenames = await readdirPromise(directory)
-      return filenames.filter(filter)
+      return filenames.filter(criterion)
+
     } catch (e) {
+
       throw new Error(e)
+
     }
 
 }
@@ -107,11 +111,9 @@ const findUncapturedDates = (startDate, stopDate, allDatesCaptured) => {
 
 function buildQueryPaths(dates) {
 
-    if (!dates.length) {
-        logToUserSuccess(`No requests necessary for subject ${ db.sessionCache.get('subjectId') }. All data collected in this date window`)
-        process.exit(0)
-    }
     const queryPaths = generateQueryPaths(dates)
+
+    return queryPaths
     
 
     toPromiseArray(queryPaths)
@@ -157,11 +159,15 @@ function validateArgs(participantId, { dates=[], windowSize = null, refresh=fals
     return { warning: 'no date range provided, no window size provided. using default window size of 3 days' }
   }
 
+  return {}
+
 }
 
 async function main(participantId, { dates=[], windowSize=null, refresh=false }) {
+  
+    // todo: turn date metadata into a map, shouldn't have duplicates. makes missing calc faster
 
-    const { error, warning } = validateArgs(participantId, { dates=[], windowSize=null, refresh=false })
+    const { error, warning } = validateArgs(participantId, { dates, windowSize, refresh })
 
     if (error)
       return logger.error(error)
@@ -189,7 +195,6 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
           return
       }
 
-      // don't run if they signed up today: should probably do a better comparison
       registrationDate = new Date(participant.registration_date)
       daysAgoRegistered = differenceInDays(today, registrationDate) 
 
@@ -214,50 +219,41 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
 
     try {
 
-      const filenames = await getFilenames({ 
-        filter: fname => fname.startsWith(participantId),
-        directory: DATA_PATH 
+      // filename, datestring, date
+      const filenames = await getFiles({ 
+        directory: DATA_PATH,
+        criterion: fname => fname.startsWith(participantId),
       })
 
-      // get date range based on args
-      const [ rangeStart, rangeStop ] = windowSize ? 
+      const metadata = filenames.map(filename => {
+        const [ participantId, dateString, extension ] = filename.split(/[_.]/)
+        return { 
+          filename,
+          dateString,
+          date: new Date(dateString)
+        }
+      })
+
+      const [ start, stop ] = windowSize ? 
                         dateRangeFromWindowSize({ registrationDate, today, windowSize }) :
                         dateRangeFromDateArgs({ dates }) 
 
-      const expectedDates = datesFromRange({ start: rangeStart, stop: rangeStop })
-      const existingDates = filenames.map(filename => {
-        const [ id, dateString, extension ] = filename.split(/[_.]/)
-        return new Date(dateString)
-      }).filter(date => {
-        return date >= rangeStart && date <= rangeStop
-      })
-      const missingDates = expectedDates.filter(expectedDate => {
-        return !existingDates
-          .map(existingDate => format(existingDate, ymdFormat))
-          .includes(format(expectedDate, ymdFormat))
-      })
-      console.log({ expectedDates, existingDates, missingDates })
-
-
-
+      const expectedDates = datesFromRange({ start, stop })
+      const capturedDates = metadata.map(md => md.date)
+      const missingDateStrings = expectedDates.filter(date => !capturedDates.includes(date)).map(date => format(date, ymdFormat))
+      const queryPaths = generateQueryPaths(missingDateStrings)
+      const requests = toPromiseArray(queryPaths)
+      
     } catch (e) {
       throw new Error(e)
     }
 
-  /*
-    let dateRange
-    if (dates.length 
-        dateRange = dates.length === 1 ? [commandOptions.dates[0], commandOptions.dates[0]] : commandOptions.dates
-                          
-    const uncapturedDates = findUncapturedDates(startDate, stopDate, allDatesCaptured); 
-
-    buildQueryPaths(uncapturedDates)
-    */
-
-
-    
     // todo: flatten to 2d
     //const pathsByDate = dates.map(date => metrics.map(metric => makeRequest({ date, metric })))
+
+}
+
+function findMissingParticipantFiles({ dates, files }) {
 
 }
 
@@ -311,15 +307,11 @@ async function restartQuery({ subjectId }) {
 }
 
 function toPromiseArray(queryPaths) {
-
-    const requestGroups = queryPaths.map(queryPath => { 
-        return queryPath.map(path => {
-            return fbClient.get(path, db.sessionCache.get('accessToken')); 
-        })
-    })
-
-    queryAPI(requestGroups)
-
+  return queryPaths.map(dates => { 
+    return dates.map(metric => {
+      return fbClient.get(metric, 'abc') //db.sessionCache.get('accessToken')); 
+    }).flat()
+  }).flat()
 }
 
 async function queryAPI(requestGroups) {
@@ -459,6 +451,6 @@ module.exports = exports = {
 }
 
 main('001', { dates: ['2019-12-22', '2019-12-28'] }).catch(console.log)
-main('001', { dates: ['2019-01-01', '2019-01-09'] }).catch(console.log)
-main('001', { dates: ['2019-01-01'] }).catch(console.log)
-main('001', {  }).catch(console.log)
+//main('001', { dates: ['2019-01-01', '2019-01-09'] }).catch(console.log)
+//main('001', { dates: ['2019-01-01'] }).catch(console.log)
+//main('001', {  }).catch(console.log)
