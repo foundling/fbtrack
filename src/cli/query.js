@@ -66,6 +66,19 @@ const commandOptions = { windowSize: null }
 const todaysDateString = moment().format(ymdFormat)
 
 const DEFAULT_WINDOW_SIZE = 3
+const ENDPOINT_TEMPLATES = {
+
+    // intraday timeseries
+    'steps':     '/activities/steps/date/%DATE%/1d/1min.json',
+    'calories':  '/activities/calories/date/%DATE%/1d/1min.json',
+    'distance':  '/activities/distance/date/%DATE%/1d/1min.json',
+    'heartrate': '/activities/heart/date/%DATE%/1d/1min.json',
+
+    // daily timeseries
+    'activities': '/activities/date/%DATE%.json',
+    'sleep':     '/sleep/date/%DATE%.json'
+
+ };
 
 function preQueryCheck(subjectData) {
 
@@ -90,7 +103,7 @@ async function getFiles({ criterion, directory }) {
 
     } catch (e) {
 
-      throw new Error(e)
+      throw new Error('getFiles failed: ', e)
 
     }
 
@@ -153,119 +166,102 @@ function validateArgs(participantId, { dates=[], windowSize = null, refresh=fals
 
 }
 
+
 // todo: write your own decorator to validate this stuff ?
 async function main(participantId, { dates=[], windowSize=null, refresh=false }) {
+  console.log(participantId, { dates, windowSize, refresh })
+  return
+  const { error, warning } = validateArgs(participantId, { dates, windowSize, refresh })
+
+  if (error)
+    return logger.error(error)
+
+  if (warning)
+    logger.warn(warning)
+
+  if (dates.length === 0 && windowSize == null)
+    windowSize = DEFAULT_WINDOW_SIZE
+
+  await db.init()
+
+  const today = new Date()
+  const participant = await getParticipantById(participantId)
+  const registrationDate = new Date(participant.registration_date)
+
+  if (differenceInDays(today, registrationDate) === 0) {
+    await logger.success(`Subject ${ participant } was signed up today. No data to query.`);  
+    return
+  }
+
+  if (refresh) {
+    logger.info(`Access Token for participant ${participantId} expired. Refreshing ...`)
+
+    // todo: save access token to database
+    participant.access_token = await refreshAccessToken(participant)
+  }
+
+  const missingDates = findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate })
+  const queryPaths = generateQueryPaths({ dates: missingDates, metricEndpoints: ENDPOINT_TEMPLATES })
+  const requests = queryPaths.map(path => fbClient.get(path, participant.access_token))
+
+  try {
+    const responses = await Promise.all(requests)
+  } catch(e) {
+    throw new Error(e)
+  }
   
-    const { error, warning } = validateArgs(participantId, { dates, windowSize, refresh })
 
-    if (error)
-      return logger.error(error)
-
-    if (warning)
-      logger.warn(warning)
-
-    if (dates.length === 0 && windowSize == null)
-      windowSize = DEFAULT_WINDOW_SIZE
-
-    await db.init()
-
-    let registrationDate
-    let daysAgoRegistered
-    let participant 
-    let accessToken 
-
-    const today = new Date()
-
-    // get participant by id
-    try {
-      participant = await db.getParticipantByParticipantId(participantId)
-      if (!participant) {
-          await logger.error(`subject [ ${ participantId } ] is not in the database.`)
-          return
-      }
-
-      registrationDate = new Date(participant.registration_date)
-      daysAgoRegistered = differenceInDays(today, registrationDate) 
-
-      if (daysAgoRegistered === 0) {
-        await logger.success(`Subject ${ participant } was signed up today. No data to query.`);  
-        return
-      }
-
-    } catch (e) {
-      throw new Error(e)
-    }
-
-    // refresh token if needed -- add prop .refreshed to main? check against that?
-    if (refresh) {
-      await logger.info(`Running Fbtrack for subject ${participantId}`)
-      try {
-        accessToken = await refreshAccessToken(participant)
-      } catch(e) {
-        throw new Error(e)
-      }
-    }
-
-    try {
-
-      const filenames = await getFiles({ 
-        directory: DATA_PATH,
-        criterion: fname => fname.startsWith(participantId),
-      })
-
-      // todo: turn date metadata into a map, shouldn't have duplicates. makes missing calc faster
-      const metadata = filenames.map(filename => {
-
-        const [ participantId, dateString, extension ] = filename.split(/[_.]/)
-
-        return { 
-          filename,
-          dateString,
-          date: new Date(dateString)
-        }
-
-      })
-
-      const [ start, stop ] = windowSize ? 
-                        dateRangeFromWindowSize({ registrationDate, today, windowSize }) :
-                        dateRangeFromDateArgs({ dates }) 
-
-      const expectedDates = datesFromRange({ start, stop })
-      const capturedDates = metadata.map(md => md.date)
-      const missingDates = expectedDates.filter(date => !capturedDates.includes(date)).map(date => format(date, ymdFormat))
-
-      const metricUrls = {
-
-        // intraday timeseries
-        'steps':     '/activities/steps/date/%DATE%/1d/1min.json',
-        'calories':  '/activities/calories/date/%DATE%/1d/1min.json',
-        'distance':  '/activities/distance/date/%DATE%/1d/1min.json',
-        'heartrate': '/activities/heart/date/%DATE%/1d/1min.json',
-
-        // daily timeseries
-        'activities': '/activities/date/%DATE%.json',
-        'sleep':     '/sleep/date/%DATE%.json'
-
-     };
-
-      const queryPaths = generateQueryPaths({ 
-        dates: missingDates, 
-        metricEndpoints: metricUrls
-      })
-
-      const requests = toPromiseArray(queryPaths)
-
-      
-    } catch (e) {
-      throw new Error(e)
-    }
-
-    // todo: flatten to 2d
-    //const pathsByDate = dates.map(date => metrics.map(metric => makeRequest({ date, metric })))
+  // todo: flatten to 2d
+  //const pathsByDate = dates.map(date => metrics.map(metric => makeRequest({ date, metric })))
 
 }
 
-function findMissingParticipantFiles({ dates, files }) {
+async function findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate }) {
+
+  const filenames = await getFiles({ 
+    directory: DATA_PATH,
+    criterion: fname => fname.startsWith(participantId),
+  })
+
+  // todo: turn date metadata into a map, shouldn't have duplicates. makes missing calc faster
+  const metadata = filenames.map(filename => {
+
+    const [ participantId, dateString, extension ] = filename.split(/[_.]/)
+
+    return { 
+      filename,
+      dateString,
+      date: new Date(dateString)
+    }
+
+  })
+
+  const [ start, stop ] = windowSize ? 
+                    dateRangeFromWindowSize({ registrationDate, today, windowSize }) :
+                    dateRangeFromDateArgs({ dates }) 
+
+  const expectedDates = datesFromRange({ start, stop })
+  const capturedDates = metadata.map(md => md.date)
+  const missingDates = expectedDates.filter(date => !capturedDates.includes(date)).map(date => format(date, ymdFormat))
+
+  return missingDates
+
+}
+
+
+async function getParticipantById(id) {
+
+  // get participant by id
+  try {
+    const participant = await db.getParticipantByParticipantId(id)
+    if (!participant) {
+        await logger.error(`subject [ ${ id } ] is not in the database.`)
+        return
+    }
+    return participant
+  } catch (e) {
+    throw new Error(e)
+  }
 
 }
 
@@ -316,15 +312,6 @@ async function restartQuery({ subjectId }) {
         preQueryCheck(subjectData)
     })
 
-}
-
-function toPromiseArray(queryPaths) {
-  console.log({ queryPaths })
-  return queryPaths.map(dates => { 
-    return dates.map(metric => {
-      return fbClient.get(metric, 'abc') //db.sessionCache.get('accessToken')); 
-    }).flat()
-  }).flat()
 }
 
 async function queryAPI(requestGroups) {
@@ -386,21 +373,29 @@ function handleClientErrors(clientErrorCodes, refreshCallback) {
 
 }
 
-function refreshAccessToken(subjectData) {
+async function refreshAccessToken({ access_token, refresh_token }) {
 
+    const expirationWindow = 3600
+
+    // better way than mutating function? use a closure?
     if (refreshAccessToken.called) {
         logger.error(`Unexpected multiple token refresh attempts. Exiting ...`); 
         process.exit(1)
     } 
     refreshAccessToken.called = true
 
-    fbClient
-        .refreshAccessToken(subjectData.accessToken, subjectData.refreshToken, 3600)
-        .then(updateTokens)
-        .catch(e => {
-            logger.error(`Token update failed. Error details: ${ JSON.stringify(e.context.errors[0]) }`)
-        })
+    // make generic?
+    try {
+      return await fbClient.refreshAccessToken(access_token, refresh_token, expirationWindow)
+    } catch(e) {
+      // todo
+      const errors = (e.context.errors)
+      const messages = errors.map(e => '\n * ' + e.message)
+      await logger.error(`Token update failed. Error details: ${ messages }`)
+    }
+
 }
+
 
 function updateTokens({ access_token, refresh_token }) {
 
@@ -455,14 +450,13 @@ module.exports = exports = {
     isClientError,
     queryAPI,
     refreshAccessToken,
-    toPromiseArray,
     toStatusCodeString,
     updateTokens,
     writeDatasetsToFiles
     
 }
 
-main('001', { dates: ['2019-12-22', '2019-12-28'] }).catch(console.log)
+main('001', { dates: ['2019-12-22', '2019-12-28'], refresh: false }).catch(console.log)
 //main('001', { dates: ['2019-01-01', '2019-01-09'] }).catch(console.log)
 //main('001', { dates: ['2019-01-01'] }).catch(console.log)
 //main('001', {  }).catch(console.log)

@@ -69,6 +69,7 @@ const generateDateRange = (startDateString, stopDateString) => {
 
 };
 
+// [dates], [metricEndpoints] => [ requestPaths ]
 const generateQueryPaths = ({ dates, metricEndpoints }) => {
 
     // metric name -> path w/ date replaced
@@ -78,7 +79,7 @@ const generateQueryPaths = ({ dates, metricEndpoints }) => {
       return metrics.map(metric => {
         return metricEndpoints[metric].replace('%DATE%', format(date, ymdFormat));
       })
-    })
+    }).flat()
 
 };
 
