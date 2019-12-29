@@ -2,8 +2,9 @@ require('dotenv').config()
 
 const cli = require('commander');
 const { delayedRequire } = require('./utils');
+const { validate, validators } = require('./validators');
 
-const lazyHandlers = [
+const validatedLazyHandlers = [
 
     'signup',
     'query',
@@ -17,12 +18,15 @@ const lazyHandlers = [
 ]
 .reduce((o, cmd) => {
 
-    o[cmd] = delayedRequire(`./commands/${ cmd }`);
+    const lazyHandler = delayedRequire(`./commands/${ cmd }`);
+    const validatedLazyHandler = validators[cmd](lazyHandler)
+    o[cmd] = validatedLazyHandler
+
     return o;
 
 }, {});
 
-const { signup, query, revoke, missing, status, apistatus, update, dump }  = lazyHandlers; 
+const { signup, query, revoke, missing, status, apistatus, update, dump }  = validatedLazyHandlers; 
 
 cli
     .command('signup')
@@ -35,7 +39,7 @@ cli
     .option('-w, --window-size <windowSize>', 'window size')
     .option('-r, --refresh','refresh oauth token')
     .option('-d, --dates <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', s => s.split('..'))
-    .action(query);
+    .action(query)
 
 cli
     .command('revoke <subject_id>')
