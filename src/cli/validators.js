@@ -31,7 +31,7 @@ const validators = {
   apistatus: id,
   update: id,
   dump: id,
-  undefined: (..args) => { throw new Error('no handler defined') }
+  undefined: (...args) => { throw new Error('no handler defined') }
 }
 
 module.exports = { validate, validators }
