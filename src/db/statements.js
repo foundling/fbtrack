@@ -29,5 +29,6 @@ module.exports = exports = {
         $is_active
       )
     `,
+    setAccessToken: `update participants set access_token = $access_token where participant_id = $participant_id`
   }
 }

@@ -1,4 +1,6 @@
 // should return args as array if valid
+const id = (...args) => [...args]
+const validate = (fn, validator) => (...args) => fn(validator(...args))
 const validators = {
 
   query: function (participantId, { dates=[], windowSize = null, refresh=false }) {
@@ -21,18 +23,15 @@ const validators = {
     return [ participantId, { dates, windowSize, refresh } ]
 
   },
-  signup: () => {},
-  query: () => {},
-  revoke: () => {},
-  missing: () => {},
-  status: () => {},
-  apistatus: () => {},
-  update: () => {},
-  dump: () => {},
-  undefined: () => { throw new Error('no handler defined') }
+  signup: id,
+  query: id,
+  revoke: id,
+  missing: id,
+  status: id,
+  apistatus: id,
+  update: id,
+  dump: id,
+  undefined: (..args) => { throw new Error('no handler defined') }
 }
 
-module.exports = {
-  validate: (fn, validator) => (...args) => fn(validator(...args)),
-  validators, 
-}
+module.exports = { validate, validators }

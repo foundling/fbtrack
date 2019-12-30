@@ -167,10 +167,8 @@ function validateArgs(participantId, { dates=[], windowSize = null, refresh=fals
 }
 
 
-// todo: write your own decorator to validate this stuff ?
 async function main(participantId, { dates=[], windowSize=null, refresh=false }) {
-  console.log(participantId, { dates, windowSize, refresh })
-  return
+
   const { error, warning } = validateArgs(participantId, { dates, windowSize, refresh })
 
   if (error)
@@ -196,25 +194,34 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
   if (refresh) {
     logger.info(`Access Token for participant ${participantId} expired. Refreshing ...`)
 
-    // todo: save access token to database
-    participant.access_token = await refreshAccessToken(participant)
+    const refreshAccessToken = statefulRefreshAccessToken(participant)
+    participant.access_token = await refreshAccessToken()
   }
 
   const missingDates = findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate })
-  const queryPaths = generateQueryPaths({ dates: missingDates, metricEndpoints: ENDPOINT_TEMPLATES })
-  const requests = queryPaths.map(path => fbClient.get(path, participant.access_token))
+  const participantData = getFitbitDataForDates({ dates: missingDates, endpoints: ENDPOINT_TEMPLATES })
 
-  try {
-    const responses = await Promise.all(requests)
-  } catch(e) {
-    throw new Error(e)
-  }
-  
 
   // todo: flatten to 2d
   //const pathsByDate = dates.map(date => metrics.map(metric => makeRequest({ date, metric })))
 
 }
+
+async function getFitbitDataForDates({ dates, endpoints }) {
+
+  const queryPaths = generateQueryPaths({ dates, metricEndpoints: ENDPOINT_TEMPLATES })
+  const requests = queryPaths.map(path => fbClient.get(path, participant.access_token))
+
+  try {
+    const responses = await Promise.all(requests)
+  } catch(e) {
+    throw new Error(['Error retrieving fitbit data for dates', e])
+  }
+
+  return responses
+  
+}
+
 
 async function findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate }) {
 
@@ -373,28 +380,44 @@ function handleClientErrors(clientErrorCodes, refreshCallback) {
 
 }
 
-async function refreshAccessToken({ access_token, refresh_token }) {
+function statefulRefreshAccessToken({ access_token, refresh_token, participant_id }) {
 
-    const expirationWindow = 3600
+  let maxRetries = 1
 
-    // better way than mutating function? use a closure?
-    if (refreshAccessToken.called) {
-        logger.error(`Unexpected multiple token refresh attempts. Exiting ...`); 
-        process.exit(1)
-    } 
-    refreshAccessToken.called = true
+  return async function refreshAccessToken() {
 
-    // make generic?
-    try {
-      return await fbClient.refreshAccessToken(access_token, refresh_token, expirationWindow)
-    } catch(e) {
-      // todo
-      const errors = (e.context.errors)
-      const messages = errors.map(e => '\n * ' + e.message)
-      await logger.error(`Token update failed. Error details: ${ messages }`)
+    if (maxRetries > 0) {
+
+      maxRetries -= 1
+
+      try {
+
+        const expirationWindow = 3600
+        const newAccessToken = await fbClient.refreshAccessToken(access_token, refresh_token, expirationWindow)
+        await db.setParticipantAccessToken({ participantId: participant_id, accessToken: newAccessToken })
+        return newAccessToken
+
+      } catch(e) {
+        formatFitbitErrors({ msg: 'Failed to refresh Access token', errorObj: e })
+      }
+
+    } else {
+
+      logger.error(`Unexpected multiple token refresh attempts. Exiting ...`); 
+      process.exit(1)
+
     }
 
+  }
+
 }
+
+async formatFitbitErrors ({ msg, errorObj }) {
+  const { errors } = e.context
+  const messages = errors.map(e => '\n * ' + e.message)
+  await logger.error(`${msg}. Error details: ${ messages }`)
+}
+
 
 
 function updateTokens({ access_token, refresh_token }) {

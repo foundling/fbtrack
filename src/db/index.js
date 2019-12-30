@@ -7,6 +7,7 @@ const {
   getAllActive,
   getAll,
   insert,
+  setAccessToken
 } = require('./statements').participants
 
 class Database {
@@ -14,7 +15,7 @@ class Database {
   constructor({ databaseFile }) {
 
     this.databaseFile = databaseFile
-    this.dbPromise = sqlite.open(__dirname + `/${databaseFile}`, { Promise })
+    this.dbPromise = sqlite.open(__dirname + `/${databaseFile}`, { Promise }) // add {cached: true} so you can reuse the db handle?
 
   }
 
@@ -47,7 +48,19 @@ class Database {
       const params = { $participant_id: participantId }
       return await db.get(getByParticipantId, params)
     } catch(e) {
-      throw new Error(e)
+      throw new Error(['getParticipantByParticipantId failed', e])
+    }
+
+  }
+
+  async setParticipantAccessToken({ participantId, accessToken }) {
+
+    try {
+      const db = await this.dbPromise
+      const params = { $participant_id: participantId, $access_token: accessToken }
+      return await db.run(setAccessToken, params)
+    } catch(e) {
+      throw new Error(['setParticipantAccessToken failed', e])
     }
 
   }
