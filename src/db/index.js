@@ -45,7 +45,7 @@ class Database {
 
     try {
       const db = await this.dbPromise
-      const params = { $participant_id: participantId }
+      const params = { $participantId: participantId }
       return await db.get(getByParticipantId, params)
     } catch(e) {
       throw new Error(['getParticipantByParticipantId failed', e])
@@ -57,7 +57,7 @@ class Database {
 
     try {
       const db = await this.dbPromise
-      const params = { $participant_id: participantId, $access_token: accessToken }
+      const params = { $participantId: participantId, $accessToken: accessToken }
       return await db.run(setAccessToken, params)
     } catch(e) {
       throw new Error(['setParticipantAccessToken failed', e])
@@ -68,9 +68,9 @@ class Database {
   async addParticipant({ participantId, registrationDate, isActive }) {
 
     const params = {
-      $participant_id: participantId,
-      $registration_date: registrationDate,
-      $is_active: isActive 
+      $participantId: participantId,
+      $registrationDate: registrationDate,
+      $isActive: isActive 
     }
 
     try {

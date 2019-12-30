@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const {
   DB_PATH,
+  DB_NAME,
   CLIENT_ID,
   CLIENT_SECRET,
   DATA_PATH,
@@ -61,7 +62,7 @@ const fbClient = new FitBitClient({
 })
 
 const Database = require(DB_PATH)
-const db = new Database({ databaseFile: 'fbtest' })
+const db = new Database({ databaseFile: DB_NAME })
 const commandOptions = { windowSize: null }
 const todaysDateString = moment().format(ymdFormat)
 
@@ -184,7 +185,11 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
 
   const today = new Date()
   const participant = await getParticipantById(participantId)
-  const registrationDate = new Date(participant.registration_date)
+  if (!participant) {
+      await logger.error(`subject [ ${ participantId } ] is not in the database.`)
+      return
+  }
+  const registrationDate = new Date(participant.registrationDate)
 
   if (differenceInDays(today, registrationDate) === 0) {
     await logger.success(`Subject ${ participant } was signed up today. No data to query.`);  
@@ -192,14 +197,16 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
   }
 
   if (refresh) {
-    logger.info(`Access Token for participant ${participantId} expired. Refreshing ...`)
+    logger.info(`Access Token for participant ${ participantId } expired. Refreshing ...`)
 
     const refreshAccessToken = statefulRefreshAccessToken(participant)
-    participant.access_token = await refreshAccessToken()
+    participant.accessToken = await refreshAccessToken()
   }
 
   const missingDates = findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate })
-  const participantData = getFitbitDataForDates({ dates: missingDates, endpoints: ENDPOINT_TEMPLATES })
+  const datasets = getFitbitDataForDates({ dates: missingDates, endpoints: ENDPOINT_TEMPLATES })
+
+  //writeDatasetsToFiles({ participantId, 
 
 
   // todo: flatten to 2d
@@ -210,7 +217,7 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
 async function getFitbitDataForDates({ dates, endpoints }) {
 
   const queryPaths = generateQueryPaths({ dates, metricEndpoints: ENDPOINT_TEMPLATES })
-  const requests = queryPaths.map(path => fbClient.get(path, participant.access_token))
+  const requests = queryPaths.map(path => fbClient.get(path, participant.accessToken))
 
   try {
     const responses = await Promise.all(requests)
@@ -261,10 +268,6 @@ async function getParticipantById(id) {
   // get participant by id
   try {
     const participant = await db.getParticipantByParticipantId(id)
-    if (!participant) {
-        await logger.error(`subject [ ${ id } ] is not in the database.`)
-        return
-    }
     return participant
   } catch (e) {
     throw new Error(e)
@@ -380,7 +383,7 @@ function handleClientErrors(clientErrorCodes, refreshCallback) {
 
 }
 
-function statefulRefreshAccessToken({ access_token, refresh_token, participant_id }) {
+function statefulRefreshAccessToken({ accessToken, refreshToken, participantId }) {
 
   let maxRetries = 1
 
@@ -393,8 +396,8 @@ function statefulRefreshAccessToken({ access_token, refresh_token, participant_i
       try {
 
         const expirationWindow = 3600
-        const newAccessToken = await fbClient.refreshAccessToken(access_token, refresh_token, expirationWindow)
-        await db.setParticipantAccessToken({ participantId: participant_id, accessToken: newAccessToken })
+        const newAccessToken = await fbClient.refreshAccessToken(accessToken, refreshToken, expirationWindow)
+        await db.setParticipantAccessToken({ participantId, accessToken: newAccessToken })
         return newAccessToken
 
       } catch(e) {
@@ -412,7 +415,7 @@ function statefulRefreshAccessToken({ access_token, refresh_token, participant_i
 
 }
 
-async formatFitbitErrors ({ msg, errorObj }) {
+async function formatFitbitErrors ({ msg, errorObj }) {
   const { errors } = e.context
   const messages = errors.map(e => '\n * ' + e.message)
   await logger.error(`${msg}. Error details: ${ messages }`)
@@ -420,11 +423,11 @@ async formatFitbitErrors ({ msg, errorObj }) {
 
 
 
-function updateTokens({ access_token, refresh_token }) {
+function updateTokens({ accessToken, refreshToken }) {
 
     const newTokens = {
-        accessToken: access_token,
-        refreshToken: refresh_token
+        accessToken,
+        refreshToken
     }
 
     if ( ! (newTokens.accessToken && newTokens.refreshToken) ) {
@@ -464,15 +467,15 @@ module.exports = exports = {
 
     main,
 
-    extractFitBitData,
     findUncapturedDates,
+
+    extractFitBitData,
     handleAPIResponse,
     isErrorResponse,
     isDataResponse,
     isValidDataset,
     isClientError,
     queryAPI,
-    refreshAccessToken,
     toStatusCodeString,
     updateTokens,
     writeDatasetsToFiles
