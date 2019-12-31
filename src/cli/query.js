@@ -45,8 +45,16 @@ const {
     writeFilePromise,
 } = require('./utils')
 
+const Database = require(DB_PATH)
 const endpoints = require(FITBIT_ENDPOINTS)
 
+const isValidDataset = (day) => !!day['activities-heart-intraday'].dataset.length
+const toStatusCodeString = (day) => day[1][1].statusCode.toString()
+const isErrorResponse = (day) => day.some(metric => metric[0].errors)
+const isDataResponse = (day) => day.some(metric => metric[0]['activities-heart-intraday'])
+const isClientError = (statusCode) => statusCode.startsWith('4')
+
+const db = new Database({ databaseFile: DB_NAME })
 const fbClient = new FitBitClient({ 
   clientId: CLIENT_ID,
   clientSecret: CLIENT_SECRET
@@ -61,16 +69,6 @@ const logger = new Logger({
     success: false
   }
 })
-
-const isValidDataset = (day) => !!day['activities-heart-intraday'].dataset.length
-const toStatusCodeString = (day) => day[1][1].statusCode.toString()
-const isErrorResponse = (day) => day.some(metric => metric[0].errors)
-const isDataResponse = (day) => day.some(metric => metric[0]['activities-heart-intraday'])
-const isClientError = (statusCode) => statusCode.startsWith('4')
-
-const Database = require(DB_PATH)
-const db = new Database({ databaseFile: DB_NAME })
-
 
 async function getFiles({ criterion, directory }) {
 
