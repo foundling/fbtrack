@@ -170,14 +170,37 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
     participant.accessToken = await refreshAccessToken()
   }
 
-  const missingDates = findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate })
-  const datasets = getFitbitDataForDates({ dates: missingDates, endpoints })
+  const uncapturedDates = findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate })
+  const datasets = getFitbitDataForDates({ dates: uncapturedDates, endpoints })
 
-  //writeDatasetsToFiles({ participantId, 
+  writeDatasetsToFiles({ participantId, datasets })
 
 
-  // todo: flatten to 2d
-  //const pathsByDate = dates.map(date => metrics.map(metric => makeRequest({ date, metric })))
+
+}
+
+async function writeDatasetsToFiles({ participantId, datasets }) {
+
+  await logger.info(`Writing ${ datasets.length } datasets for ${participantId}, each to a separate file in ${ DATA_PATH } ...`)
+
+  const fileWritePromises = datasets.map(dataset => {
+
+    const captureDate = dataset['activities-steps'][0]['dateTime']
+    const outputFilename = `${ DATA_PATH }/${ participantId }_${ captureDate }.json`
+    const serializedData = JSON.stringify(dataset, null, 4)
+
+    return writeFilePromise(outputFilename, serializedData)
+
+  })
+
+  // needs inspection
+  try {
+    await Promise.all(fileWritePromises)
+  } catch(e) {
+    logger.error(e)
+  }
+
+  })
 
 }
 
@@ -407,27 +430,6 @@ function updateTokens({ accessToken, refreshToken }) {
 
 }
 
-function writeDatasetsToFiles(subjectId, datasets, nextCb) {
-
-    if (!datasets.length) return nextCb(null)
-    else logger.info(`writing ${ datasets.length } datasets, each to a separate file in ${ config.paths.rawData } ...`)
-
-  /*
-    [].forEach(datasets, (dataset, cb) => {
-    //async.each(datasets, (dataset, cb) => {
-
-        let serializedData = JSON.stringify(dataset, null, 4)
-        let captureDate = dataset['activities-steps'][0]['dateTime']
-        let outputFilename = `${ config.paths.rawData }/${ subjectId }_${ captureDate }.json`
-
-        fs.writeFile(outputFilename, serializedData, (err) => { 
-            cb(err); 
-        })
-
-    },
-    nextCb())
-    */
-}
 
 module.exports = exports = {
 
