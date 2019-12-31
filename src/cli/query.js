@@ -23,8 +23,9 @@ const {
 } = require('date-fns')
 
 const FitBitClient = require('fitbit-node')
-
+const Database = require(DB_PATH)
 const Logger = require('./logger')
+
 const { logErrors } = require('./reporting/queryMonitor')
 const { 
     compact,
@@ -45,8 +46,6 @@ const {
     writeFilePromise,
 } = require('./utils')
 
-const Database = require(DB_PATH)
-const endpoints = require(FITBIT_ENDPOINTS)
 
 const isValidDataset = (day) => !!day['activities-heart-intraday'].dataset.length
 const toStatusCodeString = (day) => day[1][1].statusCode.toString()
@@ -59,7 +58,6 @@ const fbClient = new FitBitClient({
   clientId: CLIENT_ID,
   clientSecret: CLIENT_SECRET
 })
-
 const logger = new Logger({
   logDir: LOGS_PATH,
   config: {
@@ -69,6 +67,8 @@ const logger = new Logger({
     success: false
   }
 })
+
+const endpoints = require(FITBIT_ENDPOINTS)
 
 async function getFiles({ criterion, directory }) {
 
