@@ -5,6 +5,11 @@ const {
   DEFAULT_WINDOW_SIZE
 } = process.env
 
+const {
+  dateRE,
+  ymdFormat
+} = require('./utils')
+
 const Logger = require('./logger')
 const logger = new Logger({
   logDir: LOGS_PATH,
@@ -26,32 +31,34 @@ const validate = (validateFn, cliCommand) => (...args) => {
 
 const validators = {
 
-  query: async function(args) {
+  query: async function(...args) {
 
     const [ participantId, options={} ] = args
-    const { dates=[], windowSize=3, refresh=false } = options
+    const { dates, windowSize, refresh } = options
 
-    // participantId, { dates=[], windowSize = null, refresh=false } = {}) {
-    // both window size and range, invalid
+    if (dates && dates.length > 0) {
 
-    if (dates.length > 0 && windowSize !== null) {
-      await logger.error('Provide a window size or a date range, but not both.')
+      if (windowSize != null) {
+        await logger.error('Provide a window size or a date range, but not both.')
+        process.exit(1)
+      }
+
+      if (dates.some(date => !dateRE.test(date))) {
+        await logger.error(`invalid date format: ${dates.join('..')}. Expected format: ${ymdFormat}`)
+        process.exit(1)
+      }
+
+    } else if (windowSize == null) {
+
+      await logger.info(`Using default window size of ${ DEFAULT_WINDOW_SIZE } days`)
+
+    } else if (isNaN(windowSize) || windowSize < 0) {
+
+      await logger.error('window size must be non-negative integer')
       process.exit(1)
+
     }
 
-    // check dates for validity
-    if (!dates.every(date => dateRE.test(date))) {
-      await logger.error(`invalid date format: ${dates.join('..')}`)
-      process.exit(1)
-    }
-
-    // if both values are missing, set default window size
-    if (!dates.length && windowSize == null) {
-      await logger.warning(`no date range provided, no window size provided. using default window size of ${ DEFAULT_WINDOW_SIZE } days`)
-    }
-
-    // dates, windowSize, refresh } ]
-    return [ participantId, options ]
 
   },
 

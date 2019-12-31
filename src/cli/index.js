@@ -15,8 +15,13 @@ const { signup, query, revoke, missing, status, apistatus, update, dump } = [
 
 ].reduce(function(memo, cmd) {
 
-    // if you put commands in ./commands/ dir, breaks dotenv
-    memo[cmd] = delayedRequire(`./${ cmd }`)
+    // fix: if you put commands in ./commands/ dir, it breaks the .env PATHS scheme
+
+    const lazyFn = delayedRequire(`./${ cmd }`)
+    const commandValidator = validators[cmd]
+    const validatedLazyFn = validate(commandValidator, lazyFn)
+    memo[cmd] = validatedLazyFn
+
     return memo
 
 }, {})
