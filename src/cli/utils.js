@@ -1,18 +1,15 @@
 const colors = require('colors');
 const moment = require('moment');
 const fs = require('fs');
-const util = require('fs');
+const util = require('util');
 const format = require('date-fns/format');
 
-
-const delayedRequire = function(dependencyPath) { 
-
-    return function() {
-        let entryPoint = require(dependencyPath).main;
-        entryPoint.apply(null, arguments);
-    };
-
-};
+const delayedRequire = function(path) { 
+  return function(...args) {
+    //return require(path).main.call(null, ...args) 
+    return require(path).main(...args) 
+  }
+}
 
 const ymdFormat = 'YYYY-MM-DD';
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/;
@@ -212,6 +209,8 @@ module.exports = exports = {
     toLength,
     flattenOnce,
     ymdFormat,
+    readdirPromise: util.promisify(fs.readdir),
+    writeFilePromise: util.promisify(fs.writeFile),
 
 };
 

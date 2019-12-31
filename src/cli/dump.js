@@ -1,9 +1,13 @@
-'use strict';
+require('dotenv').config()
 
-const config = require(__dirname + '/../../config');
+const {
+  DB_PATH,
+  DB_FILENAME
+} = process.env
+
 const colors = require('colors');
-const Database = require(config.paths.db);
-const db = new Database(config.paths.store);
+const Database = require(DB_PATH);
+const db = new Database({ databaseFile: DB_FILENAME });
 
 function buildRowsOutput(rows) {
 
@@ -16,11 +20,11 @@ FBTRACK DATABASE DUMP:`;
 
 ********************************************
 
-subject id:     ${ row.subjectId }
-signup date:    ${ row.signupDate }
+subject id:     ${ row.participantId }
+signup date:    ${ row.registrationDate }
 access token:   ${ row.accessToken }
 refresh token:  ${ row.refreshToken }
-deauthorized:   ${ !row.active ? 'yes' : 'no' }
+deauthorized:   ${ !row.isActive ? 'yes' : 'no' }
 
 ********************************************
 
@@ -44,6 +48,4 @@ function main() {
     });
 }
 
-module.exports = exports = {
-    main 
-};
+module.exports = exports = { main };

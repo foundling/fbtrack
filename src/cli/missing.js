@@ -1,22 +1,16 @@
-' use strict';
+require('dotenv').config()
 
-/* 
- *  db call: active subject ids and registration dates
- *  file read: last fbtrack run 
- *  file reads: subject id missing data files 
- *  file read: current outstanding syncs
- *
- */
+const { 
+  DB_PATH,
+  DB_FILENAME,
+  DATA_PATH 
+} = process.env 
 
-const async = require('async');
 const colors = require('colors');
 const fs = require('fs');
 const moment = require('moment');
 
-const config = require(__dirname + '/../../config');
-const Database = require(config.paths.db);
-const db = new Database(config.paths.store);
-const rawDataDir = config.paths.rawData;
+
 const { 
 
     dateRE, 
@@ -29,12 +23,15 @@ const {
     isRawDataFile,
     includesDate
 
-} = require(config.paths.utils);
+} = require('./utils');
 
+const Database = require(DB_PATH);
+const db = new Database({ databaseFile: DB_FILENAME });
 
 function printMissingDataFiles(subjectId) {
+  return
     db.fetchOneSubject(subjectId, (err, subject) => {
-        fs.readdir(config.paths.rawData, (err, filenames) => {
+        fs.readdir(DATA_PATH, (err, filenames) => {
 
             const subjectFiles = filenames
                 .filter(filename => filename.match(/_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].json/))

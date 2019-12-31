@@ -1,16 +1,22 @@
-'use strict';
+require('dotenv').config()
 
 const colors = require('colors'); 
 const FitBitClient = require('fitbit-node');
-const config = require('../../config');
-const client = new FitBitClient(config.clientId, config.clientSecret);
+const {
+  DB_PATH,
+  CLIENT_ID,
+  CLIENT_SECRET
+} = process.env
+
 const { 
     logToUserInfo,
     logToUserSuccess, 
     logToUserFail 
-} = require(config.paths.utils);
-const Database = require(config.paths.db);
-const db = new Database(config.paths.store);
+} = require('./utils');
+
+const client = new FitBitClient(CLIENT_ID, CLIENT_SECRET);
+const Database = require(DB_PATH);
+const db = new Database({ databaseFile: DB_FILENAME });
 
 function main(subjectId) {
 

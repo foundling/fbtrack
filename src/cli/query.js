@@ -1,36 +1,32 @@
 require('dotenv').config() 
 
 const {
-  DB_PATH,
-  DB_NAME,
   CLIENT_ID,
   CLIENT_SECRET,
+  DEFAULT_WINDOW_SIZE,
+  DB_PATH,
+  DB_NAME,
   DATA_PATH,
-  LOGS_PATH
+  FITBIT_ENDPOINTS,
+  LOGS_PATH,
 } = process.env
 
-const { format, addDays, subDays, differenceInDays, isAfter, isBefore  } = require('date-fns')
-
 const fs = require('fs')
-const util = require('util')
 const moment = require('moment')
+const { 
+  format, 
+  addDays, 
+  subDays, 
+  differenceInDays, 
+  isAfter, 
+  isBefore  
+} = require('date-fns')
+
 const FitBitClient = require('fitbit-node')
 
-const readdirPromise = util.promisify(fs.readdir)
-const writeFilePromise = util.promisify(fs.writeFile)
 const Logger = require('./logger')
-const logger = new Logger({
-  logDir: LOGS_PATH,
-  config: {
-    info: false,
-    warn: false,
-    error: false,
-    success: false
-  }
-})
-
+const { logErrors } = require('./reporting/queryMonitor')
 const { 
-
     compact,
     dateRE, 
     dateNotIn,
@@ -42,11 +38,29 @@ const {
     inDateRange,
     matchesSubjectId,
     parseDateRange,
+    readdirPromise,
     toDateString,
     toHeartRateMetric,
     ymdFormat, 
-
+    writeFilePromise,
 } = require('./utils')
+
+const endpoints = require(FITBIT_ENDPOINTS)
+
+const fbClient = new FitBitClient({ 
+  clientId: CLIENT_ID,
+  clientSecret: CLIENT_SECRET
+})
+
+const logger = new Logger({
+  logDir: LOGS_PATH,
+  config: {
+    info: false,
+    warn: false,
+    error: false,
+    success: false
+  }
+})
 
 const isValidDataset = (day) => !!day['activities-heart-intraday'].dataset.length
 const toStatusCodeString = (day) => day[1][1].statusCode.toString()
@@ -54,59 +68,22 @@ const isErrorResponse = (day) => day.some(metric => metric[0].errors)
 const isDataResponse = (day) => day.some(metric => metric[0]['activities-heart-intraday'])
 const isClientError = (statusCode) => statusCode.startsWith('4')
 
-const { logErrors } = require('./reporting/queryMonitor')
-
-const fbClient = new FitBitClient({ 
-  clientId: CLIENT_ID,
-  clientSecret: CLIENT_SECRET
-})
-
 const Database = require(DB_PATH)
 const db = new Database({ databaseFile: DB_NAME })
-const commandOptions = { windowSize: null }
-const todaysDateString = moment().format(ymdFormat)
 
-const DEFAULT_WINDOW_SIZE = 3
-const ENDPOINT_TEMPLATES = {
-
-    // intraday timeseries
-    'steps':     '/activities/steps/date/%DATE%/1d/1min.json',
-    'calories':  '/activities/calories/date/%DATE%/1d/1min.json',
-    'distance':  '/activities/distance/date/%DATE%/1d/1min.json',
-    'heartrate': '/activities/heart/date/%DATE%/1d/1min.json',
-
-    // daily timeseries
-    'activities': '/activities/date/%DATE%.json',
-    'sleep':     '/sleep/date/%DATE%.json'
-
- };
-
-function preQueryCheck(subjectData) {
-
-    if (!subjectData)
-        return logToUserFail(`This subject id is not in the database.`)
-
-    if (subjectData.signupDate === todaysDateString) {
-        logToUserSuccess(`Subject ${subjectData.subjectId} was signed up today. No need to query.`);  
-        process.exit(0)
-    }
-
-    getFiles(subjectData)
-
-}
 
 async function getFiles({ criterion, directory }) {
 
-    try {
+  try {
 
-      const filenames = await readdirPromise(directory)
-      return filenames.filter(criterion)
+    const filenames = await readdirPromise(directory)
+    return filenames.filter(criterion)
 
-    } catch (e) {
+  } catch (e) {
 
-      throw new Error('getFiles failed: ', e)
+    throw new Error('getFiles failed: ', e)
 
-    }
+  }
 
 }
 
@@ -170,14 +147,6 @@ function validateArgs(participantId, { dates=[], windowSize = null, refresh=fals
 
 async function main(participantId, { dates=[], windowSize=null, refresh=false }) {
 
-  const { error, warning } = validateArgs(participantId, { dates, windowSize, refresh })
-
-  if (error)
-    return logger.error(error)
-
-  if (warning)
-    logger.warn(warning)
-
   if (dates.length === 0 && windowSize == null)
     windowSize = DEFAULT_WINDOW_SIZE
 
@@ -204,7 +173,7 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
   }
 
   const missingDates = findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate })
-  const datasets = getFitbitDataForDates({ dates: missingDates, endpoints: ENDPOINT_TEMPLATES })
+  const datasets = getFitbitDataForDates({ dates: missingDates, endpoints })
 
   //writeDatasetsToFiles({ participantId, 
 
@@ -216,7 +185,7 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
 
 async function getFitbitDataForDates({ dates, endpoints }) {
 
-  const queryPaths = generateQueryPaths({ dates, metricEndpoints: ENDPOINT_TEMPLATES })
+  const queryPaths = generateQueryPaths({ dates, metricEndpoints: endpoints })
   const requests = queryPaths.map(path => fbClient.get(path, participant.accessToken))
 
   try {
@@ -228,7 +197,6 @@ async function getFitbitDataForDates({ dates, endpoints }) {
   return responses
   
 }
-
 
 async function findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate }) {
 
@@ -319,7 +287,7 @@ async function restartQuery({ subjectId }) {
     /* runs when acess token needs to be refreshed */
     db.fetchOneSubject(subjectId, (err, subjectData) => {
         if (err) throw err
-        preQueryCheck(subjectData)
+        //preQueryCheck(subjectData)
     })
 
 }
@@ -482,7 +450,7 @@ module.exports = exports = {
     
 }
 
-main('001', { dates: ['2019-12-22', '2019-12-28'], refresh: false }).catch(console.log)
+//main('001', { dates: ['2019-12-22', '2019-12-28'], refresh: false }).catch(console.log)
 //main('001', { dates: ['2019-01-01', '2019-01-09'] }).catch(console.log)
 //main('001', { dates: ['2019-01-01'] }).catch(console.log)
 //main('001', {  }).catch(console.log)

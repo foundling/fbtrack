@@ -1,10 +1,8 @@
-require('dotenv').config()
+const cli = require('commander')
+const { delayedRequire } = require('./utils')
+const { validate, validators } = require('./validators')
 
-const cli = require('commander');
-const { delayedRequire } = require('./utils');
-const { validate, validators } = require('./validators');
-
-const validatedLazyHandlers = [
+const { signup, query, revoke, missing, status, apistatus, update, dump } = [
 
     'signup',
     'query',
@@ -15,23 +13,18 @@ const validatedLazyHandlers = [
     'update',
     'dump'
 
-]
-.reduce((o, cmd) => {
+].reduce(function(memo, cmd) {
 
-    const lazyHandler = delayedRequire(`./commands/${ cmd }`);
-    const validatedLazyHandler = validators[cmd](lazyHandler)
-    o[cmd] = validatedLazyHandler
+    // if you put commands in ./commands/ dir, breaks dotenv
+    memo[cmd] = delayedRequire(`./${ cmd }`)
+    return memo
 
-    return o;
-
-}, {});
-
-const { signup, query, revoke, missing, status, apistatus, update, dump }  = validatedLazyHandlers; 
+}, {})
 
 cli
     .command('signup')
     .description('Initiate subject authorization process in Google Chrome.')
-    .action(signup);
+    .action(signup)
 
 cli
     .command('query <subject_id>')
@@ -44,44 +37,43 @@ cli
 cli
     .command('revoke <subject_id>')
     .description('Revoke access token for a subject')
-    .action(revoke);
+    .action(revoke)
 
 cli
     .command('status')
     .description('Output study-level statistics')
-    .action(status);
+    .action(status)
 
 cli
     .command('missing <subject_id>')
     .description('Print Dates of Missing Data Files for Subject')
-    .action(missing);
+    .action(missing)
 
 cli
     .command('apistatus')
     .description('Open a Google Chrome browser to the fitbit status page')
-    .action(apistatus);
+    .action(apistatus)
 
 cli
     .command('dump')
     .description('Show all data from the database')
-    .action(dump);
+    .action(dump)
 
 cli
     .command('update')
     .description('Update fbtrack')
-    .action(update);
-
+    .action(update)
 
 module.exports = exports = {
 
   start: function() {
 
     if (!process.argv.slice(2).length)
-      cli.outputHelp(helpText => helpText);
+      cli.outputHelp(helpText => helpText)
 
     else
-      cli.parse(process.argv);
+      cli.parse(process.argv)
 
   }
 
-};
+}

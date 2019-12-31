@@ -1,20 +1,19 @@
-/* 
- *  db call: active subject ids and registration dates
- *  file read: last fbtrack run 
- *  file reads: subject id missing data files 
- *  file read: current outstanding syncs
- *
- */
+require('dotenv').config()
 
 const async = require('async');
 const colors = require('colors');
 const fs = require('fs');
 const moment = require('moment');
 
-const config = require(__dirname + '/../../config');
-const Database = require(config.paths.db);
-const db = new Database(config.paths.store);
-const rawDataDir = config.paths.rawData;
+const {
+  DB_PATH,
+  DB_FILENAME,
+  DATA_PATH
+} = process.env
+
+const Database = require(DB_PATH);
+const db = new Database({ databaseFile: DB_FILENAME });
+const rawDataDir = DATA_PATH
 const { 
 
     dateRE, 
@@ -27,7 +26,7 @@ const {
     isRawDataFile,
     includesDate
 
-} = require(config.paths.utils);
+} = require('./utils');
 
 function moreInformation(cb) {
     logToUserInfo(`To get missing data files for a subject, run 'fbtrack missing <subject_id>'`); 
@@ -51,7 +50,7 @@ function printSubjectsAndSignupDates(cb) {
 }
 
 function printLastFbtrackRun(cb) {
-    fs.readdir(config.paths.reminderLogs, (err, files) => {
+    fs.readdir(`${LOGS_DIR}/reminders`, (err, files) => {
         if (err) throw err;
 
         const dates = files
@@ -91,7 +90,7 @@ function printActiveAndInactiveSubjects(cb) {
 
 function printCurrentOutstandingSyncs(cb) {
 
-    fs.readdir(config.paths.reminderLogs, (err, filenames) => {
+    fs.readdir(`${LOGS_DIR}/reminders`, (err, filenames) => {
         if (err) throw err;
 
         const reminderFiles = filenames
@@ -105,7 +104,7 @@ function printCurrentOutstandingSyncs(cb) {
             return moment(f2Date).unix() - moment(f1Date).unix();
         });
 
-        fs.readFile(`${config.paths.reminderLogs}/${sortedFiles[0]}`, 'utf8', (err, fileContent) => {
+        fs.readFile(`${LOGS_DIR}/reminders/${sortedFiles[0]}`, 'utf8', (err, fileContent) => {
             if (err) throw err;
 
             console.log(colors.blue('Outstanding Syncs'));
