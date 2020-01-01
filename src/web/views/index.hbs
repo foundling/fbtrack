@@ -19,23 +19,27 @@
             method="POST"
             id="subject_id_form">
 
-            <div class="input-group subject-id-input">
-              <label>Subject Id</label>
-              <input 
-                  name="subject_id"
-                  id="subject_id" 
-                  type="text"/> 
-            </div>
+            <h1 class="study-name">{{ studyName }} Participant Fitbit Registration Form</h1>
 
-            <div class="input-group authorize">
-              <button 
-                  class="authorize"
-                  title="Let Fitbit share your data with our study"
-                  type="submit" 
-                  value="Authorize" />
-                  Authorize
-              </button>
-            </div class="input-group">
+            <div class="input-groups">
+              <div class="input-group subject-id-input">
+                <label>Subject Id</label>
+                <input 
+                    name="subject_id"
+                    id="subject_id" 
+                    type="text"/> 
+              </div>
+
+              <div class="input-group authorize">
+                <button 
+                    class="authorize"
+                    title="Let Fitbit share your data with our study"
+                    type="submit" 
+                    value="Authorize" />
+                    Authorize
+                </button>
+              </div class="input-group">
+            </div>
         </form>
 
     </section>

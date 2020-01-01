@@ -8,7 +8,7 @@ const app = express()
 const { PATHS, SERVER } = require('../config')
 const routes = require('./routes')
 
-app.engine('hbs', expressHandlebars({ defaultLayout: '' }))
+app.engine('hbs', expressHandlebars({ defaultLayout: 'main' }))
 app.set('view engine', 'hbs')
 app.set('views', path.join(__dirname, 'views'))
 

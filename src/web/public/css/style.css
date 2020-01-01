@@ -3,6 +3,10 @@ html, body {
   font-family: sans-serif;
 }
 
+html, body, body * {
+  box-sizing: border-box;
+}
+
 a {
   text-decoration: none;
 }
@@ -22,7 +26,7 @@ body {
 
 header {
   background: white;
-  height: 2em;
+  height: 1.5em;
   display: inline-flex;
   justify-content: left;
   align-items: center;
@@ -30,13 +34,28 @@ header {
   padding: 20px;
 }
 
-form {
+form > div.input-groups {
+  width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 50%;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   height: 50%;
   background: lightgray;
+}
+
+form > h1 {
+  margin: 20px;
+  padding: 10px;
+  width: 100%;
+  height: 1.5em;
+  text-align: center;
 }
 
 .input-group {
@@ -48,18 +67,18 @@ form {
 }
 
 label, button {
-  font-size: 2em;
+  font-size: 1.5em;
   padding: 10px;
 }
 
 input {
   padding: 5px 10px;
-  font-size: 2em;
+  font-size: 1.5em;
   width: 180px;
 }
 
 section.signup-window {
-  height: calc(100% - 2em);
+  height: calc(100% - calc(1.5em + 20px));
   width: 100%;
   padding: 20px;
   display: flex;
@@ -67,6 +86,16 @@ section.signup-window {
   justify-content: center;
 }
 
+button.authorize.invalid {
+  background: gray;
+}
+
+button.authorize {
+  border-radius: 10px;
+  border: 1px solid lightgray;
+  height: 60px;
+  width: 170px;
+}
 button.authorize {
   border-radius: 10px;
   border: 1px solid lightgray;
@@ -79,11 +108,11 @@ button:focus {
   background: rgb(3, 169, 244);
 }
 
-@media(max-width: 500px) {
+@media(max-width: 800px) {
   .input-group {
     flex-direction: column;
   }
-  form {
+  .input-groups {
     display: flex;
     flex-direction: column;
   }

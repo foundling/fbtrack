@@ -39,7 +39,7 @@ const index = (req, res) => {
     logger.info(`NEW SESSION`)
     logger.info(`path: ${ req.path }`)
     logger.info(`New subject registration started.`)
-    res.render('index', { layout: false })
+    res.render('index', { layout: 'main.hbs', studyName: 'ACT' })
 
 };
 
