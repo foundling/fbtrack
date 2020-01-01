@@ -6,30 +6,36 @@
 <body>
 
     <header>
-        <img src="http://www.stressdevelopmentlab.org/sites/default/files/logo_1_0.png"></img>
+      <a class="fbtrack-link" href="https://github.com/foundling/fbtrack">Fbtrack</a>
     </header>
 
     <p id="error-box"></p>
 
-    <section>
+    <section class="signup-window">
         <form 
+            class="registration-form"
             name="subject_id_form"
             action="authorize"
             method="POST"
             id="subject_id_form">
 
-            <label>Enter Subject Id</label>
-            <input 
-                name="subject_id"
-                id="subject_id" 
-                type="text"/> 
+            <div class="input-group subject-id-input">
+              <label>Subject Id</label>
+              <input 
+                  name="subject_id"
+                  id="subject_id" 
+                  type="text"/> 
+            </div>
 
-            <label>Click 'authorize' to let Fitbit share your data with our study.</label>
-            <button 
-                type="submit" 
-                value="Authorize" />
-                Authorize
-            </button>
+            <div class="input-group authorize">
+              <button 
+                  class="authorize"
+                  title="Let Fitbit share your data with our study"
+                  type="submit" 
+                  value="Authorize" />
+                  Authorize
+              </button>
+            </div class="input-group">
         </form>
 
     </section>
