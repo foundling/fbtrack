@@ -1,48 +1,32 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const expressHandlebars = require('express-handlebars');
-const cors = require('cors');
+const path = require('path')
+const express = require('express')
+const expressHandlebars = require('express-handlebars')
+const bodyParser = require('body-parser')
+const cors = require('cors')
+const app = express()
+const { PATHS, SERVER } = require('../config')
+const routes = require('./routes')
 
-const app = express();
-const routes = require('./routes');
-const {
+app.engine('hbs', expressHandlebars({ defaultLayout: '' }))
+app.set('view engine', 'hbs')
+app.set('views', path.join(__dirname, 'views'))
+app.use(express.static(path.join(__dirname, 'public')))
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(cors({ origin: `http://localhost:${SERVER.PORT}` }))
 
-    logToUserInfo
-
-} = require(config.paths.utils);
-
-// configure middleware
-app.set('view engine', expressHandlebars());
-app.set('views', './views');
-app.use(express.static('./public'));
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors({
-    origin: 'http://localhost:3000'
-}));
-
-/*
 // bind routes
-app.get('/', routes.index);
-app.post('/authorize', routes.authorize);
-app.get('/store_subject_data', routes.storeSubjectData);
-app.get('/subjectExists', routes.subjectExists);
-app.post('/quit', routes.stopServer);
+app.get('/', routes.index)
+/*
+app.post('/authorize', routes.authorize)
+app.get('/store_subject_data', routes.storeSubjectData)
+app.get('/subjectExists', routes.subjectExists)
+app.post('/quit', routes.stopServer)
 */
 
-// define the start server callback
-const start = function(cb) {
+const start = function() {
+  app.listen(SERVER.PORT, () => {
+    console.log(`Fbtrack Registration Server running at http://localhost:${SERVER.PORT}...`)
+  })
+}
 
-    app.listen(config.port, function() {
-
-        cb(config.port);
-        logToUserInfo(`Local Web Server Running on port ${ config.port }`);
-        logToUserInfo(`Go To http://localhost:${ config.port } to register subject with SEA study`);
-
-    });
-
-};
-
-module.exports = exports = {
-    start: start
-};
-
+module.exports = exports = { start }

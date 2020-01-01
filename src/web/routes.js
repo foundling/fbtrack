@@ -1,19 +1,29 @@
-'use strict';
+const { PATHS, OAUTH, SERVER } = require('../config')
 
-const config = require(__dirname + '/../config');
-const Database = require(config.paths.db);
-const db = new Database(config.paths.store);
-const FitBitApiClient = require('fitbit-node');
-const client = new FitBitApiClient(config.clientId, config.clientSecret);
-const logger = require(config.paths.serverLogger);
-const moment = require('moment');
+const FitBitApiClient = require('fitbit-node')
+const { format } = require('date-fns')
+const Database = require(PATHS.DB_PATH)
+
+const db = new Database({ databaseFile: PATHS.DB_NAME })
+const client = new FitBitApiClient({ clientId: OAUTH.CLIENT_ID, clientSecret: OAUTH.CLIENT_SECRET })
+const Logger = require('../lib/logger')
+const logger = new Logger({
+  logDir: PATHS.LOGS,
+  config: {
+    info: false,
+    warn: false,
+    success: false,
+    error: false
+  }
+})
+
 const { 
 
-    logToUserSuccess, 
-    logToUserFail,
-    ymdFormat
+  logToUserSuccess, 
+  logToUserFail,
+  ymdFormat
 
-} = require(config.paths.utils); 
+} = require('../lib/utils') 
 
 const index = (req, res) => {
 
@@ -26,10 +36,10 @@ const index = (req, res) => {
      * sends to /authorize route.
      */
 
-    logger(`NEW SESSION`);
-    logger(`path: ${ req.path }`);
-    logger(`New subject registration started.`);
-    res.render('index');
+    logger.info(`NEW SESSION`)
+    logger.info(`path: ${ req.path }`)
+    logger.info(`New subject registration started.`)
+    res.render('index', { layout: false })
 
 };
 
@@ -38,10 +48,15 @@ const subjectExists = (req, res) => {
     logger(`path: ${ req.path }`);
 
     db.subjectExists(req.query.subject_id, (err, exists) => {
-        if (err) throw err;
-        if (exists) logger(`Subject with id has already been registered: ${ req.query.subject_id }.`);
-        else logger(`Registering new subject with id: ${ req.query.subject_id }.`);
-        res.send(exists);
+
+        if (err) throw err
+
+        if (exists) {
+          logger(`Subject with id has already been registered: ${ req.query.subject_id }.`)
+        } else {
+          logger(`Registering new subject with id: ${ req.query.subject_id }.`)
+        }
+        res.send(exists)
     });
     
 };
@@ -84,7 +99,7 @@ const storeSubjectData = (req, res) => {
 
     const accessCode = req.query.code;
     const error = req.query.error_description;
-    const todaysDate = moment().format(ymdFormat);
+    const todaysDate = format(new Date(), ymdFormat);
 
     logger(`path: ${ req.path }`);
 
