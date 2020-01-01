@@ -11,19 +11,24 @@ const {
 } = require('date-fns')
 const FitBitClient = require('fitbit-node')
 
+const { PATHS, OAUTH } = require('../config')
+
 const {
   CLIENT_ID,
   CLIENT_SECRET,
   DEFAULT_WINDOW_SIZE,
   FITBIT_ENDPOINTS,
+} = OAUTH
+
+const {
   DB_NAME,
   DB_PATH,
   DATA_PATH,
   LOGS_PATH,
-} = require('./../config')
+} = PATHS
 
 const Database = require(DB_PATH)
-const Logger = require('./logger')
+const Logger = require('../lib/logger')
 
 const { 
     compact,

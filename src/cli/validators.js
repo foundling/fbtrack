@@ -10,7 +10,7 @@ const {
   ymdFormat
 } = require('../lib/utils')
 
-const Logger = require('./logger')
+const Logger = require('../lib/logger')
 const logger = new Logger({
   logDir: LOGS_PATH,
   config: {
