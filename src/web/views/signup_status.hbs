@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+    <meta charset="utf8">
+    <title>Stress and Development Lab - SEA study</title>
+    <head>
+        <link rel="stylesheet" type="text/css" href="/css/style.css">
+    </head>
+<body>
+
+    <section class="container">
+
+        {{#if error}}
+            <h1 class="error"> 
+                An error occurred: <span class="error-msg">{{error}}</span>
+            </h1>
+        {{else}}
+            <h1 class="success">Authorization Was a Success!</h1>
+        {{/if}}
+
+    </section>
+
+    <button id="quit">Quit<button>
+
+    <script type="text/javascript">
+      document.getElementById('quit').addEventListener('click', function() {
+        window.close()
+      })
+    </script>
+</body>
+</html>

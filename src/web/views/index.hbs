@@ -1,0 +1,38 @@
+<!doctype>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+    </head>
+<body>
+
+    <header>
+        <img src="http://www.stressdevelopmentlab.org/sites/default/files/logo_1_0.png"></img>
+    </header>
+
+    <p id="error-box"></p>
+
+    <section>
+        <form 
+            name="subject_id_form"
+            action="authorize"
+            method="POST"
+            id="subject_id_form">
+
+            <label>Enter Subject Id</label>
+            <input 
+                name="subject_id"
+                id="subject_id" 
+                type="text"/> 
+
+            <label>Click 'authorize' to let Fitbit share your data with our study.</label>
+            <button 
+                type="submit" 
+                value="Authorize" />
+                Authorize
+            </button>
+        </form>
+
+    </section>
+    <script src="js/validateSubjectId.js"></script>
+</body>
+</html>

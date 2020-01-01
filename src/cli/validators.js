@@ -8,7 +8,7 @@ const {
 const {
   dateRE,
   ymdFormat
-} = require('./utils')
+} = require('../lib/utils')
 
 const Logger = require('./logger')
 const logger = new Logger({

@@ -1,5 +1,6 @@
 const cli = require('commander')
-const { delayedRequire } = require('./utils')
+const path = require('path')
+const { delayedRequire } = require('../lib/utils')
 const { validate, validators } = require('./validators')
 
 const { signup, query, revoke, missing, status, apistatus, update, dump } = [
@@ -17,7 +18,7 @@ const { signup, query, revoke, missing, status, apistatus, update, dump } = [
 
     // fix: if you put commands in ./commands/ dir, it breaks the .env PATHS scheme
 
-    const lazyFn = delayedRequire(`./${ cmd }`)
+    const lazyFn = delayedRequire(path.join(__dirname, cmd))
     const commandValidator = validators[cmd]
     const validatedLazyFn = validate(commandValidator, lazyFn)
     memo[cmd] = validatedLazyFn

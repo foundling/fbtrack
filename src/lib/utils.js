@@ -1,5 +1,4 @@
 const colors = require('colors');
-const moment = require('moment');
 const fs = require('fs');
 const util = require('util');
 const format = require('date-fns/format');
@@ -48,8 +47,8 @@ const generateDateRange = (startDateString, stopDateString) => {
         throw new Error('startDateString and stopDateString are required');
     }
 
-    const start = moment(startDateString);
-    const stop = moment(stopDateString);
+    //const start = moment(startDateString);
+    //const stop = moment(stopDateString);
     const diffDays = stop.diff(start, 'days'); 
 
     const dates = []; 
@@ -137,7 +136,7 @@ function debugExit(msg) {
 
 
 function inDateRange({ start, end }) {
-    return (date) => moment(date).isBetween( start, end, null, '[]');
+    //return (date) => moment(date).isBetween( start, end, null, '[]');
 }
 
 
@@ -158,7 +157,7 @@ function toDateString(filename) {
     review: no need for this function, just do 'dates.map(moment);'
 */
 function toDate(dateString) {
-    return moment(dateString);
+    //return moment(dateString);
 }
 
 function matchesSubjectId(subjectId){
@@ -169,9 +168,11 @@ function dateComparator (isDescending) {
 
     return function(a,b) {
 
+      /*
         return isDescending ? 
         moment(b).unix() - moment(a).unix() : 
         moment(a).unix() - moment(b).unix();
+        */
 
     };
 }

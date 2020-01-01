@@ -7,6 +7,8 @@ module.exports = exports = {
         -- rowid          INT  PRIMARY KEY,
         participantId    TEXT  NOT NULL,
         registrationDate TEXT NOT NULL,
+        accessToken      TEXT,
+        refreshToken     TEXT,
         isActive         INT  NOT NULL   CHECK(isActive in (0,1))
       );
     `,

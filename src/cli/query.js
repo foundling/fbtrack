@@ -1,18 +1,6 @@
 require('dotenv').config() 
 
-const {
-  CLIENT_ID,
-  CLIENT_SECRET,
-  DEFAULT_WINDOW_SIZE,
-  DB_PATH,
-  DB_NAME,
-  DATA_PATH,
-  FITBIT_ENDPOINTS,
-  LOGS_PATH,
-} = process.env
-
 const fs = require('fs')
-const moment = require('moment')
 const { 
   format, 
   addDays, 
@@ -21,12 +9,22 @@ const {
   isAfter, 
   isBefore  
 } = require('date-fns')
-
 const FitBitClient = require('fitbit-node')
+
+const {
+  CLIENT_ID,
+  CLIENT_SECRET,
+  DEFAULT_WINDOW_SIZE,
+  FITBIT_ENDPOINTS,
+  DB_NAME,
+  DB_PATH,
+  DATA_PATH,
+  LOGS_PATH,
+} = require('./../config')
+
 const Database = require(DB_PATH)
 const Logger = require('./logger')
 
-const { logErrors } = require('./reporting/queryMonitor')
 const { 
     compact,
     dateRE, 
@@ -44,7 +42,7 @@ const {
     toHeartRateMetric,
     ymdFormat, 
     writeFilePromise,
-} = require('./utils')
+} = require('../lib/utils')
 
 
 const isValidDataset = (day) => !!day['activities-heart-intraday'].dataset.length
@@ -67,8 +65,6 @@ const logger = new Logger({
     success: false
   }
 })
-
-const endpoints = require(FITBIT_ENDPOINTS)
 
 async function getFiles({ criterion, directory }) {
 
@@ -173,34 +169,32 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
   const uncapturedDates = findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate })
   const datasets = getFitbitDataForDates({ dates: uncapturedDates, endpoints })
 
-  writeDatasetsToFiles({ participantId, datasets })
-
+  await logger.info(
+    `Writing ${ datasets.length } datasets for ${participantId}. 
+     Output Path: ${ DATA_PATH }`
+  )
+  writeDatasetsToFiles({ participantId, datasets, path: DATA_PATH })
 
 
 }
 
-async function writeDatasetsToFiles({ participantId, datasets }) {
+async function writeDatasetsToFiles({ participantId, datasets, path }) {
 
-  await logger.info(`Writing ${ datasets.length } datasets for ${participantId}, each to a separate file in ${ DATA_PATH } ...`)
 
-  const fileWritePromises = datasets.map(dataset => {
+  for (const dataset of datasets) {
 
     const captureDate = dataset['activities-steps'][0]['dateTime']
-    const outputFilename = `${ DATA_PATH }/${ participantId }_${ captureDate }.json`
+    const outputFilepath = `${ path }/${ participantId }_${ captureDate }.json`
     const serializedData = JSON.stringify(dataset, null, 4)
 
-    return writeFilePromise(outputFilename, serializedData)
+    return writeFilePromise(outputFilepath, serializedData)
 
-  })
-
-  // needs inspection
-  try {
-    await Promise.all(fileWritePromises)
-  } catch(e) {
-    logger.error(e)
+    try {
+      await fileWritePromises
+    } catch(e) {
+      logger.error(e)
+    }
   }
-
-  })
 
 }
 
@@ -368,7 +362,7 @@ function handleClientErrors(clientErrorCodes, refreshCallback) {
     const needsRefresh = clientErrorCodes.some(tokenExpired)
 
     if (needsRefresh) handleExpiredAuthToken()
-    if (errorsToLog.length) logErrors(db.sessionCache.get('subjectId'), errorsToLog)
+    //if (errorsToLog.length) logErrors(db.sessionCache.get('subjectId'), errorsToLog)
 
 }
 
