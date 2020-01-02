@@ -1,46 +1,37 @@
-<!doctype>
-<html>
-    <head>
-        <link rel="stylesheet" type="text/css" href="css/style.css">
-    </head>
-<body>
+<header>
+  <a class="fbtrack-link" href="https://github.com/foundling/fbtrack">Fbtrack</a>
+</header>
 
-    <header>
-      <a class="fbtrack-link" href="https://github.com/foundling/fbtrack">Fbtrack</a>
-    </header>
+<p id="error-box"></p>
 
-    <p id="error-box"></p>
+<section class="signup-window">
+    <form 
+        class="registration-form"
+        name="subject_id_form"
+        id="subject_id_form">
 
-    <section class="signup-window">
-        <form 
-            class="registration-form"
-            name="subject_id_form"
-            id="subject_id_form">
+        <h1 class="study-name">{{ studyName }} Participant Fitbit Registration Form</h1>
 
-            <h1 class="study-name">{{ studyName }} Participant Fitbit Registration Form</h1>
+        <div class="input-groups">
+          <div class="input-group subject-id-input">
+            <label>Subject Id</label>
+            <input 
+                name="subject_id"
+                id="subject_id" 
+                type="text"/> 
+          </div>
 
-            <div class="input-groups">
-              <div class="input-group subject-id-input">
-                <label>Subject Id</label>
-                <input 
-                    name="subject_id"
-                    id="subject_id" 
-                    type="text"/> 
-              </div>
+          <div class="input-group authorize">
+            <button 
+                class="authorize"
+                title="Let Fitbit share your data with our study"
+                type="submit" 
+                value="Authorize" />
+                Authorize
+            </button>
+          </div class="input-group">
+        </div>
+    </form>
 
-              <div class="input-group authorize">
-                <button 
-                    class="authorize"
-                    title="Let Fitbit share your data with our study"
-                    type="submit" 
-                    value="Authorize" />
-                    Authorize
-                </button>
-              </div class="input-group">
-            </div>
-        </form>
-
-    </section>
-    <script src="js/validateSubjectId.js"></script>
-</body>
-</html>
+</section>
+<script src="js/validateSubjectId.js"></script>

@@ -14,8 +14,8 @@ app.set('views', path.join(__dirname, 'views'))
 
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(cors({ origin: `http://localhost:${SERVER.PORT}` }))
-console.log(SERVER.PORT)
+//app.use(cors({ origin: `http://localhost:${SERVER.PORT}` }))
+app.use(cors())
 
 // bind routes
 app.get('/', routes.index)

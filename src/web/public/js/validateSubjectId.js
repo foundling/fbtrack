@@ -34,15 +34,13 @@ async function register(e) {
       if (errorBox.classList.contains('.error')) {
           errorBox.classList.remove('.error');
       }
-      try {
-        const response = await fetch(`/authorize?participantId=${participantId}`, {
-          method: 'POST'
-        })
-        const result = await response.json()
-        console.log({ result })
-      } catch(e) {
-        throw e
-      }
+      fetch(`http://localhost:3000/authorize?participantId=${participantId}`, {
+        method: 'post'
+      }).then(response=>response.json()).then(({ data }) => {
+        window.location.href = data.redirectURI
+      }).catch(console.log)
+      //const result = await response.json()
+      //console.log({ result })
 
   }
 

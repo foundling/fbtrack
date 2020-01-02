@@ -83,23 +83,36 @@ const authorize = async (req, res) => {
 
     logger.info(`path: ${ JSON.stringify(req.query) }`);
     logger.info(`path: ${ req.path }`);
-    //db.sessionCache.set({ subjectId: req.body.subject_id });
 
   
     const { participantId } = req.query 
+
     if (!participantId)
       return res.status(400).send({ errorMessage: 'Bad request. No participant id.' })
+
     try {
 
       const participant = await db.getParticipantByParticipantId(participantId)
+
       if (participant)
         return res.status(404).send({ errorMessage: 'This participant id already exists in the database.' })
-      else
-        res.redirect(client.getAuthorizeUrl(OAUTH.SCOPE, OAUTH.CALLBACK_URL, 'login consent'));
+      else {
+
+        try {
+          // sending whole url back to client, so client can do the redirect instead of server. 
+          // seems like something has changed with cors or express or fitbit.
+          const redirectURI = client.getAuthorizeUrl(OAUTH.SCOPE, OAUTH.CALLBACK_URL, 'login consent') 
+          await res.json({ data: { redirectURI } })
+        } catch(e) {
+          throw e
+        }
+      }
 
     } catch(e) {
+
         throw e;
         return res.setStatus(500).end()
+
     }
 
 };
