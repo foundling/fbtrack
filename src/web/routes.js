@@ -1,4 +1,9 @@
-const { STUDY_NAME, PATHS, OAUTH, SERVER } = require('../config')
+const { 
+  OAUTH,
+  PATHS,
+  SERVER,
+  STUDY_NAME,
+} = require('../config')
 
 const FitBitApiClient = require('fitbit-node')
 const { format } = require('date-fns')
@@ -26,147 +31,94 @@ const {
 } = require('../lib/utils') 
 
 const index = (req, res) => {
-
-    /* 
-     * Route: '/start'
-     *
-     * Render start page. Here experimenter adds 
-     * subject id and clicks authorize.
-     *
-     * sends to /authorize route.
-     */
-
-    logger.info(`NEW SESSION`)
-    logger.info(`New subject registration started.`)
-
-    res.render('index', { layout: 'main.hbs', studyName: STUDY_NAME })
-
-};
-
-const subjectExists = (req, res) => {
-
-  const subjectId = req.query.subjectId
-
-  db.subjectExists(subjectId, (err, exists) => {
-
-      if (err) throw err
-
-      if (exists) {
-        logger.error(`subject exists: ${subjectId}`)
-      } else {
-        logger.info(`Registering new subject with id: ${subjectId}.`)
-      }
-
-      res.send(exists)
-
-  });
-  
+  res.render('index', { 
+    layout: 'main.hbs',
+    studyName: STUDY_NAME
+  })
 };
 
 const authorize = async (req, res) => {
 
-    /* 
-     * Route: '/authorize'
-     *
-     * - Receive the subject id as a query param,
-     *
-     * - check if it exists in the database and 
-     * throw error if so. 
-     *
-     *  - otherwise, stache it in the session cache 
-     *  and redirect to fb's auth url.
-     *
-     * note: not saving subject_id here, waiting until 
-     * a subject generates valid tokens in later steps.
-     *
-     */
+  const { participantId } = req.query 
 
-    logger.info(`path: ${ JSON.stringify(req.query) }`);
-    logger.info(`path: ${ req.path }`);
+  if (!participantId)
+    return res.status(400).send({ errorMessage: 'Bad request. No participant id.' })
 
-  
-    const { participantId } = req.query 
+  try {
 
-    if (!participantId)
-      return res.status(400).send({ errorMessage: 'Bad request. No participant id.' })
+    const participant = await db.getParticipantByParticipantId(participantId)
 
-    try {
+    if (participant) {
+      return res.status(404).send({ errorMessage: 'This participant id already exists in the database.' })
+    } else {
 
-      const participant = await db.getParticipantByParticipantId(participantId)
-
-      if (participant)
-        return res.status(404).send({ errorMessage: 'This participant id already exists in the database.' })
-      else {
-
-        try {
-          // sending whole url back to client, so client can do the redirect instead of server. 
-          // seems like something has changed with cors or express or fitbit.
-          const redirectURI = client.getAuthorizeUrl(OAUTH.SCOPE, OAUTH.CALLBACK_URL, 'login consent') 
-          await res.json({ data: { redirectURI } })
-        } catch(e) {
-          throw e
-        }
+      try {
+        // let client do the redirect to server. if redirecting via ajax call, it's a cross-domain request,
+        // but blocked by fitbit.
+        
+        const redirectURI = client.getAuthorizeUrl(OAUTH.SCOPE, OAUTH.CALLBACK_URL, 'login consent') 
+        await res.json({ data: { redirectURI } })
+      } catch(e) {
+        throw e
+        await res.json({ errorMessage: e })
       }
-
-    } catch(e) {
-
-        throw e;
-        return res.setStatus(500).end()
-
     }
+
+  } catch(e) {
+
+      throw e;
+      return res.setStatus(500).end()
+
+  }
 
 };
 
-const storeSubjectData = (req, res) => {
+async function addParticipant(req, res) {
 
-    const accessCode = req.query.code;
-    const error = req.query.error_description;
-    const todaysDate = format(new Date(), ymdFormat);
+  const { code, state } = req.query;
+  const error = req.query.error_description;
+  const todaysDate = format(new Date(), ymdFormat);
 
-    logger(`path: ${ req.path }`);
+  if (error) {
+    logger.error(`Error receiving auth tokens`)
+    return res.render('signup_status', { layout: 'main.hbs', error: e })
+  }
 
-    if (error) {
-        logger(`Error receiving auth tokens`);
-        return res.render('signup_status', { error });
-    }
+  try {
 
-    client.getAccessToken(accessCode, config.redirectURI).then(function (tokens) {
+    const { 
+      access_token,
+      refresh_token
+    } = await client.getAccessToken(code, OAUTH.CALLBACK_URL)
 
-        const subjectData = { 
-            subjectId: db.sessionCache.get('subjectId'), 
-            accessToken: tokens.access_token, 
-            refreshToken: tokens.refresh_token,
-            signupDate: todaysDate
-        };
+  } catch(e) {
 
-        db.storeSubjectData(subjectData, (error) => { 
-
-            if (error) {
-                logger(`error storing auth tokens in the database`);
-                return res.render('signup_status', { error }); 
-            }
-
-            logger(`
-Successfully stored auth tokens in the database for subject with id: ${ db.sessionCache.get('subjectId') }.
-access token ends in: ${ tokens.access_token.slice(-8) }
-refresh token ends in: ${ tokens.refresh_token.slice(-8) }
-            `);
-
-            return res.render('signup_status');
-        });
-
+    logger.error(`Error getting access tokens: ${e}`)
+    return res.render('signup_status', { 
+      layout: 'main.hbs',
+      error: e 
     })
-    .catch(function (error) {
-        logger(error);
-        logToUserFail(error);
-        if (error) throw error;
-    });
+
+  }
+  const newParticipantData = { 
+    participantId,
+    // use state: participantId: db.sessionCache.get('subjectId'), 
+    accessToken: access_token, 
+    refreshToken: refresh_token,
+    registrationDate: todaysDate
+    isActive: 1,
+  }
+
+  try {
+    await db.addParticipant(newParticipantData)
+  } catch (e) {
+    return res.render('signup_status', { layout: 'main.hbs', error: e })
+  }
 
 };
 
 const stopServer = (req, res) => {
 
-    logger(`path: ${ req.path }`);
     logger(`stopped server session for subject with id: ${ db.sessionCache.get('subjectId') }`, () => {
         console.log('Stopping the local server ...');
         process.exit(0);
@@ -178,8 +130,7 @@ module.exports = exports = {
 
     index,
     authorize,
-    subjectExists,
-    storeSubjectData,
+    addParticipant,
     stopServer
 
 };

@@ -1,8 +1,7 @@
-require('dotenv').config()
-
 const path = require('path')
-
+require('dotenv').config({ path: path.join(__dirname, '.env') })
 const {
+  DB_PATH,
   AUTH_URI,
   CALLBACK_URL,
   ACCESS_TOKEN_URI,
@@ -18,7 +17,7 @@ module.exports = {
   STUDY_NAME: 'ACT',
   PATHS: {
     DB_NAME: 'fbtrack.sqlite',
-    DB_PATH: path.join(__dirname,'./db'),
+    DB_PATH: path.join(__dirname, './db'),
     DATA_PATH: path.join(__dirname, './data'),
     LOGS_PATH: path.join(__dirname, './data'),
   },

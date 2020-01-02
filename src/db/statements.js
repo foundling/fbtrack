@@ -19,17 +19,33 @@ module.exports = exports = {
       from 
         participants`, 
     getAllActive: `select * from participants where active = 1`,
+    updateAccessTokens: `
+      update participants 
+      set 
+        accessToken = $accessToken,
+        refreshToken = $refreshToken
+      where participantId = $participantId;
+    `,
     insert: `
       insert into participants (
         participantId,
         registrationDate,
+        accessToken,
+        refreshToken,
         isActive
       )
       values (
         $participantId,
         $registrationDate,
+        $accessToken,
+        refreshToken,
         $isActive
-      )
+      );
+    `,
+    updateAccessTokens: `
+      update participants 
+      set accessToken = $accessToken, refreshToken = $refreshToken
+      where participantId = $participantId
     `,
     setAccessToken: `update participants set accessToken = $accessToken where participantId = $participantId`
   }

@@ -10,7 +10,7 @@ const delayedRequire = function(path) {
   }
 }
 
-const ymdFormat = 'YYYY-MM-DD'
+const ymdFormat = 'yyyy-MM-dd'
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 const parseDateRange = (dateRangeString) => {
 

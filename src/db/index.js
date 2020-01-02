@@ -7,8 +7,9 @@ const {
   getAllActive,
   getAll,
   insert,
-  setAccessToken
-} = require('./statements').participants
+  update,
+  updateAccessTokens
+} = { participants } = require('./statements')
 
 class Database {
 
@@ -65,9 +66,26 @@ class Database {
 
   }
 
-  async addParticipant({ participantId, registrationDate, isActive }) {
+  async updateAccessTokensByParticipantId({ participantId, accessToken, refreshToken }) {
+
+    try {
+      const db = await this.dbPromise
+      const params = { 
+        $participantId: participantId,
+        $accessToken: accessToken,
+        $refreshToken: refreshToken
+      }
+      return await db.run(updateAccessTokens, params)
+    } catch(e) {
+      throw new Error(['updating participant by id failed', e])
+    }
+
+  }
+  async addParticipant({ participantId, registrationDate, refreshToken, accessToken, isActive }) {
 
     const params = {
+      $accessToken: accessToken,
+      $refreshToken: refreshToken,
       $participantId: participantId,
       $registrationDate: registrationDate,
       $isActive: isActive 
