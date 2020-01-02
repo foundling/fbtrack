@@ -4,10 +4,10 @@ const express = require('express')
 const expressHandlebars = require('express-handlebars')
 const bodyParser = require('body-parser')
 const cors = require('cors')
-const app = express()
 const { PATHS, SERVER } = require('../config')
 const routes = require('./routes')
 
+const app = express()
 app.engine('hbs', expressHandlebars({ defaultLayout: 'main' }))
 app.set('view engine', 'hbs')
 app.set('views', path.join(__dirname, 'views'))
@@ -15,13 +15,14 @@ app.set('views', path.join(__dirname, 'views'))
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors({ origin: `http://localhost:${SERVER.PORT}` }))
+console.log(SERVER.PORT)
 
 // bind routes
 app.get('/', routes.index)
-/*
 app.post('/authorize', routes.authorize)
-app.get('/store_subject_data', routes.storeSubjectData)
 app.get('/subjectExists', routes.subjectExists)
+/*
+app.get('/store_subject_data', routes.storeSubjectData)
 app.post('/quit', routes.stopServer)
 */
 

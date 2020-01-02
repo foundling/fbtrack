@@ -1,4 +1,4 @@
-const { PATHS, OAUTH, SERVER } = require('../config')
+const { STUDY_NAME, PATHS, OAUTH, SERVER } = require('../config')
 
 const FitBitApiClient = require('fitbit-node')
 const { format } = require('date-fns')
@@ -37,31 +37,33 @@ const index = (req, res) => {
      */
 
     logger.info(`NEW SESSION`)
-    logger.info(`path: ${ req.path }`)
     logger.info(`New subject registration started.`)
-    res.render('index', { layout: 'main.hbs', studyName: 'ACT' })
+
+    res.render('index', { layout: 'main.hbs', studyName: STUDY_NAME })
 
 };
 
 const subjectExists = (req, res) => {
 
-    logger(`path: ${ req.path }`);
+  const subjectId = req.query.subjectId
 
-    db.subjectExists(req.query.subject_id, (err, exists) => {
+  db.subjectExists(subjectId, (err, exists) => {
 
-        if (err) throw err
+      if (err) throw err
 
-        if (exists) {
-          logger(`Subject with id has already been registered: ${ req.query.subject_id }.`)
-        } else {
-          logger(`Registering new subject with id: ${ req.query.subject_id }.`)
-        }
-        res.send(exists)
-    });
-    
+      if (exists) {
+        logger.error(`subject exists: ${subjectId}`)
+      } else {
+        logger.info(`Registering new subject with id: ${subjectId}.`)
+      }
+
+      res.send(exists)
+
+  });
+  
 };
 
-const authorize = (req, res) => {
+const authorize = async (req, res) => {
 
     /* 
      * Route: '/authorize'
@@ -79,19 +81,26 @@ const authorize = (req, res) => {
      *
      */
 
-    logger(`path: ${ req.path }`);
-    db.sessionCache.set({ subjectId: req.body.subject_id });
+    logger.info(`path: ${ JSON.stringify(req.query) }`);
+    logger.info(`path: ${ req.path }`);
+    //db.sessionCache.set({ subjectId: req.body.subject_id });
 
-    db.fetchAllSubjects((err, rows) => {
-        if (err) throw err;
+  
+    const { participantId } = req.query 
+    if (!participantId)
+      return res.status(400).send({ errorMessage: 'Bad request. No participant id.' })
+    try {
 
-        const subjectIdExists = rows.some(row => row.subject_id === db.sessionCache.get('subject_id'));
-        const error = `The subject id ${ db.sessionCache.get('subjectId') } already exists ...`;
+      const participant = await db.getParticipantByParticipantId(participantId)
+      if (participant)
+        return res.status(404).send({ errorMessage: 'This participant id already exists in the database.' })
+      else
+        res.redirect(client.getAuthorizeUrl(OAUTH.SCOPE, OAUTH.CALLBACK_URL, 'login consent'));
 
-        if (subjectIdExists) return res.render('signup_status', { error });
-        res.redirect(client.getAuthorizeUrl(config.scope, config.redirectURI, 'login consent'));
-
-    });
+    } catch(e) {
+        throw e;
+        return res.setStatus(500).end()
+    }
 
 };
 
