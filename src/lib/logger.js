@@ -1,6 +1,6 @@
 const fs = require('fs');
 const format = require('date-fns/format');
-const { promisify } = require('util');
+const { inspect, promisify } = require('util');
 
 const colors = require('colors/safe');
 const writeFilePromise = promisify(fs.writeFile);
@@ -22,13 +22,14 @@ class Logger {
   }
 
   timestamp () {
-    return format(new Date(), 'YYYY-MM-dd:HH:mm:ss')
+    return format(new Date(), 'yyyy-MM-dd:HH:mm:ss')
   }
 
   async log(msg, level) {
 
     const header = headers[level]
-    console.log(`${header}: ${msg}`)
+    const unpackedMsg = typeof msg === 'string' ? msg : inspect(msg, {depth: null})
+    console.log(`${header}: ${unpackedMsg}`)
 
     if (this.config[level]) {
       await this.toDisk({ 

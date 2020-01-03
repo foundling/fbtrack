@@ -28,27 +28,37 @@ async function getAuthUrl(e) {
   const participantId = subjectIdInput.value.trim()
 
   if (!participantId) {
+
       notify(errorBox, 'Please enter a subject id.');             
-      return e.preventDefault(); 
+
   } else {
-      if (errorBox.classList.contains('.error')) {
-          errorBox.classList.remove('.error');
-      }
-      try {
-        const response = await fetch(
-          `http://localhost:3000/authorize?participantId=${participantId}`, { method: 'post' }
-        )
-        const { data, errorMessage } = await response.json()
-        if (data) {
-          window.location.href = data.redirectURI
-        } else {
-          console.log('fail: ', errorMessage)
-        }
 
+    if (errorBox.classList.contains('.error'))
+        errorBox.classList.remove('.error');
 
-      } catch (e) {
-        throw e
-      }
+    let redirectURI
+
+    try {
+
+      const authorizePath = `http://localhost:3000/authorize?participantId=${participantId}`
+      const response = await fetch(authorizePath, { method: 'post' })
+      const parsedResponse = await response.json()
+
+      redirectURI = parsedResponse.data.redirectURI
+
+    } catch (e) {
+      throw e
+    }
+
+    // ensure redirect url is valid
+    try {
+      new URL(redirectURI)
+    } catch(e) {
+      throw new Error(['redirectURI is not valid', e])
+    }
+
+    window.location.href = redirectURI
+
   }
 
 }

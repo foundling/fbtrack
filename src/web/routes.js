@@ -1,3 +1,4 @@
+const qs = require('querystring')
 const { 
   OAUTH,
   PATHS,
@@ -49,14 +50,16 @@ const authorize = async (req, res) => {
     const participant = await db.getParticipantByParticipantId(participantId)
 
     if (participant) {
-      return res.status(404).send({ errorMessage: 'This participant id already exists in the database.' })
+      return res.status(409).send({ errorMessage: 'This participant id already exists in the database.' })
     } else {
 
       try {
         // let client do the redirect to server. if redirecting via ajax call, it's a cross-domain request,
         // but blocked by fitbit.
         
-        const redirectURI = client.getAuthorizeUrl(OAUTH.SCOPE, OAUTH.CALLBACK_URL, 'login consent') 
+        const state = qs.encode({ participantId })
+        const prompt = 'login consent'
+        const redirectURI = client.getAuthorizeUrl(OAUTH.SCOPE, OAUTH.CALLBACK_URL, prompt, state) 
         await res.json({ data: { redirectURI } })
       } catch(e) {
         throw e
@@ -76,6 +79,7 @@ const authorize = async (req, res) => {
 async function addParticipant(req, res) {
 
   const { code, state } = req.query;
+  const { participantId } = qs.decode(state)
   const error = req.query.error_description;
   const todaysDate = format(new Date(), ymdFormat);
 
@@ -84,12 +88,11 @@ async function addParticipant(req, res) {
     return res.render('signup_status', { layout: 'main.hbs', error: e })
   }
 
+  let tokens
+
   try {
 
-    const { 
-      access_token,
-      refresh_token
-    } = await client.getAccessToken(code, OAUTH.CALLBACK_URL)
+    tokens = { access_token, refresh_token } = await client.getAccessToken(code, OAUTH.CALLBACK_URL)
 
   } catch(e) {
 
@@ -102,17 +105,22 @@ async function addParticipant(req, res) {
   }
   const newParticipantData = { 
     participantId,
-    // use state: participantId: db.sessionCache.get('subjectId'), 
-    accessToken: access_token, 
-    refreshToken: refresh_token,
-    registrationDate: todaysDate
+    registrationDate: todaysDate,
+    accessToken: tokens.access_token, 
+    refreshToken: tokens.refresh_token,
     isActive: 1,
   }
 
   try {
+
     await db.addParticipant(newParticipantData)
+    return res.render('signup_status', { layout: 'main.hbs' })
+
   } catch (e) {
+
+    logger.error(e)
     return res.render('signup_status', { layout: 'main.hbs', error: e })
+
   }
 
 };

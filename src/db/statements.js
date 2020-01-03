@@ -1,6 +1,5 @@
 module.exports = exports = {
   participants: {
-
     createTable: `
       create table if not exists participants(
         -- note: rowid is automatically created as an autoinc'd primary key
@@ -12,7 +11,14 @@ module.exports = exports = {
         isActive         INT  NOT NULL   CHECK(isActive in (0,1))
       );
     `,
-    getByParticipantId: `select * from participants where participantId = $participantId`,
+    getByParticipantId: `
+      select 
+        * 
+      from 
+        participants 
+      where 
+        participantId = $participantId
+    `,
     getAll: `
       select 
         rowid, participantId, registrationDate, isActive 
@@ -24,7 +30,8 @@ module.exports = exports = {
       set 
         accessToken = $accessToken,
         refreshToken = $refreshToken
-      where participantId = $participantId;
+      where
+        participantId = $participantId;
     `,
     insert: `
       insert into participants (
@@ -38,15 +45,24 @@ module.exports = exports = {
         $participantId,
         $registrationDate,
         $accessToken,
-        refreshToken,
+        $refreshToken,
         $isActive
       );
     `,
     updateAccessTokens: `
       update participants 
-      set accessToken = $accessToken, refreshToken = $refreshToken
-      where participantId = $participantId
+      set 
+        accessToken = $accessToken,
+        refreshToken = $refreshToken
+      where
+        participantId = $participantId
     `,
-    setAccessToken: `update participants set accessToken = $accessToken where participantId = $participantId`
+    setAccessToken: `
+      update participants
+      set
+        accessToken = $accessToken
+      where
+        participantId = $participantId
+    `
   }
 }

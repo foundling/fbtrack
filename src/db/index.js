@@ -9,7 +9,7 @@ const {
   insert,
   update,
   updateAccessTokens
-} = { participants } = require('./statements')
+} = require('./statements').participants
 
 class Database {
 
@@ -49,6 +49,7 @@ class Database {
       const params = { $participantId: participantId }
       return await db.get(getByParticipantId, params)
     } catch(e) {
+      console.log({getByParticipantId})
       throw new Error(['getParticipantByParticipantId failed', e])
     }
 
