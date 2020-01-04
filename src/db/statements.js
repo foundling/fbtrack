@@ -11,28 +11,6 @@ module.exports = exports = {
         isActive         INT  NOT NULL   CHECK(isActive in (0,1))
       );
     `,
-    getByParticipantId: `
-      select 
-        * 
-      from 
-        participants 
-      where 
-        participantId = $participantId
-    `,
-    getAll: `
-      select 
-        rowid, participantId, registrationDate, isActive 
-      from 
-        participants`, 
-    getAllActive: `select * from participants where active = 1`,
-    updateAccessTokens: `
-      update participants 
-      set 
-        accessToken = $accessToken,
-        refreshToken = $refreshToken
-      where
-        participantId = $participantId;
-    `,
     insert: `
       insert into participants (
         participantId,
@@ -49,23 +27,33 @@ module.exports = exports = {
         $isActive
       );
     `,
-    updateAccessTokens: `
+    getAll: `
+      select 
+        rowid, participantId, registrationDate, isActive 
+      from 
+        participants`, 
+    getById: `
+      select 
+        * 
+      from 
+        participants 
+      where 
+        participantId = $participantId
+    `,
+    getActive: `select * from participants where active = 1`,
+    deleteAll: `
+      delete from participants;
+    `,
+    deleteById: `
+      delete from participants where id = $participantId;
+    `,
+    updateAccessTokensById: `
       update participants 
       set 
         accessToken = $accessToken,
         refreshToken = $refreshToken
       where
-        participantId = $participantId
+        participantId = $participantId;
     `,
-    clearParticipants: `
-      delete from participants;
-    `,
-    setAccessToken: `
-      update participants
-      set
-        accessToken = $accessToken
-      where
-        participantId = $participantId
-    `
   }
 }

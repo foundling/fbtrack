@@ -1,6 +1,8 @@
 require('dotenv').config() 
 
 const fs = require('fs')
+
+const FitBitClient = require('fitbit-node')
 const { 
   format, 
   addDays, 
@@ -9,7 +11,6 @@ const {
   isAfter, 
   isBefore  
 } = require('date-fns')
-const FitBitClient = require('fitbit-node')
 
 const { PATHS, OAUTH } = require('../config')
 
@@ -86,19 +87,6 @@ async function getFiles({ criterion, directory }) {
 
 }
 
-const findUncapturedDates = (startDate, stopDate, allDatesCaptured) => {
-
-    const startDateString = startDate.format(ymdFormat)
-    const stopDateString = stopDate.format(ymdFormat)
-
-    const idealDateRange = generateDateRange(startDateString, stopDateString)
-    const capturedDatesInRange = allDatesCaptured.filter( inDateRange({start: startDateString, end: stopDateString}) )
-    const uncapturedDatesInRange = idealDateRange.filter( dateNotIn(capturedDatesInRange) )
-
-    return uncapturedDatesInRange
-
-}
-
 function extractFitBitData(days) {
     // need to take metrics for each day and flatten them into a single object
 
@@ -167,17 +155,30 @@ async function main(participantId, { dates=[], windowSize=null, refresh=false })
   if (refresh) {
     logger.info(`Access Token for participant ${ participantId } expired. Refreshing ...`)
 
-    const refreshAccessToken = statefulRefreshAccessToken(participant)
-    participant.accessToken = await refreshAccessToken()
+    const refreshAccessTokenFn = statefulRefreshAccessToken(participant)
+    participant.accessToken = await refreshAccessTokenFn()
   }
 
-  const uncapturedDates = findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate })
-  const datasets = getFitbitDataForDates({ dates: uncapturedDates, endpoints })
+  const uncapturedDates = findUncapturedDatesInWindow({ 
+    participantId,
+    today,
+    windowSize,
+    registrationDate
+  })
+
+  // return errors here. 
+  // process successful resposnes
+  // handle errors separately
+  const datasets = getFitbitDataForDates({ 
+    dates: uncapturedDates,
+    endpoints
+  })
 
   await logger.info(
     `Writing ${ datasets.length } datasets for ${participantId}. 
      Output Path: ${ DATA_PATH }`
   )
+
   writeDatasetsToFiles({ participantId, datasets, path: DATA_PATH })
 
 
@@ -255,7 +256,7 @@ async function getParticipantById(id) {
 
   // get participant by id
   try {
-    const participant = await db.getParticipantByParticipantId(id)
+    const participant = await db.getParticipantById(id)
     return participant
   } catch (e) {
     throw new Error(e)
@@ -264,13 +265,22 @@ async function getParticipantById(id) {
 }
 
 function datesFromRange({ start, stop }) {
+
+  if (differenceInDay(start, stop) < 0) {
+    throw new Error('Invalid date range')
+  }
+
   const dates = [start]
+
   let currentDate = start
+
   while (currentDate <= stop) {
     currentDate = addDays(currentDate, 1)
     dates.push(currentDate)
   }
+
   return dates
+
 }
 
 function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
@@ -297,18 +307,15 @@ function dateRangeFromDateArgs({ dates }) {
 
 }
 
-async function restartQuery({ subjectId }) {
+async function restartQuery({ participantId }) {
 
-    if (!subjectId) {
-        await logger.error(subjectId)
+    // still needed? see refreshAccessTokenFn
+    if (!participantId) {
+        await logger.error(participantId)
         throw new Error(`Trying to restart query after token refresh, but have no subject id!`)
     }
 
-    /* runs when acess token needs to be refreshed */
-    db.fetchOneSubject(subjectId, (err, subjectData) => {
-        if (err) throw err
-        //preQueryCheck(subjectData)
-    })
+    const participant = await db.getParticipantById(participantId)
 
 }
 
@@ -371,9 +378,9 @@ function handleClientErrors(clientErrorCodes, refreshCallback) {
 
 }
 
-function statefulRefreshAccessToken({ accessToken, refreshToken, participantId }) {
+function statefulRefreshAccessToken({ maxRetries = 1, accessToken, refreshToken, participantId }) {
 
-  let maxRetries = 1
+  /* returns a function that will refresh an accessToken maxRetries times */
 
   return async function refreshAccessToken() {
 
@@ -384,8 +391,15 @@ function statefulRefreshAccessToken({ accessToken, refreshToken, participantId }
       try {
 
         const expirationWindow = 3600
-        const newAccessToken = await fbClient.refreshAccessToken(accessToken, refreshToken, expirationWindow)
-        await db.setParticipantAccessToken({ participantId, accessToken: newAccessToken })
+        const { access_token, refresh_token } = await fbClient.refreshAccessToken(accessToken, refreshToken, expirationWindow)
+
+        // todo: verify returned data from client.refresh
+        await db.setParticipantAccessToken({
+          participantId,
+          accessToken: access_token, 
+          refreshToken: refresh_token
+        })
+
         return newAccessToken
 
       } catch(e) {
@@ -409,32 +423,11 @@ async function formatFitbitErrors ({ msg, errorObj }) {
   await logger.error(`${msg}. Error details: ${ messages }`)
 }
 
-
-
-function updateTokens({ accessToken, refreshToken }) {
-
-    const newTokens = {
-        accessToken,
-        refreshToken
-    }
-
-    if ( ! (newTokens.accessToken && newTokens.refreshToken) ) {
-        throw new Error(`Trying to replace token with null data! ${ newTokens }. Exiting ...`)
-    }
-
-    db.updateTokens(newTokens, (err) => {
-        if (err) throw err
-        restartQuery({ subjectId: db.sessionCache.get('subjectId') })
-    })
-
-}
-
-
 module.exports = exports = {
 
     main,
 
-    findUncapturedDates,
+    findUncapturedDatesInWindow,
 
     extractFitBitData,
     handleAPIResponse,
@@ -444,7 +437,6 @@ module.exports = exports = {
     isClientError,
     queryAPI,
     toStatusCodeString,
-    updateTokens,
     writeDatasetsToFiles
     
 }

@@ -1,16 +1,7 @@
 const sqlite = require('sqlite')
 const path = require('path')
 const format = require('date-fns/format')
-const { 
-  clearParticipants,
-  createTable, 
-  getByParticipantId,
-  getAllActive,
-  getAll,
-  insert,
-  update,
-  updateAccessTokens
-} = require('./statements').participants
+const { participants } = require('./statements')
 
 class Database {
 
@@ -25,7 +16,7 @@ class Database {
 
     try {
       const db = await this.dbPromise
-      await db.run(createTable)
+      await db.run(participants.createTable)
     } catch(e) {
       throw new Error(e)
     }
@@ -35,7 +26,7 @@ class Database {
   async clearParticipants() {
     try {
       const db = await this.dbPromise
-      await db.run(clearParticipants)
+      await db.run(participants.deleteAll)
     } catch(e) {
       throw e 
     }
@@ -45,19 +36,19 @@ class Database {
 
     try {
       const db = await this.dbPromise
-      const allParticipants = await db.all(getAll)
+      const allParticipants = await db.all(participants.getAll)
       return allParticipants
     } catch(e) {
       throw new Error(e)
     }
   }
 
-  async getParticipantByParticipantId(participantId) {
+  async getParticipantById(participantId=requireParam('participantId')) {
 
     try {
       const db = await this.dbPromise
       const params = { $participantId: participantId }
-      return await db.get(getByParticipantId, params)
+      return await db.get(participants.getById, params)
     } catch(e) {
       console.log({getByParticipantId})
       throw new Error(['getParticipantByParticipantId failed', e])
@@ -65,7 +56,11 @@ class Database {
 
   }
 
-  async updateAccessTokensByParticipantId({ participantId, accessToken, refreshToken }) {
+  async updateAccessTokensById({ 
+    participantId=requireParam('participantId'),
+    accessToken=requireParam('accessToken'),
+    refreshToken=requireParam('refreshToken')
+  }) {
 
     try {
       const db = await this.dbPromise
@@ -74,14 +69,20 @@ class Database {
         $accessToken: accessToken,
         $refreshToken: refreshToken
       }
-      return await db.run(updateAccessTokens, params)
+      return await db.run(participants.updateAccessTokensById, params)
     } catch(e) {
       throw new Error(['updating participant by id failed', e])
     }
 
   }
 
-  async addParticipant({ participantId, registrationDate, refreshToken, accessToken, isActive=true }) {
+  async addParticipant({ 
+    participantId=requireParam('participantId'),
+    registrationDate=requireParam('registrationDate'),
+    refreshToken=requireParam('refreshToken'),
+    accessToken=requireParam('accessToken'),
+    isActive=true
+  }) {
 
     const params = {
       $accessToken: accessToken,
@@ -93,7 +94,7 @@ class Database {
 
     try {
       const db = await this.dbPromise
-      const newParticipant = await db.run(insert, params)
+      const newParticipant = await db.run(participants.insert, params)
       return newParticipant
     } catch(e) {
       throw new Error(e)
@@ -101,6 +102,22 @@ class Database {
 
   }
 
+}
+
+function requireParam(p) {
+  throw new MissingParameterError(p)
+}
+
+class MissingParameterError extends Error {
+  constructor(message) {
+
+    super(message)
+
+    this.name = this.constructor.name
+
+    Error.captureStackTrace(this, this.constructor)
+
+  }
 }
 
 module.exports = exports = Database
