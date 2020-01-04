@@ -2,6 +2,7 @@ const sqlite = require('sqlite')
 const path = require('path')
 const format = require('date-fns/format')
 const { 
+  clearParticipants,
   createTable, 
   getByParticipantId,
   getAllActive,
@@ -31,6 +32,15 @@ class Database {
 
   }
 
+  async clearParticipants() {
+    try {
+      const db = await this.dbPromise
+      await db.run(clearParticipants)
+    } catch(e) {
+      throw e 
+    }
+  }
+
   async getParticipants() {
 
     try {
@@ -55,18 +65,6 @@ class Database {
 
   }
 
-  async setParticipantAccessToken({ participantId, accessToken }) {
-
-    try {
-      const db = await this.dbPromise
-      const params = { $participantId: participantId, $accessToken: accessToken }
-      return await db.run(setAccessToken, params)
-    } catch(e) {
-      throw new Error(['setParticipantAccessToken failed', e])
-    }
-
-  }
-
   async updateAccessTokensByParticipantId({ participantId, accessToken, refreshToken }) {
 
     try {
@@ -82,14 +80,15 @@ class Database {
     }
 
   }
-  async addParticipant({ participantId, registrationDate, refreshToken, accessToken, isActive }) {
+
+  async addParticipant({ participantId, registrationDate, refreshToken, accessToken, isActive=true }) {
 
     const params = {
       $accessToken: accessToken,
       $refreshToken: refreshToken,
       $participantId: participantId,
       $registrationDate: registrationDate,
-      $isActive: isActive 
+      $isActive: Number(Boolean(isActive)) 
     }
 
     try {

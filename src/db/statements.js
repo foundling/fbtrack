@@ -57,6 +57,9 @@ module.exports = exports = {
       where
         participantId = $participantId
     `,
+    clearParticipants: `
+      delete from participants;
+    `,
     setAccessToken: `
       update participants
       set
