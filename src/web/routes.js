@@ -1,6 +1,6 @@
 const qs = require('querystring')
 const {
-  OAUTH,
+  FITBIT,
   PATHS,
   SERVER,
   STUDY_NAME,
@@ -11,7 +11,7 @@ const { format } = require('date-fns')
 const Database = require(PATHS.DB_PATH)
 
 const db = new Database({ databaseFile: PATHS.DB_NAME })
-const client = new FitBitApiClient({ clientId: OAUTH.CLIENT_ID, clientSecret: OAUTH.CLIENT_SECRET })
+const client = new FitBitApiClient({ clientId: FITBIT.CLIENT_ID, clientSecret: FITBIT.CLIENT_SECRET })
 const Logger = require('../lib/logger')
 const logger = new Logger({
   logDir: PATHS.LOGS,
@@ -71,7 +71,7 @@ const authorize = async (req, res) => {
 
     const state = qs.encode({ participantId })
     const prompt = 'login consent'
-    const redirectURI = client.getAuthorizeUrl(OAUTH.SCOPE, OAUTH.CALLBACK_URL, prompt, state)
+    const redirectURI = client.getAuthorizeUrl(FITBIT.SCOPE, FITBIT.CALLBACK_URL, prompt, state)
 
     await res.json({ data: { redirectURI } })
 
@@ -104,7 +104,7 @@ async function addParticipant(req, res) {
     tokens = {
       access_token,
       refresh_token
-    } = await client.getAccessToken(code, OAUTH.CALLBACK_URL)
+    } = await client.getAccessToken(code, FITBIT.CALLBACK_URL)
 
   } catch(e) {
 

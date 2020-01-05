@@ -4,7 +4,7 @@
   "description": "fbtrack app",
   "main": "index.js",
   "scripts": {
-    "test": "tape src/**/*.test.* | tap-spec"
+    "test": "tape src/**/test.*.js | tap-spec"
   },
   "keywords": [],
   "author": "Alex Ramsdell",
@@ -25,6 +25,9 @@
   },
   "devDependencies": {
     "nyc": "^15.0.0",
+    "tap-colorize": "^1.2.0",
+    "tap-dot": "^2.0.0",
+    "tap-min": "^2.0.0",
     "tap-spec": "^5.0.0",
     "tape": "^4.12.1"
   }

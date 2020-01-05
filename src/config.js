@@ -21,7 +21,7 @@ module.exports = {
     DATA_PATH: path.join(__dirname, './data'),
     LOGS_PATH: path.join(__dirname, './data'),
   },
-  OAUTH: {
+  FITBIT: {
     AUTH_URI,
     CALLBACK_URL,
     ACCESS_TOKEN_URI,
@@ -29,7 +29,7 @@ module.exports = {
     CLIENT_SECRET,
     DEFAULT_WINDOW_SIZE,
     RESPONSE_TYPE,
-    FITBIT_ENDPOINTS: require('./fitbit_endpoints.json'),
+    ENDPOINT_TEMPLATES: require('./fitbit_endpoints.json'),
     SCOPE,
   },
   SERVER: {

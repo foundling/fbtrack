@@ -16,7 +16,7 @@ const { signup, query, revoke, missing, status, apistatus, update, dump } = [
 
 ].reduce(function(memo, cmd) {
 
-    // fix: if you put commands in ./commands/ dir, it breaks the .env PATHS scheme
+    // problem: if you put commands in a commands/ sub-dir, it breaks the .env PATHS scheme
 
     const lazyFn = delayedRequire(path.join(__dirname, cmd))
     const commandValidator = validators[cmd]
