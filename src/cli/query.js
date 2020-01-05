@@ -5,6 +5,7 @@ const fs = require('fs')
 const FitbitClient = require('fitbit-node')
 const { 
   format, 
+  parseISO,
   addDays, 
   subDays, 
   differenceInDays, 
@@ -245,7 +246,7 @@ async function findUncapturedDatesInWindow({ participantId, today, windowSize, r
 
   const [ start, stop ] = windowSize ? 
                     dateRangeFromWindowSize({ registrationDate, today, windowSize }) :
-                    dateRangeFromDateArgs({ dates }) 
+                    dateRangeFromDateStrings({ dates }) 
 
   const expectedDates = datesFromRange({ start, stop })
   const capturedDates = metadata.map(md => md.date)
@@ -296,13 +297,30 @@ function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
 
 }
 
-function dateRangeFromDateArgs({ dates }) {
+function dateRangeFromDateStrings({ dates }) {
 
-  let dateRange
+  if (!dates || dates.length < 1 || dates.length > 2) { 
+    throw new Error('Dates array requires exactly two elements.')
+  }
 
-  if (dates.length === 1) return [ new Date(dates[0]), new Date(dates[0]) ]
-  if (dates.length >= 2)  return [ new Date(dates[0]),  new Date(dates[1]) ]
+  const [ start, stop ] = dates
 
+  if (dates.length === 1) {
+    return [
+      parseISO(start),
+      parseISO(start)
+    ]
+  } 
+
+  if (dates.length == 2) {
+    if (parseISO(start) > parseISO(stop)) {
+      throw new Error('DateRangeFromDateStrings Error: start (first param) must come before stop')
+    }
+    return [
+      parseISO(start),
+      parseISO(stop)
+    ]
+  }
 
 }
 
@@ -420,7 +438,7 @@ module.exports = exports = {
     getFitbitDataForDates,
     datesFromRange,
     dateRangeFromWindowSize,
-    dateRangeFromDateArgs,
+    dateRangeFromDateStrings,
     extractFitbitData,
     findUncapturedDatesInWindow,
     formatFitbitErrors,

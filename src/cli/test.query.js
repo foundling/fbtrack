@@ -1,6 +1,6 @@
 const tape = require('tape')
 const { default: tapePromise } = require('tape-promise')
-const { addDays, differenceInDays, format, subDays } = require('date-fns')
+const { addDays, differenceInDays, parseISO, format, subDays } = require('date-fns')
 
 const test = tapePromise(tape)
 const { FITBIT } = require('../config')
@@ -10,7 +10,7 @@ const {
 
   datesFromRange,
   dateRangeFromWindowSize,
-  dateRangeFromDateArgs,
+  dateRangeFromDateStrings,
   findUncapturedDatesInWindow,
   writeDatasetsToFiles,
   validateArgs
@@ -138,6 +138,43 @@ test('[ cli:query ] dateRangeFromWindowSize (invalid window)', (t) => {
       windowSize: invalidWindowSize,
       registrationDate,
     })
+  })
+
+})
+
+
+test('[ cli:query ] dateRangeFromDateStrings', (t) => {
+
+  t.plan(1)
+
+  const start = format(new Date(2020, 0, 1), ymdFormat)
+  const stop = format(new Date(2020, 0, 4), ymdFormat)
+  const expectedDateRange = [ start, stop ]
+
+  const actualDateRange = dateRangeFromDateStrings({
+    dates: [start, stop]
+  }).map(date => format(date, ymdFormat))
+
+  t.deepEqual(
+    actualDateRange,
+    expectedDateRange
+  )
+
+})
+
+test('[ cli:query ] dateRangeFromDateStrings', (t) => {
+
+  t.plan(1)
+
+  const start = format(new Date(2020, 0, 1), ymdFormat)
+  const stop = format(new Date(2020, 0, 4), ymdFormat)
+
+  t.throws((t) => {
+
+    const actualDateRange = dateRangeFromDateStrings({
+      dates: [stop, start]
+    }).map(date => format(date, ymdFormat))
+
   })
 
 })
