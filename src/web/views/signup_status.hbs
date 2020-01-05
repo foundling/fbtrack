@@ -1,17 +1,19 @@
-<section class="container">
+<section class="auth-results">
+  <div class="results-window">
 
-  {{#if error}}
-    <h1 class="error">
-      An error occurred: <span class="error-msg">{{error}}</span>
-    </h1>
-  {{else}}
-    <h1 class="success">Authorization for participant {{ participantId }} was a Success!</h1>
-  {{/if}}
+    {{#if error}}
+      <h1 class="error">
+        An error occurred: <span class="error-msg">{{error}}</span>
+      </h1>
+    {{else}}
+      <h1 class="success">Authorization for participant {{ participantId }} was a Success!</h1>
+    {{/if}}
 
+    <button class="quit">Quit</button>
+
+    <script type="text/javascript">
+      document.getElementById('quit').addEventListener('click', function() { window.close() })
+    </script>
+
+  </div>
 </section>
-
-<button id="quit">Quit<button>
-
-<script type="text/javascript">
-  document.getElementById('quit').addEventListener('click', function() { window.close() })
-</script>

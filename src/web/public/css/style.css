@@ -1,10 +1,13 @@
 html, body {
   height: 100%;
   font-family: sans-serif;
+  background: whitesmoke;
 }
 
 html, body, body * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 a {
@@ -13,15 +16,6 @@ a {
 
 a.fbtrack-link {
   color: rgb(244, 67, 54);
-}
-
-html, body, body * {
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  background: whitesmoke;
 }
 
 header {
@@ -34,14 +28,18 @@ header {
   padding: 20px;
 }
 
-form > div.input-groups {
+section.signup-window,
+section.auth-results {
+  height: calc(100% - calc(1.5em + 20px));
   width: 100%;
-  display: inline-flex;
+  padding: 20px;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
 
-form {
+form,
+.results-window {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -50,12 +48,20 @@ form {
   background: lightgray;
 }
 
-form > h1 {
+form > h1,
+.results-window > h1 {
   margin: 20px;
   padding: 10px;
   width: 100%;
   height: 1.5em;
   text-align: center;
+}
+
+form > .input-groups {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .input-group {
@@ -66,44 +72,35 @@ form > h1 {
   align-items: center;
 }
 
-label, button {
-  font-size: 1.5em;
-  padding: 10px;
-}
-
 input {
   padding: 5px 10px;
   font-size: 1.5em;
   width: 180px;
 }
 
-section.signup-window {
-  height: calc(100% - calc(1.5em + 20px));
-  width: 100%;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+label, button {
+  font-size: 1.5em;
+  padding: 10px;
 }
 
 button.authorize.invalid {
   background: gray;
 }
 
-button.authorize {
-  border-radius: 10px;
-  border: 1px solid lightgray;
-  height: 60px;
-  width: 170px;
-}
-button.authorize {
+button.authorize,
+button.quit {
   border-radius: 10px;
   border: 1px solid lightgray;
   height: 60px;
   width: 170px;
 }
 
-button:focus {
+button.quit:hover {
+  background: rgb(3, 169, 244);
+  color: white;
+}
+
+button.authorize:focus {
   color: white;
   background: rgb(3, 169, 244);
 }
