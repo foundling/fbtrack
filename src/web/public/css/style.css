@@ -95,7 +95,8 @@ button.quit {
   width: 170px;
 }
 
-button.quit:hover {
+button.quit:hover,
+button.authorize:hover {
   background: rgb(3, 169, 244);
   color: white;
 }
