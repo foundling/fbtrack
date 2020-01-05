@@ -274,16 +274,25 @@ function datesFromRange({ start, stop }) {
 }
 
 function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
+  /* get date range starting at (yesterday - window size) until yesterday (inclusive), unless registration date
+   * occurs in between that, in which case, registration date is start of range. */
 
+  if (windowSize < 1) {
+    throw new Error('windowSize must be greater than or equal to 1')
+  }
+
+  const yesterday = subDays(today, 1)
+  const windowOffset = windowSize - 1
+  /* note: date ranges are calculated in terms of offsets.
+   * subtract 1 from windowSize to get offset */
   const startDate = new Date(
     Math.max(
-      subDays(today, windowSize),
+      subDays(yesterday, windowOffset),
       registrationDate
     )
   )
 
-  const dateRange = [ startDate, addDays(startDate, windowSize) ]
-  return dateRange
+  return [ startDate, yesterday ]
 
 }
 
