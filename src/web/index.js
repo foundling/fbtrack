@@ -5,16 +5,16 @@ const expressHandlebars = require('express-handlebars')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 
-const { PATHS, SERVER } = require('../config')
+const { APP_CONFIG } = require('../config')
 const routes = require('./routes')
-const Logger = require('../lib/logger')
+const { defaultLogger:logger } = require('../lib/logger')
 
-const logger = new Logger({ logDir: PATHS.LOGS })
 const app = express()
 
 app.engine('hbs', expressHandlebars({ defaultLayout: 'main' }))
 app.set('view engine', 'hbs')
 app.set('views', path.join(__dirname, 'views'))
+app.set('port', APP_CONFIG.SERVER_PORT)
 
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -34,9 +34,9 @@ app.get('/store_subject_data', routes.addParticipant) // leave url name for now,
 
 function start() {
 
-  app.listen(SERVER.PORT, () => {
+  app.listen(APP_CONFIG.SERVER_PORT, () => {
 
-    const localUrl = `http://localhost:${SERVER.PORT}`
+    const localUrl = `http://localhost:${app.get('port')}`
     logger.info(`Fbtrack Registration Server running at ${ localUrl }...`)
 
     exec(

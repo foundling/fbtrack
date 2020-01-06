@@ -37,7 +37,7 @@ cli
     .description('Query the FitBit API for a given subject')
     .option('-w, --window-size <windowSize>', 'window size')
     .option('-r, --refresh','refresh oauth token')
-    .option('-d, --dates <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', s => s.split('..'))
+    .option('-d, --date-range <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', s => s.split('..'))
     .action(query)
 
 cli

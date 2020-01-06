@@ -1,26 +1,11 @@
-require('dotenv').config()
-
-const { 
-  LOGS_PATH,
-  DEFAULT_WINDOW_SIZE
-} = process.env
+const { USER_CONFIG, APP_CONFIG } = require('../config')
 
 const {
-  dateRE,
+  dateREStrict,
   ymdFormat
 } = require('../lib/utils')
 
-const Logger = require('../lib/logger')
-const logger = new Logger({
-  logDir: LOGS_PATH,
-  config: {
-    info: false,
-    warn: false,
-    error: false,
-    success: false
-  }
-})
-
+const { defaultLogger:logger } = require('../lib/logger')
 
 const id = (...args) => [...args]
 
@@ -34,31 +19,31 @@ const validators = {
   query: async function(...args) {
 
     const [ participantId, options={} ] = args
-    const { dates, windowSize, refresh } = options
+    const { dateRange, windowSize, refresh } = options
 
-    if (dates && dates.length > 0) {
+    if (dateRange && dateRange.length > 0) {
 
       if (windowSize != null) {
-        await logger.error('Provide a window size or a date range, but not both.')
+        logger.error('Provide a window size or a date range, but not both.')
         process.exit(1)
       }
 
-      if (dates.some(date => !dateRE.test(date))) {
-        await logger.error(`invalid date format: ${dates.join('..')}. Expected format: ${ymdFormat}`)
+      if (dateRange.some(date => !dateREStrict.test(date))) {
+        const fmt = ymdFormat.toLowerCase()
+        logger.error(`invalid date format: ${dateRange.join('..')}.\n\tExpected format: '${fmt}..${fmt}'`)
         process.exit(1)
       }
 
     } else if (windowSize == null) {
 
-      await logger.info(`Using default window size of ${ DEFAULT_WINDOW_SIZE } days`)
+      logger.info(`Using default window size of ${ USER_CONFIG.WINDOW_SIZE } days`)
 
-    } else if (isNaN(windowSize) || windowSize < 0) {
+    } else if (isNaN(windowSize) || windowSize <= 0) {
 
-      await logger.error('window size must be non-negative integer')
+      logger.error('window size must be non-negative integer')
       process.exit(1)
 
     }
-
 
   },
 

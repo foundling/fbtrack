@@ -7,16 +7,10 @@ const Database = require('.')
 const { ymdFormat } = require('../lib/utils')
 const db = new Database({ databaseFile: 'test.sqlite' })
 
-test('[ database ] setup', async (t) => {
+test('[ database:setup ] clear participants', async (t) => {
 
   await db.init()
   await db.clearParticipants()
-
-  t.end()
-
-})
-
-test('[ database ] teardown', async (t) => {
 
   t.end()
 
@@ -96,13 +90,5 @@ test('[ database ] updateAccessTokensById', async (t) => {
 
 })
 
-test('[ database ] teardown', async (t) => {
-
-  t.plan(1)
-
-  await db.clearParticipants()
-  const participants = await db.getParticipants()
-
-  t.equal(participants.length, 0)
-
+test('[ database:teardown ]', async (t) => {
 })

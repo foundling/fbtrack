@@ -12,6 +12,7 @@ const delayedRequire = function(path) {
 
 const ymdFormat = 'yyyy-MM-dd'
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+const dateREStrict = /^[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/
 const parseDateRange = (dateRangeString) => {
 
     const parts = dateRangeString.split(',').filter(part => !!part)
@@ -184,9 +185,9 @@ const toLength = arr => arr.length
 const flattenOnce = arr => arr[0]
 
 module.exports = exports = {
-
     appendToFile,
     dateRE,
+    dateREStrict,
     dateComparator,
     dateNotIn,
     debug,

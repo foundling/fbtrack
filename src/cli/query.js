@@ -1,44 +1,46 @@
-require('dotenv').config() 
-
 const fs = require('fs')
-
 const FitbitClient = require('fitbit-node')
-const { 
-  format, 
+const {
+  addDays,
+  differenceInDays,
+  format,
+  isAfter,
+  isBefore,
   parseISO,
-  addDays, 
-  subDays, 
-  differenceInDays, 
-  isAfter, 
-  isBefore  
+  subDays
 } = require('date-fns')
 
-const { PATHS, FITBIT } = require('../config')
+const {
+
+  FITBIT_CONFIG,
+  APP_CONFIG
+
+} = require('../config')
 
 const {
   CLIENT_ID,
   CLIENT_SECRET,
-  DEFAULT_WINDOW_SIZE,
-  ENDPOINT_TEMPLATES,
-} = FITBIT
+  WINDOW_SIZE,
+  ENDPOINTS
+} = FITBIT_CONFIG
 
 const {
   DB_NAME,
   DB_PATH,
   DATA_PATH,
   LOGS_PATH,
-} = PATHS
+} = APP_CONFIG
 
 const Database = require(DB_PATH)
-const Logger = require('../lib/logger')
+const { defaultLogger: logger } = require('../lib/logger')
 
-const { 
+const {
     compact,
-    dateRE, 
+    dateRE,
     dateNotIn,
-    debug, 
-    debugExit, 
-    errorCallback, 
+    debug,
+    debugExit,
+    errorCallback,
     generateQueryPaths,
     generateDateRange,
     inDateRange,
@@ -47,7 +49,7 @@ const {
     readdirPromise,
     toDateString,
     toHeartRateMetric,
-    ymdFormat, 
+    ymdFormat,
     writeFilePromise,
 } = require('../lib/utils')
 
@@ -59,76 +61,56 @@ const isDataResponse = (day) => day.some(metric => metric[0]['activities-heart-i
 const isClientError = (statusCode) => statusCode.startsWith('4')
 
 const db = new Database({ databaseFile: DB_NAME })
-const fbClient = new FitbitClient({ 
+const fbClient = new FitbitClient({
   clientId: CLIENT_ID,
   clientSecret: CLIENT_SECRET
 })
-const logger = new Logger({
-  logDir: LOGS_PATH,
-  config: {
-    info: false,
-    warn: false,
-    error: false,
-    success: false
-  }
-})
 
-async function main(participantId, { dates=[], windowSize=null, refresh=false }) {
+async function main(participantId, { dateRange=[], windowSize=null, refresh=false }) {
 
-  if (dates.length === 0 && windowSize == null) {
-    windowSize = DEFAULT_WINDOW_SIZE
+  if (dateRange.length === 0 && windowSize == null) {
+    windowSize = WINDOW_SIZE
   }
 
   await db.init()
 
   const today = new Date()
-  const participant = { participantId, accessToken, refreshToken } = await db.getParticipantById(participantId)
+  const participant = await db.getParticipantById(participantId)
 
   if (!participant) {
-      await logger.error(`subject [ ${ participantId } ] is not in the database.`)
-      return
+    await logger.error(`subject [ ${ participantId } ] is not in the database. Have they been registered?`)
+    return
   }
   const registrationDate = new Date(participant.registrationDate)
-  const refreshAccessTokenFn = statefulRefreshAccessToken({
-    participantId,
-    accessToken,
-    refreshToken,
-    maxRetries: 1
-  })
 
   if (differenceInDays(today, registrationDate) === 0) {
-    await logger.success(`Subject ${ participant } was signed up today. No data to query.`);  
+    await logger.success(`Subject ${ participant } was signed up today. No data to query.`)
     return
   }
 
-  if (refresh) {
-    logger.info(`Access Token for participant ${ participantId } expired. Refreshing ...`)
-
-    participant.accessToken = await refreshAccessTokenFn()
-  }
-
-  const uncapturedDates = findUncapturedDatesInWindow({ 
+  const dates = findUncapturedDatesInWindow({
     participantId,
     today,
     windowSize,
     registrationDate
   })
 
-  // return errors here. 
-  // process successful resposnes
-  // handle errors separately
-
-  const datasets = getFitbitDataForDates({
-    dates: uncapturedDates,
-    endpoints: ENDPOINT_TEMPLATES
+  const datasets = queryFitbit({
+    dates, 
+    participant, 
+    endpoints: ENDPOINTS
   })
 
   await logger.info(
-    `Writing ${ datasets.length } datasets for ${participantId}. 
+    `Writing ${ datasets.length } datasets for ${participantId}.
      Output Path: ${ DATA_PATH }`
   )
 
-  writeDatasetsToFiles({ participantId, datasets, path: DATA_PATH })
+  await writeDatasetsToFiles({ 
+    datasets, 
+    participantId, 
+    path: DATA_PATH
+  })
 
 }
 
@@ -151,6 +133,7 @@ async function writeDatasetsToFiles({ participantId, datasets, path }) {
 
 }
 
+// review
 function extractFitbitData(days) {
 
   return days.map(day => {
@@ -159,12 +142,12 @@ function extractFitbitData(days) {
       Object
          .keys(metric[0])
          .forEach(key => {
-             o[key] = metric[0][key]; 
+             o[key] = metric[0][key]
          })
       return o
     }, {})
 
-  });  
+  })
 
 }
 
@@ -183,51 +166,72 @@ async function getFiles({ criterion, directory }) {
 
 }
 
-/* 
- * Query Functions / Async Control Flow 
+/*
+ * Query Functions / Async Control Flow
  */
 
-function validateArgs(participantId, { dates=[], windowSize = null, refresh=false }) {
+async function queryFitbit({ participant, dates, endpoints }) {
 
-   // both window size and range, invalid
-  if (dates.length > 0 && windowSize !== null) {
-    return { error: 'Provide a window size or a date range, but not both.' }
-  }
+  // loop sequentially through each endpoint
+  // renew auth token if needed, when needed
+  // wait until next window if we are rate limited
 
-  // check dates for validity
-  if (!dates.every(date => dateRE.test(date))) {
-    return { error: `invalid date format: ${dates.join('..')}` }
-  }
+  const responses = []
 
-  // if both values are missing, set default window size
-  if (!dates.length && windowSize == null) {
-    return { warning: 'no date range provided, no window size provided. using default window size of 3 days' }
-  }
+  for (let path of queryPaths) {
 
-  return {}
+    let response
 
-}
+    try {
 
+      response = await fbClient.get(path, participant.accessToken)
 
-async function getFitbitDataForDates({ dates, endpoints }) {
+    } catch (e) {
 
-  const queryPaths = generateQueryPaths({ dates, metricEndpoints: endpoints })
-  const requests = queryPaths.map(path => fbClient.get(path, participant.accessToken))
+      // 400 = access token expired
+      if (e.code === 400) {
 
-  try {
-    const responses = await Promise.all(requests)
-  } catch(e) {
-    throw new Error(['Error retrieving Fitbit data for dates', e])
+        // todo: verify returned data from client.refresh
+        let { access_token, refresh_token } = await refreshAccessToken({
+          participantId,
+          accessToken: participant.accessToken,
+          refreshToken: participant.refreshToken
+        })
+
+        await db.setParticipantAccessToken({
+          participantId,
+          accessToken: access_token,
+          refreshToken: refresh_token
+        })
+
+        response = await fbClient.get(path, refreshedAccessToken)
+        responses.push(response)
+
+      // 429 = rate limit exceeded
+      } else if (e.code === 429) {
+
+        // check retry after header for seconds until next run.
+        // wait n seconds 
+        // rate limit
+
+      } else {
+        logger.error(`Failed to get data for participant ${participant.participantId}`)
+        logger.error(e)
+      }
+    }
+
+    responses.push(response)
+
   }
 
   return responses
-  
+
 }
 
 async function findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate }) {
 
-  const filenames = await getFiles({ 
-    directory: DATA_PATH,
+  const filenames = await getFiles({
+    directory: DATA_PATH, // parameterize
     criterion: fname => fname.startsWith(participantId),
   })
 
@@ -236,7 +240,7 @@ async function findUncapturedDatesInWindow({ participantId, today, windowSize, r
 
     const [ participantId, dateString, extension ] = filename.split(/[_.]/)
 
-    return { 
+    return {
       filename,
       dateString,
       date: new Date(dateString)
@@ -244,9 +248,9 @@ async function findUncapturedDatesInWindow({ participantId, today, windowSize, r
 
   })
 
-  const [ start, stop ] = windowSize ? 
+  const [ start, stop ] = windowSize ?
                     dateRangeFromWindowSize({ registrationDate, today, windowSize }) :
-                    dateRangeFromDateStrings({ dates }) 
+                    dateRangeFromDateStrings({ dates })
 
   const expectedDates = datesFromRange({ start, stop })
   const capturedDates = metadata.map(md => md.date)
@@ -257,6 +261,7 @@ async function findUncapturedDatesInWindow({ participantId, today, windowSize, r
 }
 
 function datesFromRange({ start, stop }) {
+  /* range is inclusive */
 
   if (differenceInDays(stop, start) < 0) {
     throw new Error('Invalid date range')
@@ -299,7 +304,7 @@ function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
 
 function dateRangeFromDateStrings({ dates }) {
 
-  if (!dates || dates.length < 1 || dates.length > 2) { 
+  if (!dates || dates.length < 1 || dates.length > 2) {
     throw new Error('Dates array requires exactly two elements.')
   }
 
@@ -310,7 +315,7 @@ function dateRangeFromDateStrings({ dates }) {
       parseISO(start),
       parseISO(start)
     ]
-  } 
+  }
 
   if (dates.length == 2) {
     if (parseISO(start) > parseISO(stop)) {
@@ -324,18 +329,6 @@ function dateRangeFromDateStrings({ dates }) {
 
 }
 
-async function restartQuery({ participantId }) {
-
-    // still needed? see refreshAccessTokenFn
-    if (!participantId) {
-        await logger.error(participantId)
-        throw new Error(`Trying to restart query after token refresh, but have no subject id!`)
-    }
-
-    const participant = await db.getParticipantById(participantId)
-
-}
-
 function handleAPIResponse(responseGroups) {
 
     const subjectId = db.sessionCache.get('subjectId')
@@ -344,7 +337,7 @@ function handleAPIResponse(responseGroups) {
     const statusCodeStrings = responseGroups.map(toStatusCodeString)
     const errorResponses = responseGroups.filter(isErrorResponse)
     const dataResponses = responseGroups.filter(isDataResponse)
-    const validDatasets = extractFitbitData(dataResponses).filter(isValidDataset); 
+    const validDatasets = extractFitbitData(dataResponses).filter(isValidDataset)
 
   /*
     logger.info(`Status codes from request for subject ${ subjectId }: ${ colors.white(statusCodeStrings.join(',')) }.`)
@@ -353,8 +346,8 @@ function handleAPIResponse(responseGroups) {
     */
 
     // this callback runs when all datasets are written. It runs regardless if there are datasets or not.
-    writeDatasetsToFiles(subjectId, validDatasets, (err) => { 
-        if (err) throw err; 
+    writeDatasetsToFiles(subjectId, validDatasets, (err) => {
+        if (err) throw err
         handleClientErrors(errorResponses.map(toStatusCodeString), refreshAccessToken)
     })
 
@@ -385,41 +378,14 @@ function handleClientErrors(clientErrorCodes, refreshCallback) {
 
 }
 
-function statefulRefreshAccessToken({ maxRetries = 1, accessToken, refreshToken, participantId }) {
+async function refreshAccessToken({ accessToken, refreshToken, participantId }) {
 
-  /* returns a function that will refresh an accessToken maxRetries times */
-
-  return async function refreshAccessToken() {
-
-    if (maxRetries > 0) {
-
-      maxRetries -= 1
-
-      try {
-
-        const expirationWindow = 3600
-        const { access_token, refresh_token } = await fbClient.refreshAccessToken(accessToken, refreshToken, expirationWindow)
-
-        // todo: verify returned data from client.refresh
-        await db.setParticipantAccessToken({
-          participantId,
-          accessToken: access_token, 
-          refreshToken: refresh_token
-        })
-
-        return newAccessToken
-
-      } catch(e) {
-        formatFitbitErrors({ msg: 'Failed to refresh Access token', errorObj: e })
-      }
-
-    } else {
-
-      logger.error(`Unexpected multiple token refresh attempts. Exiting ...`); 
-      process.exit(1)
-
-    }
-
+  try {
+    const expirationWindow = 3600
+    return await fbClient.refreshAccessToken(accessToken, refreshToken, expirationWindow)
+  } catch(e) {
+    logger.error(`Failed to participant ${participantId}'s Refresh Access Token`)
+    logger.error(e)
   }
 
 }
@@ -435,7 +401,7 @@ module.exports = exports = {
     main,
 
     getFiles,
-    getFitbitDataForDates,
+    queryFitbit,
     datesFromRange,
     dateRangeFromWindowSize,
     dateRangeFromDateStrings,
@@ -443,8 +409,6 @@ module.exports = exports = {
     findUncapturedDatesInWindow,
     formatFitbitErrors,
     handleAPIResponse,
-    restartQuery,
-    writeDatasetsToFiles,
-    validateArgs
-    
+    writeDatasetsToFiles
+
 }

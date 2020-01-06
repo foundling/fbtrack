@@ -1,3 +1,4 @@
+const { APP_CONFIG} = require('../config')
 const fs = require('fs');
 const format = require('date-fns/format');
 const { inspect, promisify } = require('util');
@@ -55,4 +56,18 @@ class Logger {
 
 }
 
-module.exports = exports = Logger
+const defaultLogger = new Logger({
+  logDir: APP_CONFIG.LOGS_PATH,
+  config: {
+    info: false,
+    warn: false,
+    error: false,
+    success: false
+  }
+})
+
+
+module.exports = exports = { 
+  Logger, 
+  defaultLogger
+}

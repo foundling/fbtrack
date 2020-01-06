@@ -3,8 +3,8 @@ const { default: tapePromise } = require('tape-promise')
 const { addDays, differenceInDays, parseISO, format, subDays } = require('date-fns')
 
 const test = tapePromise(tape)
-const { FITBIT } = require('../config')
-const { ymdFormat } = require('../lib/utils')
+const { FITBIT_CONFIG } = require('../config')
+const { dateRE, ymdFormat, generateQueryPaths } = require('../lib/utils')
 
 const {
 
@@ -31,9 +31,14 @@ test('[ cli:query ] datesFromRange', (t) => {
     start: new Date(2020,0,1),
     stop: new Date(2020,0,3)
   }
-  const dates = datesFromRange(validRange)
+  const actualDates = datesFromRange(validRange).map(d => format(d, ymdFormat))
+  const expectedDates =  [
+    '2020-01-01',
+    '2020-01-02',
+    '2020-01-03'
+  ]
 
-  t.equal(dates.length, 3)
+  t.deepEqual(actualDates, expectedDates)
 
   t.throws(() => {
     const invalidRange = {
@@ -162,7 +167,7 @@ test('[ cli:query ] dateRangeFromDateStrings', (t) => {
 
 })
 
-test('[ cli:query ] dateRangeFromDateStrings', (t) => {
+test('[ cli:query ] dateRangeFromDateStrings: fails when start is after stop', (t) => {
 
   t.plan(1)
 
@@ -176,5 +181,26 @@ test('[ cli:query ] dateRangeFromDateStrings', (t) => {
     }).map(date => format(date, ymdFormat))
 
   })
+
+})
+
+test('[ cli:query ] dateRangeFromDateStrings', (t) => {
+
+  t.plan(2)
+
+  const dates = [
+    new Date(2020, 0, 4),
+    new Date(2020, 0, 5),
+    new Date(2020, 0, 6)
+  ]
+
+  const paths = generateQueryPaths({ dates, metricEndpoints: FITBIT_CONFIG.ENDPOINTS })
+
+  // these tests are a bit arbitrary, how to test?
+  t.ok(paths.every(p => dateRE.test(p)))
+  t.equal(
+    paths.length,
+    dates.length * Object.keys(FITBIT_CONFIG.ENDPOINTS).length
+  )
 
 })

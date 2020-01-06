@@ -2,13 +2,12 @@ require('dotenv').config()
 
 const { exec } = require('child_process')
 const { debug } = require('./utils')
-const { APP_ROOT } = process.env
 
 function main() {
 
     exec(
         'git pull',
-        { 'cwd': APP_ROOT }, 
+        { 'cwd': __dirname }, 
         function(err, stdout, stderr) {
             if (err) throw err
             console.log(stdout || stderr)
