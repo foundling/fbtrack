@@ -205,7 +205,6 @@ async function queryFitbit({ participant, dates, endpoints }) {
         })
 
         response = await fbClient.get(path, refreshedAccessToken)
-        responses.push(response)
 
       // 429 = rate limit exceeded
       } else if (e.code === 429) {
@@ -391,9 +390,11 @@ async function refreshAccessToken({ accessToken, refreshToken, participantId }) 
 }
 
 async function formatFitbitErrors ({ msg, errorObj }) {
+
   const { errors } = e.context
   const messages = errors.map(e => '\n * ' + e.message)
   await logger.error(`${msg}. Error details: ${ messages }`)
+
 }
 
 module.exports = exports = {
