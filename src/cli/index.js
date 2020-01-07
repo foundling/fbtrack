@@ -3,12 +3,13 @@ const path = require('path')
 const { delayedRequire } = require('../lib/utils')
 const { validate, validators } = require('./validators')
 
-const { signup, query, revoke, missing, status, apistatus, update, dump } = [
+const { signup, query, revoke, missing, report, status, apistatus, update, dump } = [
 
     'signup',
     'query',
     'revoke',
     'missing',
+    'report',
     'status',
     'apistatus',
     'update',
@@ -69,6 +70,11 @@ cli
     .command('update')
     .description('Update fbtrack')
     .action(update)
+
+cli
+    .command('report')
+    .description('report on subject data')
+    .action(report)
 
 module.exports = exports = {
 

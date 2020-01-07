@@ -11,15 +11,6 @@ if (!parsedFromConfig) {
 
 }
 
-const {
-  CALLBACK_URL,
-  CLIENT_ID,
-  CLIENT_SECRET,
-  WINDOW_SIZE,
-  SCOPE,
-  STUDY_NAME,
-} = parsedFromConfig
-
 module.exports = {
   USER_CONFIG: {
     CALLBACK_URL,
@@ -28,7 +19,7 @@ module.exports = {
     WINDOW_SIZE,
     SCOPE,
     STUDY_NAME,
-  },
+  } = parsedFromConfig,
   APP_CONFIG: {
     DB_NAME: 'fbtrack.sqlite',
     DB_PATH: path.join(__dirname, 'db'),

@@ -211,6 +211,7 @@ module.exports = exports = {
     toLength,
     flattenOnce,
     ymdFormat,
+    readFilePromise: util.promisify(fs.readFile),
     readdirPromise: util.promisify(fs.readdir),
     writeFilePromise: util.promisify(fs.writeFile),
 }
