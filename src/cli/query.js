@@ -35,22 +35,22 @@ const Database = require(DB_PATH)
 const { defaultLogger: logger } = require('../lib/logger')
 
 const {
-    compact,
-    dateRE,
-    dateNotIn,
-    debug,
-    debugExit,
-    errorCallback,
-    generateQueryPaths,
-    generateDateRange,
-    inDateRange,
-    matchesSubjectId,
-    parseDateRange,
-    readdirPromise,
-    toDateString,
-    toHeartRateMetric,
-    ymdFormat,
-    writeFilePromise,
+  compact,
+  dateRE,
+  dateNotIn,
+  debug,
+  debugExit,
+  errorCallback,
+  generateQueryPaths,
+  generateDateRange,
+  inDateRange,
+  matchesSubjectId,
+  parseDateRange,
+  readdirPromise,
+  toDateString,
+  toHeartRateMetric,
+  ymdFormat,
+  writeFilePromise,
 } = require('../lib/utils')
 
 
