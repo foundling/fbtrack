@@ -36,12 +36,12 @@ module.exports = {
     CLIENT_SECRET,
     RESPONSE_TYPE: 'code',
     ENDPOINTS: {
-      "steps":     "/activities/steps/date/%DATE%/1d/1min.json",
-      "calories":  "/activities/calories/date/%DATE%/1d/1min.json",
-      "distance":  "/activities/distance/date/%DATE%/1d/1min.json",
-      "heartrate": "/activities/heart/date/%DATE%/1d/1min.json",
+      "sleep":     "/sleep/date/%DATE%.json",
       "activities": "/activities/date/%DATE%.json",
-      "sleep":     "/sleep/date/%DATE%.json"
+      "activities-calories":  "/activities/calories/date/%DATE%/1d/1min.json",
+      "activities-steps":     "/activities/steps/date/%DATE%/1d/1min.json",
+      "activities-distance":  "/activities/distance/date/%DATE%/1d/1min.json",
+      "activities-heartrate": "/activities/heart/date/%DATE%/1d/1min.json",
     },
     SCOPE,
   },

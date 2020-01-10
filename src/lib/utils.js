@@ -10,7 +10,7 @@ const delayedRequire = function(path) {
   }
 }
 
-const ymdFormat = 'yyyy-MM-dd'
+const ymdFormat = 'yyyy-MM-dd' // this is fitbit's resource url format
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 const dateREStrict = /^[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/
 const parseDateRange = (dateRangeString) => {
@@ -44,6 +44,8 @@ const parseDateRange = (dateRangeString) => {
 
 const generateDateRange = (startDateString, stopDateString) => {
 
+
+
     if (! (startDateString && stopDateString) ) {
         throw new Error('startDateString and stopDateString are required')
     }
@@ -66,17 +68,25 @@ const generateDateRange = (startDateString, stopDateString) => {
 
 }
 
-// [dates], [metricEndpoints] => [ requestPaths ]
-const generateQueryPaths = ({ dates, metricEndpoints }) => {
+const generateQueryPaths = ({ dateStrings, metricEndpoints }) => {
 
-    // metric name -> path w/ date replaced
-    const metrics = Object.keys(metricEndpoints)
+  const memo = {}
 
-    return dates.map(date => {
-      return metrics.map(metric => {
-        return metricEndpoints[metric].replace('%DATE%', format(date, ymdFormat))
-      })
-    }).flat()
+  // organize paths by dateString, then by metric
+  for (const dateString of dateStrings) {
+    for (const metricKey in metricEndpoints) {
+
+      const resourcePath = metricEndpoints[metricKey].replace('%DATE%', dateString)
+
+      if (!memo[dateString])
+        memo[dateString] = {}
+
+      memo[dateString][metricKey] = resourcePath
+
+    }
+  }
+
+  return memo
 
 }
 

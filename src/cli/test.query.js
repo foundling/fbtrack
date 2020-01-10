@@ -186,6 +186,7 @@ test('[ cli:query ] dateRangeFromDateStrings: fails when start is after stop', (
 
 test('[ cli:query ] dateRangeFromDateStrings', (t) => {
 
+  // improve these tests
   t.plan(2)
 
   const dates = [
@@ -194,13 +195,20 @@ test('[ cli:query ] dateRangeFromDateStrings', (t) => {
     new Date(2020, 0, 6)
   ]
 
-  const paths = generateQueryPaths({ dates, metricEndpoints: FITBIT_CONFIG.ENDPOINTS })
+  const numMetrics = Object.keys(FITBIT_CONFIG.ENDPOINTS).length 
+  const pathMap = generateQueryPaths({
+    dates,
+    metricEndpoints: FITBIT_CONFIG.ENDPOINTS
+  })
 
-  // these tests are a bit arbitrary, how to test?
-  t.ok(paths.every(p => dateRE.test(p)))
   t.equal(
-    paths.length,
-    dates.length * Object.keys(FITBIT_CONFIG.ENDPOINTS).length
+    Object.keys(pathMap).every(dateString => Object.keys(pathMap[dateString]).length === numMetrics),
+    true
+  )  
+
+  t.equal(
+    Object.keys(pathMap).length,
+    dates.length
   )
 
 })

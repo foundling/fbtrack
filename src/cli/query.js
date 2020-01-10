@@ -13,16 +13,18 @@ const {
 const {
 
   FITBIT_CONFIG,
-  APP_CONFIG
+  APP_CONFIG,
+  USER_CONFIG,
 
 } = require('../config')
 
 const {
   CLIENT_ID,
   CLIENT_SECRET,
-  WINDOW_SIZE,
   ENDPOINTS
 } = FITBIT_CONFIG
+
+const { WINDOW_SIZE } = USER_CONFIG
 
 const {
   DB_NAME,
@@ -81,6 +83,7 @@ async function main(participantId, { dateRange=[], windowSize=null, refresh=fals
     await logger.error(`subject [ ${ participantId } ] is not in the database. Have they been registered?`)
     return
   }
+
   const registrationDate = new Date(participant.registrationDate)
 
   if (differenceInDays(today, registrationDate) === 0) {
@@ -88,16 +91,28 @@ async function main(participantId, { dateRange=[], windowSize=null, refresh=fals
     return
   }
 
-  const dates = findUncapturedDatesInWindow({
+  const dateStrings = await findUncapturedDatesInWindow({
+    dateRange,
     participantId,
+    registrationDate,
     today,
     windowSize,
-    registrationDate
   })
+
+
+  const queryPathsByDate = generateQueryPaths({
+    dateStrings,
+    metricEndpoints: FITBIT_CONFIG.ENDPOINTS
+  })
+
+  console.log({queryPathsByDate})
+  console.log('EXITING')
+  process.exit()
 
   const datasets = queryFitbit({
     dates, 
     participant, 
+    queryPathsByDate,
     endpoints: ENDPOINTS
   })
 
@@ -105,7 +120,6 @@ async function main(participantId, { dateRange=[], windowSize=null, refresh=fals
     `Writing ${ datasets.length } datasets for ${participantId}.
      Output Path: ${ DATA_PATH }`
   )
-
   await writeDatasetsToFiles({ 
     datasets, 
     participantId, 
@@ -170,64 +184,75 @@ async function getFiles({ criterion, directory }) {
  * Query Functions / Async Control Flow
  */
 
-async function queryFitbit({ participant, dates, endpoints }) {
+async function queryFitbit({ participant, dates, queryPathsByDate }) {
 
-  // loop sequentially through each endpoint
+  // loop sequentially through each date
+  // get metric request paths for that date
+  // make a request for that
   // renew auth token if needed, when needed
   // wait until next window if we are rate limited
 
+  console.log({ participant, dates, queryPathsByDate })
+  console.log('EXITING')
+  process.exit()
+
   const responses = []
 
-  for (let path of queryPaths) {
+  for (const date in queryPathsByDate) {
 
-    let response
+    const queriesForDate = queryPathsByDate[date]
 
-    try {
+    for (const queryPath in queriesForDate) {
 
-      response = await fbClient.get(path, participant.accessToken)
+      let response
 
-    } catch (e) {
+      try {
 
-      // 400 = access token expired
-      if (e.code === 400) {
+        response = await fbClient.get(queryPath, participant.accessToken)
 
-        // todo: verify returned data from client.refresh
-        let { access_token, refresh_token } = await refreshAccessToken({
-          participantId,
-          accessToken: participant.accessToken,
-          refreshToken: participant.refreshToken
-        })
+      } catch (e) {
 
-        await db.setParticipantAccessToken({
-          participantId,
-          accessToken: access_token,
-          refreshToken: refresh_token
-        })
+        // 400 = access token expired
+        if (e.code === 400) {
 
-        response = await fbClient.get(path, refreshedAccessToken)
+          // todo: verify returned data from client.refresh
+          let { access_token, refresh_token } = await refreshAccessToken({
+            participantId,
+            accessToken: participant.accessToken,
+            refreshToken: participant.refreshToken
+          })
 
-      // 429 = rate limit exceeded
-      } else if (e.code === 429) {
+          await db.setParticipantAccessToken({
+            participantId,
+            accessToken: access_token,
+            refreshToken: refresh_token
+          })
 
-        // check retry after header for seconds until next run.
-        // wait n seconds 
-        // rate limit
+          response = await fbClient.get(path, refreshedAccessToken)
 
-      } else {
-        logger.error(`Failed to get data for participant ${participant.participantId}`)
-        logger.error(e)
+        // 429 = rate limit exceeded
+        } else if (e.code === 429) {
+
+          // check retry after header for seconds until next run.
+          // wait n seconds 
+          // rate limit
+
+        } else {
+          logger.error(`Failed to get data for participant ${participant.participantId}`)
+          logger.error(e)
+        }
       }
+
+      responses.push(response)
+
     }
-
-    responses.push(response)
-
   }
 
   return responses
 
 }
 
-async function findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate }) {
+async function findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate, dateRange }) {
 
   const filenames = await getFiles({
     directory: DATA_PATH, // parameterize
@@ -249,7 +274,7 @@ async function findUncapturedDatesInWindow({ participantId, today, windowSize, r
 
   const [ start, stop ] = windowSize ?
                     dateRangeFromWindowSize({ registrationDate, today, windowSize }) :
-                    dateRangeFromDateStrings({ dates })
+                    dateRangeFromDateStrings({ dates: dateRange })
 
   const expectedDates = datesFromRange({ start, stop })
   const capturedDates = metadata.map(md => md.date)
@@ -304,7 +329,7 @@ function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
 function dateRangeFromDateStrings({ dates }) {
 
   if (!dates || dates.length < 1 || dates.length > 2) {
-    throw new Error('Dates array requires exactly two elements.')
+    throw new Error('Dates array requires exactly two elements. Received ', JSON.stringify(dates))
   }
 
   const [ start, stop ] = dates
