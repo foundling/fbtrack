@@ -1,7 +1,20 @@
 const colors = require('colors')
 const fs = require('fs')
 const util = require('util')
-const format = require('date-fns/format')
+const {
+  addDays,
+  differenceInDays,
+  format,
+  isAfter,
+  isBefore,
+  parseISO,
+  subDays
+} = require('date-fns')
+
+
+const readdirPromise = util.promisify(fs.readdir)
+const readFilePromise = util.promisify(fs.readFile)
+const writeFilePromise = util.promisify(fs.writeFile)
 
 const delayedRequire = function(path) { 
   return function(...args) {
@@ -14,6 +27,10 @@ const isClientError = code => code >= 400 && code < 500
 const isServerError = code => code >= 500 && code < 600
 const isSuccess = code => 200 && code < 300
 
+// 201_2020-01-10_activities-calories.json
+// what if they use a '_' in the subjectId? like participant_2901
+
+const filenamePattern = /^.*_[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_.*_.json$/
 const ymdFormat = 'yyyy-MM-dd' // this is fitbit's resource url format
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 const dateREStrict = /^[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/
@@ -46,31 +63,91 @@ const parseDateRange = (dateRangeString) => {
     return dates
 }
 
-const generateDateRange = (startDateString, stopDateString) => {
 
+async function getFiles({ criterion=()=>true, directory }) {
 
+  try {
 
-    if (! (startDateString && stopDateString) ) {
-        throw new Error('startDateString and stopDateString are required')
-    }
+    const filenames = await readdirPromise(directory)
+    return filenames.filter(criterion)
 
-    //const start = moment(startDateString)
-    //const stop = moment(stopDateString)
-    const diffDays = stop.diff(start, 'days'); 
+  } catch (e) {
 
-    const dates = []; 
-     
-    for(let dayOffset = 0; dayOffset <= diffDays; ++dayOffset) {
-        let nextDate = start
-            .clone()
-            .add({ days: dayOffset })
-            .format('YYYY-MM-DD')
-        dates.push(nextDate)
-    } 
-     
-    return dates
+    throw new Error(['getFiles failed: ', e])
+
+  }
 
 }
+
+function datesFromRange({ start, stop }) {
+  /* range is inclusive */
+
+  if (differenceInDays(stop, start) < 0) {
+    throw new Error('Invalid date range')
+  }
+
+  const dates = []
+  let currentDate = start
+
+  while (currentDate <= stop) {
+    dates.push(currentDate)
+    currentDate = addDays(currentDate, 1)
+  }
+
+  return dates
+
+}
+
+function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
+  /* get date range starting at (yesterday - window size) until yesterday (inclusive), unless registration date
+   * occurs in between that, in which case, registration date is start of range. */
+
+  if (windowSize < 1) {
+    throw new Error('windowSize must be greater than or equal to 1')
+  }
+
+  const yesterday = subDays(today, 1)
+  const windowOffset = windowSize - 1
+  /* note: date ranges are calculated in terms of offsets.
+   * subtract 1 from windowSize to get offset */
+  const startDate = new Date(
+    Math.max(
+      subDays(yesterday, windowOffset),
+      registrationDate
+    )
+  )
+
+  return [ startDate, yesterday ]
+
+}
+
+function dateRangeFromDateStrings({ dates }) {
+
+  if (!dates || dates.length < 1 || dates.length > 2) {
+    throw new Error('Dates array requires exactly two elements. Received ', JSON.stringify(dates))
+  }
+
+  const [ start, stop ] = dates
+
+  if (dates.length === 1) {
+    return [
+      parseISO(start),
+      parseISO(start)
+    ]
+  }
+
+  if (dates.length == 2) {
+    if (parseISO(start) > parseISO(stop)) {
+      throw new Error('DateRangeFromDateStrings Error: start (first param) must come before stop')
+    }
+    return [
+      parseISO(start),
+      parseISO(stop)
+    ]
+  }
+
+}
+
 
 const generateQueryPaths = ({ dateStrings, metricEndpoints }) => {
 
@@ -178,18 +255,6 @@ function matchesSubjectId(subjectId){
     return (filename) => filename.startsWith(subjectId)
 }
 
-function dateComparator (isDescending) {
-
-    return function(a,b) {
-
-      /*
-        return isDescending ? 
-        moment(b).unix() - moment(a).unix() : 
-        moment(a).unix() - moment(b).unix()
-        */
-
-    }
-}
 
 const toHeartRateMetric = (metric) => metric.fitBitDate['activities-heart-intraday']
 const toFitBitData = metric  => metric[0]
@@ -198,36 +263,39 @@ const toLength = arr => arr.length
 const flattenOnce = arr => arr[0]
 
 module.exports = exports = {
-    appendToFile,
-    dateRE,
-    dateREStrict,
-    dateComparator,
-    dateNotIn,
-    debug,
-    debugExit,
-    delayedRequire,
-    errorCallback,
-    generateQueryPaths,
-    generateDateRange,
-    inDateRange,
-    isRawDataFile,
-    isClientError,
-    isServerError,
-    isSuccess,
-    logToFile,
-    logToUserInfo,
-    logToUserSuccess,
-    logToUserFail,
-    matchesSubjectId,
-    parseDateRange,
-    toDateString,
-    toHeartRateMetric,
-    toFitBitData,
-    compact,
-    toLength,
-    flattenOnce,
-    ymdFormat,
-    readFilePromise: util.promisify(fs.readFile),
-    readdirPromise: util.promisify(fs.readdir),
-    writeFilePromise: util.promisify(fs.writeFile),
+  appendToFile,
+  datesFromRange,
+  dateRangeFromDateStrings,
+  dateRangeFromWindowSize,
+  dateRE,
+  dateREStrict,
+  dateNotIn,
+  debug,
+  debugExit,
+  delayedRequire,
+  errorCallback,
+  filenamePattern,
+  getFiles,
+  generateQueryPaths,
+  inDateRange,
+  isRawDataFile,
+  isClientError,
+  isServerError,
+  isSuccess,
+  logToFile,
+  logToUserInfo,
+  logToUserSuccess,
+  logToUserFail,
+  matchesSubjectId,
+  parseDateRange,
+  toDateString,
+  toHeartRateMetric,
+  toFitBitData,
+  compact,
+  toLength,
+  flattenOnce,
+  ymdFormat,
+  readFilePromise,
+  readdirPromise,
+  writeFilePromise,
 }

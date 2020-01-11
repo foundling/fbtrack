@@ -1,8 +1,9 @@
-const { parseISO } = require('date-fns')
+const { format, parseISO, subDays } = require('date-fns')
 const { groupBy } = require('lodash')
 const logger = require('../lib/logger')
-const { APP_CONFIG } = require('../config')
+const { FITBIT_CONFIG, APP_CONFIG } = require('../config')
 const { 
+  DB_NAME,
   DB_PATH,
   DB_FILENAME,
   RAW_DATA_PATH 
@@ -13,6 +14,9 @@ const {
     dateRE, 
     dateNotIn,
     dateComparator,
+    datesFromRange,
+    filenamePattern,
+    getFiles,
     generateDateRange, 
     logToUserSuccess, 
     logToUserInfo, 
@@ -21,67 +25,41 @@ const {
     includesDate,
     readFilePromise,
     readdirPromise,
+    ymdFormat,
 
 } = require('../lib/utils');
 
 const Database = require(DB_PATH);
-const db = new Database({ databaseFile: DB_FILENAME });
+const db = new Database({ databaseFile: DB_NAME });
 
-const metrics = [
-  'steps',
-  'calories',
-  'distance',
-  'heartrate',
-  'activities',
-  'sleep'
-]
+const metrics = Object.keys(FITBIT_CONFIG.ENDPOINTS)
 
-module.exports = exports = {
+async function main() {
 
-  main: async function() {
-
-    const filenames = await readdirPromise(RAW_DATA_PATH)
-    const participants = await db.getParticipants()
-
-    // figure out canonical path structure!!!
-    const filesById = groupBy(filenames, s => s.split('_')[0])
-    Object.keys(filesById).forEach(id => {
-      filesById[id].sort((a,b) => {
-        return new Date(b) - new Date(a)
-      })
-    })
+  const participants = await db.getParticipants()
+  const allParticipantFiles = await getFiles({ directory: RAW_DATA_PATH })
 
 
-    // memo of participantId to sorted array dates as well as registration date
- 
-    const participantMap = new Map()
-    for (let { participantId, registrationDate } of participants) {
+  const { participantId, registrationDate } = participants.filter(participant => participant.participantId == 201)[0]
+  const participantFiles = allParticipantFiles.filter(filename => filename.startsWith(participantId))
+  const expectedDates = datesFromRange({
+    start: parseISO(registrationDate),
+    stop: subDays(new Date(), 1)
+  }).map(d => format(d, ymdFormat))
 
-      participantMap.set(participantId, {
-        files: filesById[participantId],
-        registrationDate,
-      }
+  const actualDates = participantFiles.map(filename => {
+    const [ id, date, metric, extension ] = filename.split(/[_.]/)
+    return date
+  })
 
-    }
+  const missingDates = expectedDates.filter(expectedDateString => {
+    return !actualDates.includes(expectedDateString)
+  })
 
-    for (let [participantId, { files, registrationDate }] of participantMap) {
+  console.log(`${participantId} is missing data for the following dates: ${missingDates.join('\n  ')}`)
 
-      logger.info(`${participantId}`)
-
-      for (let metric of metrics) {
-        logger.info(`\t${metric}`)
-        const 
-        if (metric 
-      }
-
-    }
-    // filter files to those that contain a valid subject id
-    // match against some criteria
-    // cache by subjectId
-    // 
+}
 
 
 
-  }
-
-};
+module.exports = { main }

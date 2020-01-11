@@ -39,6 +39,9 @@ const { defaultLogger: logger } = require('../lib/logger')
 
 const {
   compact,
+  datesFromRange,
+  dateRangeFromWindowSize,
+  dateRangeFromDateStrings,
   dateRE,
   dateNotIn,
   debug,
@@ -46,6 +49,7 @@ const {
   errorCallback,
   generateQueryPaths,
   generateDateRange,
+  getFiles,
   inDateRange,
   isClientError,
   isServerError,
@@ -145,21 +149,6 @@ async function writeDatasetsToFiles({ participantId, datasets, outputDir }) {
     }
 
   }
-}
-
-async function getFiles({ criterion, directory }) {
-
-  try {
-
-    const filenames = await readdirPromise(directory)
-    return filenames.filter(criterion)
-
-  } catch (e) {
-
-    throw new Error('getFiles failed: ', e)
-
-  }
-
 }
 
 /*
@@ -279,75 +268,6 @@ async function findUncapturedDatesInWindow({ participantId, today, windowSize, r
   const missingDates = expectedDates.filter(date => !capturedDates.includes(date)).map(date => format(date, ymdFormat))
 
   return missingDates
-
-}
-
-function datesFromRange({ start, stop }) {
-  /* range is inclusive */
-
-  if (differenceInDays(stop, start) < 0) {
-    throw new Error('Invalid date range')
-  }
-
-  const dates = []
-  let currentDate = start
-
-  while (currentDate <= stop) {
-    dates.push(currentDate)
-    currentDate = addDays(currentDate, 1)
-  }
-
-  return dates
-
-}
-
-function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
-  /* get date range starting at (yesterday - window size) until yesterday (inclusive), unless registration date
-   * occurs in between that, in which case, registration date is start of range. */
-
-  if (windowSize < 1) {
-    throw new Error('windowSize must be greater than or equal to 1')
-  }
-
-  const yesterday = subDays(today, 1)
-  const windowOffset = windowSize - 1
-  /* note: date ranges are calculated in terms of offsets.
-   * subtract 1 from windowSize to get offset */
-  const startDate = new Date(
-    Math.max(
-      subDays(yesterday, windowOffset),
-      registrationDate
-    )
-  )
-
-  return [ startDate, yesterday ]
-
-}
-
-function dateRangeFromDateStrings({ dates }) {
-
-  if (!dates || dates.length < 1 || dates.length > 2) {
-    throw new Error('Dates array requires exactly two elements. Received ', JSON.stringify(dates))
-  }
-
-  const [ start, stop ] = dates
-
-  if (dates.length === 1) {
-    return [
-      parseISO(start),
-      parseISO(start)
-    ]
-  }
-
-  if (dates.length == 2) {
-    if (parseISO(start) > parseISO(stop)) {
-      throw new Error('DateRangeFromDateStrings Error: start (first param) must come before stop')
-    }
-    return [
-      parseISO(start),
-      parseISO(stop)
-    ]
-  }
 
 }
 
