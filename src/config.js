@@ -25,7 +25,7 @@ module.exports = {
     DB_PATH: path.join(__dirname, 'db'),
     SERVER_PATH: path.join(__dirname, 'web'),
     SERVER_PORT: 3000,
-    DATA_PATH: path.join(__dirname, '../data'),
+    RAW_DATA_PATH: path.join(__dirname, '../data/raw'),
     LOGS_PATH: path.join(__dirname, '../logs'),
   },
   FITBIT_CONFIG: {

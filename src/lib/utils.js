@@ -10,6 +10,10 @@ const delayedRequire = function(path) {
   }
 }
 
+const isClientError = code => code >= 400 && code < 500
+const isServerError = code => code >= 500 && code < 600
+const isSuccess = code => 200 && code < 300
+
 const ymdFormat = 'yyyy-MM-dd' // this is fitbit's resource url format
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 const dateREStrict = /^[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/
@@ -153,7 +157,6 @@ function inDateRange({ start, end }) {
 
 const isRawDataFile = filename => dateRE.test(filename)
 const dateNotIn = (list) => (dateString) => !list.includes(dateString)
-const isClientError = (statusCode) => statusCode.startsWith('4')
 const isValidDataSet = (day) => day['activities-heart-intraday'].length
 const toStatusCodeString = (day) => day[1][1].statusCode.toString()
 
@@ -208,6 +211,9 @@ module.exports = exports = {
     generateDateRange,
     inDateRange,
     isRawDataFile,
+    isClientError,
+    isServerError,
+    isSuccess,
     logToFile,
     logToUserInfo,
     logToUserSuccess,

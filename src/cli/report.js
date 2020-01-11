@@ -5,7 +5,7 @@ const { APP_CONFIG } = require('../config')
 const { 
   DB_PATH,
   DB_FILENAME,
-  DATA_PATH 
+  RAW_DATA_PATH 
 } = APP_CONFIG
 
 const { 
@@ -29,7 +29,7 @@ const db = new Database({ databaseFile: DB_FILENAME });
 
 const metrics = [
   'steps',
-  'calories'
+  'calories',
   'distance',
   'heartrate',
   'activities',
@@ -40,7 +40,7 @@ module.exports = exports = {
 
   main: async function() {
 
-    const filenames = await readdirPromise(DATA_PATH)
+    const filenames = await readdirPromise(RAW_DATA_PATH)
     const participants = await db.getParticipants()
 
     // figure out canonical path structure!!!

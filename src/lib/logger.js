@@ -49,6 +49,13 @@ class Logger {
     }
   }
 
+  async debug(o) {
+    await this.log(
+      'DEBUG: ', 
+      JSON.stringify(o, null, 2)
+    )
+  }
+
   error(msg)   { return this.log(msg, 'error')   }
   info(msg)    { return this.log(msg, 'info')    }
   warn(msg)    { return this.log(msg, 'warn')    }

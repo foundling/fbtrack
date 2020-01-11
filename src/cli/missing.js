@@ -5,7 +5,7 @@ const {
 const { 
   DB_PATH,
   DB_FILENAME,
-  DATA_PATH 
+  RAW_DATA_PATH 
 } = APP_CONFIG
 
 const colors = require('colors')
@@ -32,7 +32,7 @@ const db = new Database({ databaseFile: DB_FILENAME });
 
 function printMissingDataFiles(subjectId) {
   return db.fetchOneSubject(subjectId, (err, subject) => {
-    fs.readdir(DATA_PATH, (err, filenames) => {
+    fs.readdir(RAW_DATA_PATH, (err, filenames) => {
 
       const subjectFiles = filenames
           .filter(filename => filename.match(/_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].json/)) // use dateRE
