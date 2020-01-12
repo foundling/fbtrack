@@ -1,4 +1,5 @@
 const util = require('util')
+const path = require('path')
 const {
   readdir,
   readFile,
@@ -30,7 +31,7 @@ async function getFiles({ criterion=()=>true, directory }) {
 
 }
 
-async function writeDatasetsToFiles({ participantId, datasets, outputDir }) {
+async function writeDatasetsToFiles({ participantId, datasets, outputDir, log=false }) {
 
   for (const date in datasets) {
 
@@ -38,9 +39,12 @@ async function writeDatasetsToFiles({ participantId, datasets, outputDir }) {
 
     for (const metric in dataset) {
 
+
       const filepath = path.join(outputDir,`${participantId}_${date}_${metric}.json`)
       const serialized = JSON.stringify(dataset[metric], null, 2)
       try {
+
+        console.log('writing data to ', filepath) 
         await writeFilePromise(filepath, serialized)
       } catch (e) {
         logger.error(e)

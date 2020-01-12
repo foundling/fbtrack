@@ -10,18 +10,30 @@ class Participant {
     this.store = store || new Database({ databaseFile: DB_NAME })
     this.data = null
   }
+
   async fetch() {
     try { 
 
       const result = await this.store.getParticipantById(this.participantId)
       this.data = result
 
-      return result 
-
     } catch(e) {
       throw e
     }
   }
+
+  get capturedDates() {
+    const capturedDates  = []
+    return capturedDates
+  }
+  get missingDates() {
+    const missingDates  = []
+    return missingDates
+  }
+
+  buildQueryPaths() {
+  }
+
 }
 
 module.exports = Participant

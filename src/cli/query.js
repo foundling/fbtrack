@@ -100,7 +100,6 @@ async function main(participantId, { dateRange=[], windowSize=null, refresh=fals
     windowSize,
   })
 
-
   const queryPathsByDate = generateQueryPaths({
     dateStrings,
     metricEndpoints: FITBIT_CONFIG.ENDPOINTS
@@ -112,14 +111,11 @@ async function main(participantId, { dateRange=[], windowSize=null, refresh=fals
     endpoints: ENDPOINTS
   })
 
-  await logger.info(
-    `Writing ${ datasets.length } datasets for ${participantId}.
-     Output Path: ${ RAW_DATA_PATH }`
-  )
   await writeDatasetsToFiles({ 
     datasets,
     participantId, 
-    outputDir: RAW_DATA_PATH
+    outputDir: RAW_DATA_PATH,
+    log: true,
   })
 
 }
@@ -166,14 +162,10 @@ async function queryFitbit({ participant, queryPathsByDate }) {
   // make a request for that
   // renew auth token if needed, when needed
   // wait until next window if we are rate limited
-
   const responses = {}
-
   for (const date in queryPathsByDate) {
-
     const queriesForDate = queryPathsByDate[date]
     for (const metric in queriesForDate) {
-
       const queryPath = queriesForDate[metric]
 
       let response
@@ -219,6 +211,8 @@ async function queryFitbit({ participant, queryPathsByDate }) {
           } else if(rateLimitExceeded(response.statusCode)) {
             const secondsToWait = response.headers.retryAfter
             console.log(`rate limit exceeded. try again in ${secondsToWait} seconds...`)
+          } else {
+            console.log('unknown failure: ', response)
           }
 
         }

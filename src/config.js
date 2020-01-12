@@ -21,7 +21,7 @@ module.exports = {
     STUDY_NAME,
   } = parsedFromConfig,
   APP_CONFIG: {
-    DB_NAME: 'fbtrack.sqlite',
+    DB_NAME: 'fbtrack',
     DB_PATH: path.join(__dirname, 'db'),
     SERVER_PATH: path.join(__dirname, 'web'),
     SERVER_PORT: 3000,
