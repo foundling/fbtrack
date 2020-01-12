@@ -49,6 +49,8 @@ const {
   isClientError,
   isServerError,
   isSuccess,
+  rateLimitExceeded,
+  accessTokenExpired,
 } = http
 
 const {
@@ -58,7 +60,10 @@ const {
   writeFilePromise,
 } = io
 
-const db = new Database({ databaseFile: DB_NAME })
+const db = new Database({
+  databaseFile: DB_NAME
+})
+
 const fbClient = new FitbitClient({
   clientId: CLIENT_ID,
   clientSecret: CLIENT_SECRET
@@ -161,10 +166,6 @@ async function queryFitbit({ participant, queryPathsByDate }) {
   // make a request for that
   // renew auth token if needed, when needed
   // wait until next window if we are rate limited
-
-  const rateLimitExceeded = code => code === 429
-  const accessTokenExpired = code => code === 409
-  //console.log({queryPathsByDate})
 
   const responses = {}
 
@@ -280,12 +281,14 @@ async function refreshAccessToken({ accessToken, refreshToken, participantId }) 
 }
 
 module.exports = exports = {
+
   main,
+
   isValidDataset,
   isDataResponse,
-  queryFitbit,
   findUncapturedDatesInWindow,
   generateQueryPaths,
   queryFitbit,
   refreshAccessToken,
+
 }

@@ -1,6 +1,7 @@
 const cli = require('commander')
 const path = require('path')
-const { delayedRequire } = require('../lib/utils')
+const { io } = require('../lib/utils')
+const { delayedRequire } = io
 const { validate, validators } = require('./validators')
 
 const { signup, query, revoke, missing, report, status, apistatus, update, dump } = [

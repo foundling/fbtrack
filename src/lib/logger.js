@@ -9,7 +9,7 @@ const writeFilePromise = promisify(fs.writeFile);
 const headers = {
   'debug': colors.gray('debug'),
   'error': colors.red('error'),
-  'warn': colors.yellow('warn'),
+  'warning': colors.yellow('warning'),
   'info': colors.blue('info'),
   'success': colors.rainbow('success'),
   undefined: '',
@@ -82,7 +82,7 @@ class Logger {
 
   error(msg)   { return this._log(msg, 'error')   }
   info(msg)    { return this._log(msg, 'info')    }
-  warn(msg)    { return this._log(msg, 'warn')    }
+  warn(msg)    { return this._log(msg, 'warning')    }
   success(msg) { return this._log(msg, 'success') }
 
 }

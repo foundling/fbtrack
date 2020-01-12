@@ -1,6 +1,7 @@
 const { format, parseISO, subDays } = require('date-fns')
 const { groupBy } = require('lodash')
 const { defaultLogger:logger } = require('../lib/logger')
+
 const { FITBIT_CONFIG, APP_CONFIG } = require('../config')
 const { 
   DB_NAME,
@@ -10,16 +11,23 @@ const {
 } = APP_CONFIG
 
 const {
+  dates,
+  http,
+  io
+} = require('../lib/utils');
 
+const {
     dateRE, 
     datesFromRange,
     filenamePattern,
+    ymdFormat,
+} = dates
+
+const {
     getFiles,
     readFilePromise,
     readdirPromise,
-    ymdFormat,
-
-} = require('../lib/utils');
+} = io
 
 const listFormatter = sep => (items, fn=x=>x) => {
   return items.map(i => ` ${sep} ${fn(i)}`).join('\n')
@@ -34,20 +42,18 @@ async function main({ all=false, participantIds=[] }) {
 
   const allParticipantFiles = await getFiles({ directory: RAW_DATA_PATH })
   const participants = await db.getParticipants()
-  const notFound = participantIds.filter(id => {
-    return participants.findIndex(p => p.participantId === id) === -1
-  })
+  const notFound = participantIds.filter(id => Boolean(id.trim()))
+    .filter(id => participants.findIndex(p => p.participantId === id) === -1)
 
+  logger.log('\nParticipant Missing Data Report\n', {bold: true})
   if (notFound.length > 0) {
     const list = makeList(notFound)
     logger.warn(`The following participants were requested but not found in the database:\n${list}\n`)
   }
 
-  const targetParticipants = all ?
-    participants.filter(p => p.isActive) : 
-    participants.filter(p => participantIds.includes(p.participantId))
-
-  logger.log('Participant Missing Data Report', {bold: true})
+  const targetParticipants = participantIds.length > 0 ?
+    participants.filter(p => participantIds.includes(p.participantId)) :
+    participants.filter(p => p.isActive)
 
   for (const participant of targetParticipants) {
 
@@ -73,7 +79,5 @@ async function main({ all=false, participantIds=[] }) {
   }
 
 }
-
-
 
 module.exports = { main }

@@ -47,6 +47,7 @@ const validators = {
 
   },
 
+  report: id,
   signup: id,
   revoke: id,
   missing: id,
@@ -54,7 +55,6 @@ const validators = {
   apistatus: id,
   update: id,
   dump: id,
-  report: id,
   undefined: (...args) => { throw new Error('no handler defined') }
 
 }
