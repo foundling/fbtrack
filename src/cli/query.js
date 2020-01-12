@@ -180,7 +180,6 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
       let response
 
-
       try {
 
         const [ body, response ] = await fbClient.get(queryPath, participant.accessToken)
