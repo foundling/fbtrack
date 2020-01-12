@@ -7,15 +7,17 @@ const colors = require('colors/safe');
 const writeFilePromise = promisify(fs.writeFile);
 
 const headers = {
+  'debug': colors.gray('debug'),
   'error': colors.red('error'),
   'warn': colors.yellow('warn'),
   'info': colors.blue('info'),
-  'success': colors.rainbow('success')
+  'success': colors.rainbow('success'),
+  undefined: '',
 }
 
 class Logger {
 
-  constructor({ logDir, config = { error: false, warn: false, info:false, success:false } }) {
+  constructor({ logDir, config = { debug: false, error: false, warn: false, info: false, success: false } }) {
 
     this.logDir = logDir
     this.config = config
@@ -26,11 +28,14 @@ class Logger {
     return format(new Date(), 'yyyy-MM-dd:HH:mm:ss')
   }
 
-  async log(msg, level) {
+  log(msg, { bold, underline }) {
+    console.log(msg)
+  }
 
-    const header = headers[level]
+  async flog(msg, level) {
+
     const unpackedMsg = typeof msg === 'string' ? msg : inspect(msg, {depth: null})
-    console.log(`${header}: ${unpackedMsg}`)
+    console.log(`${level}: ${unpackedMsg}`)
 
     if (this.config[level]) {
       await this.toDisk({ 
@@ -38,6 +43,28 @@ class Logger {
         msg: `${this.timestamp()}: fbtrack ${level}: ${msg}`
       })
     }
+
+  }
+
+  async _log(msg, level) {
+
+    const header = headers[level]
+    const unpackedMsg = typeof msg === 'string' ? msg : inspect(msg, {depth: null})
+    console.log(`${header}: ${unpackedMsg}`)
+
+  }
+
+  log(msg, { bold, underline }) {
+
+    let output = msg
+    if (bold) {
+      output = colors.bold(output)
+    }
+    if (underline) {
+      output = colors.underline(output)
+    }
+
+    console.log(output)
 
   }
 
@@ -50,16 +77,13 @@ class Logger {
   }
 
   async debug(o) {
-    await this.log(
-      'DEBUG: ', 
-      JSON.stringify(o, null, 2)
-    )
+    await this._log(JSON.stringify(o, null, 2), 'debug')
   }
 
-  error(msg)   { return this.log(msg, 'error')   }
-  info(msg)    { return this.log(msg, 'info')    }
-  warn(msg)    { return this.log(msg, 'warn')    }
-  success(msg) { return this.log(msg, 'success') }
+  error(msg)   { return this._log(msg, 'error')   }
+  info(msg)    { return this._log(msg, 'info')    }
+  warn(msg)    { return this._log(msg, 'warn')    }
+  success(msg) { return this._log(msg, 'success') }
 
 }
 

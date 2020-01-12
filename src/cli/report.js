@@ -1,6 +1,6 @@
 const { format, parseISO, subDays } = require('date-fns')
 const { groupBy } = require('lodash')
-const logger = require('../lib/logger')
+const { defaultLogger:logger } = require('../lib/logger')
 const { FITBIT_CONFIG, APP_CONFIG } = require('../config')
 const { 
   DB_NAME,
@@ -9,7 +9,12 @@ const {
   RAW_DATA_PATH 
 } = APP_CONFIG
 
-const { 
+const listFormatter = sep => (items, fn=x=>x) => {
+  return items.map(i => ` ${sep} ${fn(i)}`).join('\n')
+}
+const makeList = listFormatter('•') 
+
+const {
 
     dateRE, 
     dateNotIn,
@@ -34,18 +39,24 @@ const db = new Database({ databaseFile: DB_NAME });
 
 const metrics = Object.keys(FITBIT_CONFIG.ENDPOINTS)
 
-async function main({ participantIds=[] }) {
+async function main({ all=false, participantIds=[] }) {
 
-  // todo: report ids that aren't in database
-  // do a groupBy db results on participantId
   const allParticipantFiles = await getFiles({ directory: RAW_DATA_PATH })
   const participants = await db.getParticipants()
-  const targetParticipants = participantIds.length === 0 ? 
-    participants : 
+  const notFound = participantIds.filter(id => {
+    return participants.findIndex(p => p.participantId === id) === -1
+  })
+
+  if (notFound.length > 0) {
+    const list = makeList(notFound)
+    logger.warn(`The following participants were requested but not found in the database:\n${list}\n`)
+  }
+
+  const targetParticipants = all ?
+    participants.filter(p => p.isActive) : 
     participants.filter(p => participantIds.includes(p.participantId))
 
-
-  console.log('[ Missing Data ]')
+  logger.log('Participant Missing Data Report', {bold: true})
 
   for (const participant of targetParticipants) {
 
@@ -65,7 +76,8 @@ async function main({ participantIds=[] }) {
       return !actualDates.includes(expectedDateString)
     })
 
-    console.log(`${participantId} is missing data for the following dates: ${missingDates.join('\n  ')}`)
+    const header = `[ participant id: ${participantId} | registered on ${registrationDate} ]` 
+    console.log(`${header}\n${makeList(missingDates)}`)
 
   }
 
