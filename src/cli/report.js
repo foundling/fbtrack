@@ -34,29 +34,34 @@ const db = new Database({ databaseFile: DB_NAME });
 
 const metrics = Object.keys(FITBIT_CONFIG.ENDPOINTS)
 
-async function main() {
+async function main({ participantId }) {
 
-  const participants = await db.getParticipants()
   const allParticipantFiles = await getFiles({ directory: RAW_DATA_PATH })
+  const participants = participantId ? [ await db.getParticipantById(participantId) ] : await db.getParticipants()
 
+  console.log('[ Missing Data ]')
 
-  const { participantId, registrationDate } = participants.filter(participant => participant.participantId == 201)[0]
-  const participantFiles = allParticipantFiles.filter(filename => filename.startsWith(participantId))
-  const expectedDates = datesFromRange({
-    start: parseISO(registrationDate),
-    stop: subDays(new Date(), 1)
-  }).map(d => format(d, ymdFormat))
+  for (const participant of participants) {
 
-  const actualDates = participantFiles.map(filename => {
-    const [ id, date, metric, extension ] = filename.split(/[_.]/)
-    return date
-  })
+    const { participantId, registrationDate } = participant
+    const participantFiles = allParticipantFiles.filter(filename => filename.startsWith(participantId))
+    const expectedDates = datesFromRange({
+      start: parseISO(registrationDate),
+      stop: subDays(new Date(), 1)
+    }).map(d => format(d, ymdFormat))
 
-  const missingDates = expectedDates.filter(expectedDateString => {
-    return !actualDates.includes(expectedDateString)
-  })
+    const actualDates = participantFiles.map(filename => {
+      const [ id, date, metric, extension ] = filename.split(/[_.]/)
+      return date
+    })
 
-  console.log(`${participantId} is missing data for the following dates: ${missingDates.join('\n  ')}`)
+    const missingDates = expectedDates.filter(expectedDateString => {
+      return !actualDates.includes(expectedDateString)
+    })
+
+    console.log(`${participantId} is missing data for the following dates: ${missingDates.join('\n  ')}`)
+
+  }
 
 }
 

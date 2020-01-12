@@ -30,20 +30,20 @@ const { signup, query, revoke, missing, report, status, apistatus, update, dump 
 
 cli
     .command('signup')
-    .description('Initiate subject authorization process in Google Chrome.')
+    .description('Initiate participant authorization process in Google Chrome.')
     .action(signup)
 
 cli
-    .command('query <subject_id>')
-    .description('Query the FitBit API for a given subject')
+    .command('query <participant_id>')
+    .description('Query the FitBit API for a given participant')
     .option('-w, --window-size <windowSize>', 'window size')
-    .option('-r, --refresh','refresh oauth token')
+    .option('-r, --refresh', 'refresh oauth token')
     .option('-d, --date-range <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', s => s.split('..'))
     .action(query)
 
 cli
-    .command('revoke <subject_id>')
-    .description('Revoke access token for a subject')
+    .command('revoke <participant_id>')
+    .description('Revoke access token for a participant')
     .action(revoke)
 
 cli
@@ -52,7 +52,7 @@ cli
     .action(status)
 
 cli
-    .command('missing <subject_id>')
+    .command('missing <participant_id>')
     .description('Print Dates of Missing Data Files for Subject')
     .action(missing)
 
@@ -73,7 +73,8 @@ cli
 
 cli
     .command('report')
-    .description('report on subject data')
+    .option('-p, --participant-id <participantId>', 'participant id') 
+    .description('Report missing files for participant(s)')
     .action(report)
 
 module.exports = exports = {
