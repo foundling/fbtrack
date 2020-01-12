@@ -73,7 +73,7 @@ cli
 
 cli
     .command('report')
-    .option('-p, --participant-id <participantId>', 'participant id') 
+    .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participant ids', s => s.split(',')) 
     .description('Report missing files for participant(s)')
     .action(report)
 

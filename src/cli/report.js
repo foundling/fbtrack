@@ -34,14 +34,20 @@ const db = new Database({ databaseFile: DB_NAME });
 
 const metrics = Object.keys(FITBIT_CONFIG.ENDPOINTS)
 
-async function main({ participantId }) {
+async function main({ participantIds=[] }) {
 
+  // todo: report ids that aren't in database
+  // do a groupBy db results on participantId
   const allParticipantFiles = await getFiles({ directory: RAW_DATA_PATH })
-  const participants = participantId ? [ await db.getParticipantById(participantId) ] : await db.getParticipants()
+  const participants = await db.getParticipants()
+  const targetParticipants = participantIds.length === 0 ? 
+    participants : 
+    participants.filter(p => participantIds.includes(p.participantId))
+
 
   console.log('[ Missing Data ]')
 
-  for (const participant of participants) {
+  for (const participant of targetParticipants) {
 
     const { participantId, registrationDate } = participant
     const participantFiles = allParticipantFiles.filter(filename => filename.startsWith(participantId))
