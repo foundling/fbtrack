@@ -5,8 +5,6 @@ const {
   addDays,
   differenceInDays,
   format,
-  isAfter,
-  isBefore,
   parseISO,
   subDays
 } = require('date-fns')
@@ -37,37 +35,28 @@ const {
 const Database = require(DB_PATH)
 const { defaultLogger: logger } = require('../lib/logger')
 
+const { dates, http, io } = require('../lib/utils')
+
 const {
-  compact,
   datesFromRange,
   dateRangeFromWindowSize,
   dateRangeFromDateStrings,
   dateRE,
-  dateNotIn,
-  debug,
-  debugExit,
-  errorCallback,
-  generateQueryPaths,
-  generateDateRange,
-  getFiles,
-  inDateRange,
+  ymdFormat,
+} = dates
+
+const {
   isClientError,
   isServerError,
   isSuccess,
-  matchesSubjectId,
-  parseDateRange,
+} = http
+
+const {
+  getFiles,
   readdirPromise,
-  toDateString,
-  toHeartRateMetric,
-  ymdFormat,
+  writeDatasetsToFiles,
   writeFilePromise,
-} = require('../lib/utils')
-
-
-const isValidDataset = (day) => !!day['activities-heart-intraday'].dataset.length
-const toStatusCodeString = (day) => day[1][1].statusCode.toString()
-const isErrorResponse = (day) => day.some(metric => metric[0].errors)
-const isDataResponse = (day) => day.some(metric => metric[0]['activities-heart-intraday'])
+} = io
 
 const db = new Database({ databaseFile: DB_NAME })
 const fbClient = new FitbitClient({
@@ -130,30 +119,38 @@ async function main(participantId, { dateRange=[], windowSize=null, refresh=fals
 
 }
 
-async function writeDatasetsToFiles({ participantId, datasets, outputDir }) {
-
-  for (const date in datasets) {
-
-    const dataset = datasets[date]
-
-    for (const metric in dataset) {
-
-      const filepath = path.join(outputDir,`${participantId}_${date}_${metric}.json`)      
-      const serialized = JSON.stringify(dataset[metric], null, 2)
-      try {
-        await writeFilePromise(filepath, serialized)
-      } catch (e) {
-        logger.error(e)
-      }
-
-    }
-
-  }
+function isValidDataset(day) {
+  return !!day['activities-heart-intraday'].dataset.length
 }
 
-/*
- * Query Functions / Async Control Flow
- */
+function isDataResponse(day) {
+  return day.some(metric => metric[0]['activities-heart-intraday'])
+}
+
+
+function generateQueryPaths({ dateStrings, metricEndpoints }) {
+
+  /* creates a nested map of date strings to metrics to endpoints for those metrics */
+
+  const memo = {}
+
+  // organize paths by dateString, then by metric
+  for (const dateString of dateStrings) {
+    for (const metricKey in metricEndpoints) {
+
+      const resourcePath = metricEndpoints[metricKey].replace('%DATE%', dateString)
+
+      if (!memo[dateString])
+        memo[dateString] = {}
+
+      memo[dateString][metricKey] = resourcePath
+
+    }
+  }
+
+  return memo
+
+}
 
 // thought: use async generator here to push participantID in 
 // in case of token expiration
@@ -282,25 +279,13 @@ async function refreshAccessToken({ accessToken, refreshToken, participantId }) 
 
 }
 
-async function formatFitbitErrors ({ msg, errorObj }) {
-
-  const { errors } = e.context
-  const messages = errors.map(e => '\n * ' + e.message)
-  await logger.error(`${msg}. Error details: ${ messages }`)
-
-}
-
 module.exports = exports = {
-
-    main,
-
-    getFiles,
-    queryFitbit,
-    datesFromRange,
-    dateRangeFromWindowSize,
-    dateRangeFromDateStrings,
-    findUncapturedDatesInWindow,
-    formatFitbitErrors,
-    writeDatasetsToFiles
-
+  main,
+  isValidDataset,
+  isDataResponse,
+  queryFitbit,
+  findUncapturedDatesInWindow,
+  generateQueryPaths,
+  queryFitbit,
+  refreshAccessToken,
 }

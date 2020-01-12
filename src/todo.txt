@@ -1,1 +1,3 @@
-stronger participants and participant abstraction
+- stronger participants and participant abstraction
+- handle edge case where '_' in participant id
+- detect empty datasets in queryFitbit

@@ -23,7 +23,6 @@ const {
     logToUserSuccess, 
     logToUserInfo, 
     toDateString,
-    isRawDataFile,
     includesDate
 
 } = require('./utils');

@@ -24,7 +24,7 @@ class Logger {
 
   }
 
-  timestamp () {
+  nowISO() {
     return format(new Date(), 'yyyy-MM-dd:HH:mm:ss')
   }
 
@@ -40,7 +40,7 @@ class Logger {
     if (this.config[level]) {
       await this.toDisk({ 
         path: `${this.logDir}/${level}.log`, 
-        msg: `${this.timestamp()}: fbtrack ${level}: ${msg}`
+        msg: `${this.nowISO()}: fbtrack ${level}: ${msg}`
       })
     }
 

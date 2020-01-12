@@ -1,27 +1,34 @@
 const tape = require('tape')
 const { default: tapePromise } = require('tape-promise')
-const { addDays, differenceInDays, parseISO, format, subDays } = require('date-fns')
 
-const test = tapePromise(tape)
+const { 
+  addDays,
+  differenceInDays,
+  parseISO,
+  format,
+  subDays
+} = require('date-fns')
+
 const { FITBIT_CONFIG } = require('../config')
-const { dateRE, ymdFormat, generateQueryPaths } = require('../lib/utils')
+const { generateQueryPaths } = require('./query')
 
 const {
+  dates,
+  io,
+} = require('../lib/utils')
 
+const {
+  dateRE,
+  ymdFormat, 
   datesFromRange,
   dateRangeFromWindowSize,
   dateRangeFromDateStrings,
   findUncapturedDatesInWindow,
-  writeDatasetsToFiles,
-  validateArgs
+} = dates
 
-  //handleAPIResponse,
-  //restartQuery,
-  //formatFitbitErrors,
-  //getFitbitDataForDates,
-  //extractFitbitData,
+const { writeDatasetsToFiles } = io
 
-} = require('./query')
+const test = tapePromise(tape)
 
 test('[ cli:query ] datesFromRange', (t) => {
 
@@ -189,15 +196,15 @@ test('[ cli:query ] dateRangeFromDateStrings', (t) => {
   // improve these tests
   t.plan(2)
 
-  const dates = [
+  const dateStrings = [
     new Date(2020, 0, 4),
     new Date(2020, 0, 5),
     new Date(2020, 0, 6)
-  ]
+  ].map(date => format(date, ymdFormat))
 
   const numMetrics = Object.keys(FITBIT_CONFIG.ENDPOINTS).length 
   const pathMap = generateQueryPaths({
-    dates,
+    dateStrings,
     metricEndpoints: FITBIT_CONFIG.ENDPOINTS
   })
 
@@ -208,7 +215,7 @@ test('[ cli:query ] dateRangeFromDateStrings', (t) => {
 
   t.equal(
     Object.keys(pathMap).length,
-    dates.length
+    dateStrings.length
   )
 
 })

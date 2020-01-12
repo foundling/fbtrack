@@ -22,7 +22,6 @@ const {
     logToUserSuccess, 
     logToUserInfo, 
     toDateString,
-    isRawDataFile,
     includesDate
 
 } = require('../lib/utils');

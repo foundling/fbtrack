@@ -9,34 +9,25 @@ const {
   RAW_DATA_PATH 
 } = APP_CONFIG
 
-const listFormatter = sep => (items, fn=x=>x) => {
-  return items.map(i => ` ${sep} ${fn(i)}`).join('\n')
-}
-const makeList = listFormatter('•') 
-
 const {
 
     dateRE, 
-    dateNotIn,
-    dateComparator,
     datesFromRange,
     filenamePattern,
     getFiles,
-    generateDateRange, 
-    logToUserSuccess, 
-    logToUserInfo, 
-    toDateString,
-    isRawDataFile,
-    includesDate,
     readFilePromise,
     readdirPromise,
     ymdFormat,
 
 } = require('../lib/utils');
 
+const listFormatter = sep => (items, fn=x=>x) => {
+  return items.map(i => ` ${sep} ${fn(i)}`).join('\n')
+}
+const makeList = listFormatter('•') 
+
 const Database = require(DB_PATH);
 const db = new Database({ databaseFile: DB_NAME });
-
 const metrics = Object.keys(FITBIT_CONFIG.ENDPOINTS)
 
 async function main({ all=false, participantIds=[] }) {
