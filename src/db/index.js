@@ -8,7 +8,8 @@ class Database {
   constructor({ databaseFile }) {
 
     this.databaseFile = databaseFile
-    this.dbPromise = sqlite.open(__dirname + `/${databaseFile}`, { Promise }) // add {cached: true} so you can reuse the db handle?
+    this.dbPromise = sqlite.open(`${ path.join(__dirname, databaseFile) }.sqlite`, { Promise }) 
+    // add {cached: true} so you can reuse the db handle?
 
   }
 
@@ -50,7 +51,6 @@ class Database {
       const params = { $participantId: participantId }
       return await db.get(participants.getById, params)
     } catch(e) {
-      console.log({getByParticipantId})
       throw new Error(['getParticipantByParticipantId failed', e])
     }
 
