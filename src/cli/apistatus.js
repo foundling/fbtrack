@@ -1,9 +1,15 @@
-function main() {
+const util = require('util')  
+const { exec } = require('child_process')
+const execPromise = util.promisify(exec)
 
-  require('child_process').exec(
-      `open -a '/Applications/Google Chrome.app' http://status.fitbit.com`,
-      function(err, stdin, stdout) { if (err) throw err }
-  );
+async function main() {
+
+  const cmd = `open -a '/Applications/Google Chrome.app' http://status.fitbit.com`
+  try {
+    await exec(cmd)
+  } catch (e) {
+    throw e
+  }
 
 }
 

@@ -12,6 +12,7 @@ const {
 
 const {
   dates,
+  format,
   http,
   io
 } = require('../lib/utils');
@@ -29,9 +30,10 @@ const {
     readdirPromise,
 } = io
 
-const listFormatter = sep => (items, fn=x=>x) => {
-  return items.map(i => ` ${sep} ${fn(i)}`).join('\n')
-}
+const {
+  listFormatter
+} = format
+
 const makeList = listFormatter('•') 
 
 const Database = require(DB_PATH);
