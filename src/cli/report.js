@@ -12,7 +12,7 @@ const {
 
 const {
   dates,
-  format,
+  formatters,
   http,
   io
 } = require('../lib/utils');
@@ -32,7 +32,7 @@ const {
 
 const {
   listFormatter
-} = format
+} = formatters
 
 const makeList = listFormatter('•') 
 

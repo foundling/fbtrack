@@ -3,6 +3,7 @@ const path = require('path')
 const FitbitClient = require('fitbit-node')
 const {
   addDays,
+  addSeconds,
   differenceInDays,
   format,
   parseISO,
@@ -35,9 +36,17 @@ const {
 const Database = require(DB_PATH)
 const { defaultLogger: logger } = require('../lib/logger')
 const { dates, http, io } = require('../lib/utils')
-const { promisify } = require('util')
 
-const setTimeoutPromise = promisify(setTimeout)
+
+
+async function sleep(s) {
+
+  function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  await timeout(s * 1000);
+
+}
 
 const {
   datesFromRange,
@@ -193,6 +202,8 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
       try {
 
+        // nice to have feedback here, and not once the data is gotten for a participant in a date range
+        // because it seems like it hangs.
         const [ body, response ] = await fbClient.get(queryPath, participant.accessToken)
         const header = `\n${participant.participantId}\n${date}\n${metric}\n`
 
@@ -201,11 +212,10 @@ async function queryFitbit({ participant, queryPathsByDate }) {
           if (!collectedData[date]) {
             collectedData[date] = {}
           }
+          process.stdout.write('.')
           collectedData[date][metric] = body
 
         } else {
-
-          logger.debug(response)
 
           if (accessTokenExpired(response)) {
 
@@ -233,12 +243,12 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
           } else if (rateLimitExceeded(response)) {
 
+            const leeway = 60
+            const secondsToWait = parseInt(response.headers['retry-after']) + leeway
+            const resumeTime = format(addSeconds(new Date(), secondsToWait), 'hh:mm')
 
-            // not done here
-            const secondsToWait = response.headers['retry-after']
-            logger.error(`Rate limit exceeded. Waiting ${secondsToWait} seconds to resume ...`)
-
-            await setTimeoutPromise(secondsToWait * 1000)
+            logger.error(`Rate limit exceeded. Waiting ${secondsToWait} seconds to resume. Starting againt at ${resumeTime}.`)
+            await sleep(secondsToWait + leeway)
 
 
           } else if (invalidRefreshToken(response)) {
@@ -301,9 +311,10 @@ async function refreshAccessToken({ accessToken, refreshToken, participantId }) 
 
   try {
     const expirationWindow = 3600
+    console.log({ accessToken, refreshToken })
     return await fbClient.refreshAccessToken(accessToken, refreshToken, expirationWindow)
   } catch(e) {
-    logger.error(`Failed to participant ${participantId}'s Refresh Access Token`)
+    logger.error(`Failed to refresh participant ${participantId}'s Refresh Access Token`)
     logger.error(e)
   }
 

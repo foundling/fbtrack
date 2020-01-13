@@ -16,21 +16,19 @@ function invalidRefreshToken(response) {
 }
 
 
-function invalidAccessToken(response) {
+function accessTokenExpired(response) {
   return response.statusCode === 401 &&
-         response.body.errors[0].errorType === 'invalid_token'
+         response.body.errors[0].errorType === 'expired_token'
 }
 
-function accessTokenExpired(response) {
+function invalidGrantToken(response) {
   return response.statusCode === 400
 }
 
-
 module.exports = exports = {
+  accessTokenExpired,
   isServerError,
   isSuccess,
   invalidRefreshToken,
-  invalidAccessToken,
   rateLimitExceeded,
-  accessTokenExpired,
 }
