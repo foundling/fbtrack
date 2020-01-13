@@ -1,15 +1,36 @@
-const isClientError = ({ statusCode }) => statusCode.toString().startsWith('4')
-const isServerError = ({ statusCode }) => statusCode.toString().startsWith('5')
-const isSuccess = ({ statusCode }) => statusCode.toString().startsWith('2')
-const rateLimitExceeded = ({ statusCode}) => statusCode === 429
-const accessTokenExpired = ({ statusCode }) => statusCode === 401
-const invalidRefreshToken = ({ statusCode }) => statusCode === 400
+function isServerError({ response }) {
+  return response.statusCode.toString().startsWith('5')
+}
+
+function isSuccess(response) {
+  return response.statusCode === 200
+}
+
+function rateLimitExceeded (response) {
+  return response.statusCode === 429
+}
+
+function invalidRefreshToken(response) {
+  return response.statusCode === 400 &&
+         response.body.errors[0].errorType === 'invalid_token'
+}
+
+
+function invalidAccessToken(response) {
+  return response.statusCode === 401 &&
+         response.body.errors[0].errorType === 'invalid_token'
+}
+
+function accessTokenExpired(response) {
+  return response.statusCode === 400
+}
+
 
 module.exports = exports = {
-  isClientError,
   isServerError,
   isSuccess,
   invalidRefreshToken,
+  invalidAccessToken,
   rateLimitExceeded,
   accessTokenExpired,
 }

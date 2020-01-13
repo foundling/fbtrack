@@ -33,6 +33,8 @@ async function getFiles({ criterion=()=>true, directory }) {
 
 async function writeDatasetsToFiles({ participantId, datasets, outputDir, log=false }) {
 
+  console.log(`\nData collected for participant ${participantId}\n`)
+
   for (const date in datasets) {
 
     const dataset = datasets[date]
@@ -44,8 +46,10 @@ async function writeDatasetsToFiles({ participantId, datasets, outputDir, log=fa
       const serialized = JSON.stringify(dataset[metric], null, 2)
       try {
 
-        console.log('writing data to ', filepath) 
         await writeFilePromise(filepath, serialized)
+        if (log) {
+          console.log('wrote: ', filepath) 
+        }
       } catch (e) {
         logger.error(e)
       }
