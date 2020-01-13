@@ -29,7 +29,7 @@ module.exports = exports = {
     `,
     getAll: `
       select 
-        rowid, participantId, registrationDate, isActive 
+        rowid, participantId, registrationDate, isActive, accessToken, refreshToken 
       from 
         participants`, 
     getById: `

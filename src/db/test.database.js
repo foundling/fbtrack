@@ -7,7 +7,7 @@ const Database = require('.')
 const { dates, http, io } = require('../lib/utils')
 const { ymdFormat } = dates
 
-const db = new Database({ databaseFile: 'test.sqlite' })
+const db = new Database({ databaseFile: 'test' })
 
 test('[ database:setup ] clear participants', async (t) => {
 

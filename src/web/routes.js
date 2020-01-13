@@ -17,12 +17,12 @@ const client = new FitBitApiClient({
 const { defaultLogger: logger } = require('../lib/logger')
 
 const {
-
-  logToUserSuccess,
-  logToUserFail,
-  ymdFormat
-
+  dates
 } = require('../lib/utils')
+
+const {
+  ymdFormat
+} = dates 
 
 const index = (req, res) => {
   res.render('index', {

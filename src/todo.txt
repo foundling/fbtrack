@@ -1,3 +1,8 @@
 - stronger participants and participant abstraction
 - handle edge case where '_' in participant id
+
 - detect empty datasets in queryFitbit
+- if data exists, it's still writing.
+
+- prevent refresh token errors. got a 400 invalid refresh token, with an old refresh token in db.
+- date range is off, it will go to one day before registration date

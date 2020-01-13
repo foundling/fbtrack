@@ -1,9 +1,13 @@
 const { USER_CONFIG, APP_CONFIG } = require('../config')
 
 const {
+  dates
+} = require('../lib/utils')
+
+const {
   dateREStrict,
   ymdFormat
-} = require('../lib/utils')
+} = dates
 
 const { defaultLogger:logger } = require('../lib/logger')
 
@@ -18,8 +22,17 @@ const validators = {
 
   query: async function(...args) {
 
-    const [ participantId, options={} ] = args
-    const { dateRange, windowSize, refresh } = options
+    const [{ all, participantIds, dateRange, windowSize, refresh }] = args
+
+    if (!all && !participantIds) {
+      logger.error('Please provide at least one participant id')
+      process.exit(1)
+    }
+
+    if (all && participantIds) {
+      logger.error('Please provide one ore more participantIds or use the -a, -all flag, but not both.')
+      process.exit(1)
+    }
 
     if (dateRange && dateRange.length > 0) {
 

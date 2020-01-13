@@ -31,6 +31,7 @@ app.use((req, res, next) => {
 app.get('/', routes.index)
 app.post('/authorize', routes.authorize)
 app.get('/store_subject_data', routes.addParticipant) // leave url name for now, set in fb dev panel
+app.get('/quit', routes.stopServer)
 
 function start() {
 

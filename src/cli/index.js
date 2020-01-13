@@ -29,11 +29,13 @@ cli
   .action(signup)
 
 cli
-  .command('query <participant_id>')
-  .description('Query the FitBit API for a given participant')
+  .command('query')
+  .description('Query the FitBit API for participant(s)')
+  .option('-a, --all', 'query fitbit for all participants, no participant id is required')
+  .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participants', s => s.split(',').filter(Boolean))
   .option('-w, --window-size <windowSize>', 'window size')
   .option('-r, --refresh', 'refresh oauth token')
-  .option('-d, --date-range <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', s => s.split('..'))
+  .option('-d, --date-range <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', s => s.split('..').filter(Boolean))
   .action(query)
 
 cli
@@ -49,7 +51,7 @@ cli
 cli
   .command('report')
   .option('-a, --all', 'report on all active participants')
-  .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participant ids', s => s.split(',')) 
+  .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participant ids', s => s.split(',').filter(Boolean)) 
   .description('Report missing files for participant(s)')
   .action(report)
 

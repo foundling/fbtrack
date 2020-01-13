@@ -34,7 +34,6 @@ const {
 
 const Database = require(DB_PATH)
 const { defaultLogger: logger } = require('../lib/logger')
-
 const { dates, http, io } = require('../lib/utils')
 
 const {
@@ -49,6 +48,7 @@ const {
   isClientError,
   isServerError,
   isSuccess,
+  invalidRefreshToken,
   rateLimitExceeded,
   accessTokenExpired,
 } = http
@@ -69,7 +69,7 @@ const fbClient = new FitbitClient({
   clientSecret: CLIENT_SECRET
 })
 
-async function main(participantId, { dateRange=[], windowSize=null, refresh=false }) {
+async function main({ participantIds=[], all=false, dateRange=[], windowSize=null, refresh=false }) {
 
   if (dateRange.length === 0 && windowSize == null) {
     windowSize = WINDOW_SIZE
@@ -78,45 +78,67 @@ async function main(participantId, { dateRange=[], windowSize=null, refresh=fals
   await db.init()
 
   const today = new Date()
-  const participant = await db.getParticipantById(participantId)
 
-  if (!participant) {
+  const allParticipants = await db.getParticipants({ active: true }) // fix db to get active only, w/ flag 
+  const targetParticipants = all ? allParticipants.filter(participant => participant.isActive) :
+                                   allParticipants.filter(participant => participant.isActive && 
+                                              participantIds.includes(participant.participantId))
+
+  const targetParticipantIdMap = targetParticipants.reduce((memo, participant) => {
+    memo[participant.participantId] = true
+    return memo
+  }, {})
+
+  const invalidParticipantIds = participantIds.filter(id =>  {
+    return !targetParticipantIdMap[id]
+  })
+
+  for (const participantId of invalidParticipantIds) {
     await logger.error(`subject [ ${ participantId } ] is not in the database. Have they been registered?`)
-    return
   }
 
-  const registrationDate = new Date(participant.registrationDate)
+  for (const participant of targetParticipants) {
 
-  if (differenceInDays(today, registrationDate) === 0) {
-    await logger.success(`Subject ${ participant } was signed up today. No data to query.`)
-    return
+    const { participantId, registrationDate } = participant
+
+    if (differenceInDays(today, parseISO(registrationDate)) === 0) {
+      await logger.info(`Subject ${ participantId } was signed up today. No data to query.`)
+      return
+    }
+
+    const missingDates = await findUncapturedDatesInWindow({
+      dateRange,
+      participantId,
+      registrationDate: new Date(registrationDate),
+      today,
+      windowSize,
+    })
+
+    if (missingDates.length === 0) {
+      logger.info(`All dates captured for participant ${participantId} in this date range.`) 
+      return
+    }
+
+    const queryPathsByDate = generateQueryPaths({
+      dateStrings: missingDates,
+      metricEndpoints: FITBIT_CONFIG.ENDPOINTS
+    })
+
+    // where to handle errors so you can continue w/ rest if one fails?
+    const datasets = await queryFitbit({
+      participant, 
+      queryPathsByDate,
+      endpoints: ENDPOINTS
+    })
+
+    await writeDatasetsToFiles({ 
+      datasets,
+      participantId, 
+      outputDir: RAW_DATA_PATH,
+      log: true,
+    })
+
   }
-
-  const dateStrings = await findUncapturedDatesInWindow({
-    dateRange,
-    participantId,
-    registrationDate,
-    today,
-    windowSize,
-  })
-
-  const queryPathsByDate = generateQueryPaths({
-    dateStrings,
-    metricEndpoints: FITBIT_CONFIG.ENDPOINTS
-  })
-
-  const datasets = await queryFitbit({
-    participant, 
-    queryPathsByDate,
-    endpoints: ENDPOINTS
-  })
-
-  await writeDatasetsToFiles({ 
-    datasets,
-    participantId, 
-    outputDir: RAW_DATA_PATH,
-    log: true,
-  })
 
 }
 
@@ -157,14 +179,12 @@ function generateQueryPaths({ dateStrings, metricEndpoints }) {
 // in case of token expiration
 async function queryFitbit({ participant, queryPathsByDate }) {
 
-  // loop sequentially through each date
-  // get metric request paths for that date
-  // make a request for that
-  // renew auth token if needed, when needed
-  // wait until next window if we are rate limited
   const responses = {}
+
   for (const date in queryPathsByDate) {
+
     const queriesForDate = queryPathsByDate[date]
+
     for (const metric in queriesForDate) {
       const queryPath = queriesForDate[metric]
 
@@ -175,8 +195,7 @@ async function queryFitbit({ participant, queryPathsByDate }) {
         const [ body, response ] = await fbClient.get(queryPath, participant.accessToken)
         const header = `\n${participant.participantId}\n${date}\n${metric}\n`
 
-
-        if (isSuccess(response.statusCode)) {
+        if (isSuccess(response)) {
 
           if (!responses[date]) {
             responses[date] = {}
@@ -185,18 +204,19 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
         } else {
 
-          if (accessTokenExpired(response.statusCode)) {
+          if (accessTokenExpired(response)) {
 
-            let { access_token, refresh_token } = await refreshAccessToken({
+            const { access_token:accessToken, refresh_token:refreshToken } = await refreshAccessToken({
               participantId: participant.participantId,
               accessToken: participant.accessToken,
               refreshToken: participant.refreshToken
             })
 
+            // note: if this fails, all goes bad. important!
             await db.updateAccessTokensById({
               participantId: participant.participantId,
-              accessToken: access_token,
-              refreshToken: refresh_token
+              accessToken,
+              refreshToken
             })
 
             let [ retryBody, retryResponse ] = await fbClient.get(queryPath, access_token)
@@ -208,11 +228,17 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
             responses[date][metric] = retryBody
 
-          } else if(rateLimitExceeded(response.statusCode)) {
+          } else if (rateLimitExceeded(response)) {
+
+            // not done here
             const secondsToWait = response.headers.retryAfter
             console.log(`rate limit exceeded. try again in ${secondsToWait} seconds...`)
-          } else {
-            console.log('unknown failure: ', response)
+
+          } else if (invalidRefreshToken(response)) {
+            // handle invalid refresh token
+            // not done here
+            // todo: write lib fn 
+            console.log(`InvalidRefreshToken Error for participant ${participantId}. Error:\n`, JSON.stringify(response, null, 2))
           }
 
         }
@@ -243,9 +269,9 @@ async function findUncapturedDatesInWindow({ participantId, today, windowSize, r
     const [ participantId, dateString, extension ] = filename.split(/[_.]/)
 
     return {
+      participantId,
       filename,
       dateString,
-      date: new Date(dateString)
     }
 
   })
@@ -254,9 +280,9 @@ async function findUncapturedDatesInWindow({ participantId, today, windowSize, r
                     dateRangeFromWindowSize({ registrationDate, today, windowSize }) :
                     dateRangeFromDateStrings({ dates: dateRange })
 
-  const expectedDates = datesFromRange({ start, stop })
-  const capturedDates = metadata.map(md => md.date)
-  const missingDates = expectedDates.filter(date => !capturedDates.includes(date)).map(date => format(date, ymdFormat))
+  const expectedDates = datesFromRange({ start, stop }).map(d => format(d, ymdFormat))
+  const capturedDates = metadata.map(md => md.dateString)
+  const missingDates = expectedDates.filter(date => !capturedDates.includes(date))
 
   return missingDates
 
