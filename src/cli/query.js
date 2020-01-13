@@ -245,7 +245,9 @@ async function queryFitbit({ participant, queryPathsByDate }) {
             // handle invalid refresh token
             // not done here
             // todo: write lib fn 
-            console.log(`InvalidRefreshToken Error for participant ${participantId}. Error:\n`, JSON.stringify(response, null, 2))
+            console.log(
+              `InvalidRefreshToken Error for participant ${participantId}. The subject needs to be re-authorized with the application. Please contact Alex.\n Error:\n`, JSON.stringify(response, null, 2)
+            )
           }
 
         }
