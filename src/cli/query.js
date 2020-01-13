@@ -35,6 +35,9 @@ const {
 const Database = require(DB_PATH)
 const { defaultLogger: logger } = require('../lib/logger')
 const { dates, http, io } = require('../lib/utils')
+const { promisify } = require('util')
+
+const setTimeoutPromise = promisify(setTimeout)
 
 const {
   datesFromRange,
@@ -45,10 +48,10 @@ const {
 } = dates
 
 const {
-  isClientError,
   isServerError,
   isSuccess,
   invalidRefreshToken,
+  invalidAccessToken,
   rateLimitExceeded,
   accessTokenExpired,
 } = http
@@ -179,7 +182,7 @@ function generateQueryPaths({ dateStrings, metricEndpoints }) {
 // in case of token expiration
 async function queryFitbit({ participant, queryPathsByDate }) {
 
-  const responses = {}
+  const collectedData = {}
 
   for (const date in queryPathsByDate) {
 
@@ -188,8 +191,6 @@ async function queryFitbit({ participant, queryPathsByDate }) {
     for (const metric in queriesForDate) {
       const queryPath = queriesForDate[metric]
 
-      let response
-
       try {
 
         const [ body, response ] = await fbClient.get(queryPath, participant.accessToken)
@@ -197,12 +198,14 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
         if (isSuccess(response)) {
 
-          if (!responses[date]) {
-            responses[date] = {}
+          if (!collectedData[date]) {
+            collectedData[date] = {}
           }
-          responses[date][metric] = body
+          collectedData[date][metric] = body
 
         } else {
+
+          logger.debug(response)
 
           if (accessTokenExpired(response)) {
 
@@ -222,17 +225,21 @@ async function queryFitbit({ participant, queryPathsByDate }) {
             let [ retryBody, retryResponse ] = await fbClient.get(queryPath, access_token)
             const retryData = JSON.stringify(retryBody, null, 2)
 
-            if (!responses[date]) {
-              responses[date] = {}
+            if (!collectedData[date]) {
+              collectedData[date] = {}
             }
 
-            responses[date][metric] = retryBody
+            collectedData[date][metric] = retryBody
 
           } else if (rateLimitExceeded(response)) {
 
+
             // not done here
-            const secondsToWait = response.headers.retryAfter
-            console.log(`rate limit exceeded. try again in ${secondsToWait} seconds...`)
+            const secondsToWait = response.headers['retry-after']
+            logger.error(`Rate limit exceeded. Waiting ${secondsToWait} seconds to resume ...`)
+
+            await setTimeoutPromise(secondsToWait * 1000)
+
 
           } else if (invalidRefreshToken(response)) {
             // handle invalid refresh token
@@ -252,7 +259,7 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
   }
 
-  return responses
+  return collectedData
 
 }
 
