@@ -147,8 +147,9 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
       datasets,
       participantId, 
       outputDir: RAW_DATA_PATH,
-      log: true,
+      log: false,
     })
+    logger.info(`All data for dates queried was written to ${RAW_DATA_PATH}.`)
 
   }
 
@@ -193,8 +194,10 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
   const collectedData = {}
 
+  console.log(`PARTICIPANT: ${date}`)
   for (const date in queryPathsByDate) {
 
+    console.log(`DATE: ${date}`)
     const queriesForDate = queryPathsByDate[date]
 
     for (const metric in queriesForDate) {
@@ -212,7 +215,7 @@ async function queryFitbit({ participant, queryPathsByDate }) {
           if (!collectedData[date]) {
             collectedData[date] = {}
           }
-          process.stdout.write('.')
+          console.log(`${metric} ✓`)
           collectedData[date][metric] = body
 
         } else {
@@ -232,7 +235,7 @@ async function queryFitbit({ participant, queryPathsByDate }) {
               refreshToken
             })
 
-            let [ retryBody, retryResponse ] = await fbClient.get(queryPath, access_token)
+            let [ retryBody, retryResponse ] = await fbClient.get(queryPath, accessToken)
             const retryData = JSON.stringify(retryBody, null, 2)
 
             if (!collectedData[date]) {
