@@ -9,6 +9,10 @@
   "keywords": [],
   "author": "Alex Ramsdell",
   "license": "MIT",
+  "engines": {
+    "node": "12.x"
+  },
+  "engineStrict": true,
   "dependencies": {
     "body-parser": "^1.19.0",
     "colors": "^1.4.0",
