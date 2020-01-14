@@ -188,8 +188,6 @@ function generateQueryPaths({ dateStrings, metricEndpoints }) {
 
 }
 
-// thought: use async generator here to push participantID in 
-// in case of token expiration
 async function queryFitbit({ participant, queryPathsByDate }) {
 
   const collectedData = {}
