@@ -18,7 +18,7 @@ function hideError(el) {
 
 function notify (el, msg) {
   el.classList.add('error');
-  el.innerHTML = msg;
+  el.innerHTML = `Error: ${msg}`;
 }
 
 async function getAuthUrl(e) {
@@ -44,7 +44,13 @@ async function getAuthUrl(e) {
       const response = await fetch(authorizePath, { method: 'post' })
       const parsedResponse = await response.json()
 
-      redirectURI = parsedResponse.data.redirectURI
+      if (response.ok) {
+        redirectURI = parsedResponse.data.redirectURI
+      } else if (response.status === 409) {
+        console.log(parsedResponse.errorMessage)
+        notify(errorBox, parsedResponse.errorMessage)
+        return
+      }
 
     } catch (e) {
       throw e

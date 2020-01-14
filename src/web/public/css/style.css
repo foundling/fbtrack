@@ -63,6 +63,15 @@ form > .input-groups {
   align-items: center;
   justify-content: center;
 }
+form > #error-box {
+  margin: 5%;
+  color: red;
+  text-align: center;
+}
+form > #error-box.error {
+  padding: 2%;
+  background: white;
+}
 
 .input-group {
   display: flex;
