@@ -9,6 +9,9 @@
 
 ## Install Instructions
 
+At a terminal, run the following:
+
 - `git clone git@github.com:foundling/fbt`
 - `cd fbt`
 - `npm install`
+- `echo 'export PATH="$PATH:${pwd}/bin"' >> ~/.bashrc`
