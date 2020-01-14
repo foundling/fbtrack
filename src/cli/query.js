@@ -192,7 +192,7 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
   const collectedData = {}
 
-  console.log(`PARTICIPANT: ${date}`)
+  console.log(`PARTICIPANT: ${participant.participantId}`)
   for (const date in queryPathsByDate) {
 
     const queriesForDate = queryPathsByDate[date]
