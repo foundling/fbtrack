@@ -32,6 +32,13 @@ module.exports = exports = {
         rowid, participantId, registrationDate, isActive, accessToken, refreshToken 
       from 
         participants`, 
+    getAllActive: `
+      select 
+        rowid, participantId, registrationDate, isActive, accessToken, refreshToken 
+      from 
+        participants
+      where
+        isActive=1`,
     getById: `
       select 
         * 

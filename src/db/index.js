@@ -33,12 +33,11 @@ class Database {
     }
   }
 
-  async getParticipants() {
+  async getParticipants({ active = false } = {}) {
 
     try {
       const db = await this.dbPromise
-      const allParticipants = await db.all(participants.getAll)
-      return allParticipants
+      return await db.all(active ? participants.getActive : participants.getAll)
     } catch(e) {
       throw new Error(e)
     }
@@ -61,6 +60,12 @@ class Database {
     accessToken=requireParam('accessToken'),
     refreshToken=requireParam('refreshToken')
   }) {
+
+    if (!accessToken.length)
+      throw MissingParameterError('accessToken')
+
+    if (!refreshToken.length)
+      throw MissingParameterError('refreshToken')
 
     try {
       const db = await this.dbPromise
