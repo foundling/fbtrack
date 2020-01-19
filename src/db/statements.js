@@ -47,7 +47,6 @@ module.exports = exports = {
       where 
         participantId = $participantId
     `,
-    getActive: `select * from participants where active = 1`,
     deleteAll: `
       delete from participants;
     `,

@@ -37,7 +37,7 @@ class Database {
 
     try {
       const db = await this.dbPromise
-      return await db.all(active ? participants.getActive : participants.getAll)
+      return await db.all(active ? participants.getAllActive : participants.getAll)
     } catch(e) {
       throw new Error(e)
     }
