@@ -3,11 +3,11 @@ const { groupBy } = require('lodash')
 const { defaultLogger:logger } = require('../lib/logger')
 
 const { FITBIT_CONFIG, APP_CONFIG } = require('../config')
-const { 
+const {
   DB_NAME,
   DB_PATH,
   DB_FILENAME,
-  RAW_DATA_PATH 
+  RAW_DATA_PATH
 } = APP_CONFIG
 
 const {
@@ -18,7 +18,7 @@ const {
 } = require('../lib/utils');
 
 const {
-    dateRE, 
+    dateRE,
     datesFromRange,
     filenamePattern,
     ymdFormat,
@@ -34,50 +34,92 @@ const {
   listFormatter
 } = formatters
 
-const makeList = listFormatter('•') 
+const makeList = listFormatter('•')
 
 const Database = require(DB_PATH);
 const db = new Database({ databaseFile: DB_NAME });
 const metrics = Object.keys(FITBIT_CONFIG.ENDPOINTS)
 
-async function main({ all=false, participantIds=[] }) {
+async function main({ all = false, participantIds:targetIds = [], missingOnly = false }) {
+
+  // problem: you removed the 'all' case
 
   const allParticipantFiles = await getFiles({ directory: RAW_DATA_PATH })
-  const participants = await db.getParticipants()
-  const notFound = participantIds.filter(id => Boolean(id.trim()))
-    .filter(id => participants.findIndex(p => p.participantId === id) === -1)
+  const participants = await db.getParticipants({ active: true })
 
-  logger.log('\nParticipant Missing Data Report\n', {bold: true})
-  if (notFound.length > 0) {
-    const list = makeList(notFound)
-    logger.warn(`The following participants were requested but not found in the database:\n${list}\n`)
-  }
+  const validParticipants = []
+  const invalidParticipantIds = []
+  const report = {}
+  const output = []
 
-  const targetParticipants = participantIds.length > 0 ?
-    participants.filter(p => participantIds.includes(p.participantId)) :
-    participants.filter(p => p.isActive)
+  for (const targetId of targetIds) {
 
-  for (const participant of targetParticipants) {
+    const participant = participants.find(({ participantId }) => participantId == targetId)
+    if (!participant) {
+      invalidParticipantIds.push(targetId)
+      continue
+    }
 
     const { participantId, registrationDate } = participant
     const participantFiles = allParticipantFiles.filter(filename => filename.startsWith(participantId))
-    const expectedDates = datesFromRange({
-      start: parseISO(registrationDate),
-      stop: subDays(new Date(), 1)
-    }).map(d => format(d, ymdFormat))
+    const start = parseISO(registrationDate)
+    const stop = subDays(new Date(), 1)
 
-    const actualDates = participantFiles.map(filename => {
-      const [ id, date, metric, extension ] = filename.split(/[_.]/)
-      return date
-    })
+    // what we have by date then by metric
+    const byDateByMetric = participantFiles.reduce((memo, filename) => {
 
-    const missingDates = expectedDates.filter(expectedDateString => {
-      return !actualDates.includes(expectedDateString)
-    })
+      const [ id, dateString, metric, extension ] = filename.split(/[_.]/)
+      if  (!memo[dateString]) {
+        memo[dateString] = {}
+      }
 
-    const header = `[ participant id: ${participantId} | registered on ${registrationDate} ]` 
-    console.log(`${header}\n${makeList(missingDates)}`)
+      memo[dateString][metric] = true
 
+      return memo
+
+    }, {})
+
+    // dates we should expect
+    const dateStringsToCheck = datesFromRange({ start, stop }).map(d => format(d, ymdFormat))
+
+    report[participantId] = dateStringsToCheck.reduce((memo, dateString) => {
+
+      if (!memo[dateString]) {
+        memo[dateString] = {}
+      }
+
+      for (const metric of metrics) {
+        if (!byDateByMetric[dateString]) {
+          memo[dateString][metric] = false
+        } else {
+          memo[dateString][metric] = Boolean(byDateByMetric[dateString][metric])
+        }
+      }
+
+      return memo
+
+    }, {})
+  }
+
+  if (invalidParticipantIds.length > 0) {
+    logger.warn(`The following ids were requested, but do not exist in the database: ${ makeList(invalidParticipantIds) }`)
+  }
+
+  for (const participantId in report) {
+    console.log(`participant: ${participantId}`)
+
+    for (const dateString in report[participantId]) {
+      console.log(`  ${dateString}`)
+
+      for (const metric in report[participantId][dateString]) {
+        const wasCaptured = report[participantId][dateString][metric]
+        const symbol = wasCaptured ? '✓' : '✖'
+        if (wasCaptured && missingOnly) {
+          continue
+        }
+        console.log(`    ${symbol} ${metric}`)
+      }
+    }
   }
 
 }
