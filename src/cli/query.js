@@ -38,7 +38,6 @@ const { defaultLogger: logger } = require('../lib/logger')
 const { dates, http, io } = require('../lib/utils')
 
 
-
 async function sleep(s) {
 
   function timeout(ms) {
@@ -195,6 +194,7 @@ async function queryFitbit({ participant, queryPathsByDate }) {
   console.log(`PARTICIPANT: ${participant.participantId}`)
   for (const date in queryPathsByDate) {
 
+    collectedData[date] = {}
     const queriesForDate = queryPathsByDate[date]
 
     console.log(`DATE: ${date}`)
@@ -203,16 +203,10 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
       try {
 
-        // nice to have feedback here, and not once the data is gotten for a participant in a date range
-        // because it seems like it hangs.
         const [ body, response ] = await fbClient.get(queryPath, participant.accessToken)
-        const header = `\n${participant.participantId}\n${date}\n${metric}\n`
 
         if (isSuccess(response)) {
 
-          if (!collectedData[date]) {
-            collectedData[date] = {}
-          }
           console.log(`${metric} ✓`)
           collectedData[date][metric] = body
 
@@ -226,21 +220,16 @@ async function queryFitbit({ participant, queryPathsByDate }) {
               refreshToken: participant.refreshToken
             })
 
-            // note: if this fails, all goes bad. important!
+            // warning: if this fails, you will have to re-auth the subject. important!
             await db.updateAccessTokensById({
               participantId: participant.participantId,
               accessToken,
               refreshToken
             })
 
-            let [ retryBody, retryResponse ] = await fbClient.get(queryPath, accessToken)
-            const retryData = JSON.stringify(retryBody, null, 2)
-
-            if (!collectedData[date]) {
-              collectedData[date] = {}
-            }
-
+            const [ retryBody, retryResponse ] = await fbClient.get(queryPath, accessToken)
             collectedData[date][metric] = retryBody
+            console.log(`${metric} ✓`)
 
           } else if (rateLimitExceeded(response)) {
 
@@ -251,14 +240,19 @@ async function queryFitbit({ participant, queryPathsByDate }) {
             logger.error(`Rate limit exceeded. Waiting ${secondsToWait} seconds to resume. Starting againt at ${resumeTime}.`)
             await sleep(secondsToWait + leeway)
 
+            const [ retryBody, retryResponse ] = await fbClient.get(queryPath, participant.accessToken)
+            collectedData[date][metric] = retryBody
+            console.log(`${metric} ✓`)
 
           } else if (invalidRefreshToken(response)) {
-            // handle invalid refresh token
-            // not done here
-            // todo: write lib fn 
-            console.log(
-              `InvalidRefreshToken Error for participant ${participantId}. The subject needs to be re-authorized with the application. Please contact Alex.\n Error:\n`, JSON.stringify(response, null, 2)
-            )
+
+            // warning: this is bad news, and annoying to deal with. 
+            // make sure database never can't accept bad data for an auth token.
+            logger.error(`InvalidRefreshToken Error for participant ${participantId}.`)
+            logger.error(`The participant needs to be re-authorized with the application. Please contact Alex.\n Error:\n`)
+            logger.error(`skipping participant ${participantId}.`) 
+
+            return
           }
 
         }
