@@ -9,7 +9,7 @@ While Fitbit offers CSV web exports of participant data with a somewhat configur
 - Collects the data at a configurable interval
 - Collectes the data intelligently:
   + requests are made only for data not yet collected between a configurable [capture window](#capture-window)
-  + request are [rate-limit](https://dev.fitbit.com/build/reference/web-api/basics/#rate-limits) aware
+  + request are [rate-limit](https://dev.fitbit.com/build/reference/web-api/basics/#rate-limits) aware and will pause when that rate-limit is reached, continuing once the wait period has ended.
 - Can access daily, hourly or minute-level data (pending Fitbit's approval, see below) via Fitbit's REST API
 - Can request JSON format, which might offer more programming flexibility, depending on your analysis
 - Offers some basic participant management features:
