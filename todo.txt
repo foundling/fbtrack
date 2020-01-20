@@ -1,0 +1,1 @@
+write a setup command to gather information and update the USER_CONFIG file
