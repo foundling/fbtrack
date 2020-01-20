@@ -36,10 +36,6 @@ While Fitbit offers CSV web exports of participant data with a somewhat configur
   + OAuth 2.0: Access/Refresh Token Request URI
 - **NOTE:** If you need access for data on the **minute** or **hourly** level, you have placed an Intraday Access Request [here](https://dev.fitbit.com/build/reference/web-api/intraday-requests/) with Fitbit.
 
-## Requirements
-
-- OS X or Linux
-
 ## Install Instructions
 
 At a terminal, run the following:
