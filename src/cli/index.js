@@ -1,8 +1,9 @@
 const cli = require('commander')
 const path = require('path')
-const { io } = require('../lib/utils')
+const { io, formatters } = require('../lib/utils')
 const { delayedRequire } = io
 const { validate, validators } = require('./validators')
+const { splitArgsOn } = formatters
 
 const { signup, query, report, revoke, apistatus } = [
 
@@ -32,10 +33,10 @@ cli
   .command('query')
   .description('Query the FitBit API for participant(s)')
   .option('-a, --all', 'query fitbit for all participants, no participant id is required')
-  .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participants', s => s.split(',').filter(Boolean))
+  .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participants', splitArgsOn(','))
   .option('-w, --window-size <windowSize>', 'window size')
   .option('-r, --refresh', 'refresh oauth token')
-  .option('-d, --date-range <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', s => s.split('..').filter(Boolean))
+  .option('-d, --date-range <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', splitArgsOn('..'))
   .action(query)
 
 cli
@@ -51,7 +52,7 @@ cli
 cli
   .command('report')
   .option('-a, --all', 'report on all active participants')
-  .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participant ids', s => s.split(',').filter(Boolean))
+  .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participant ids', splitArgsOn(','))
   .option('-m, --missing-only', 'Filter report to show missing data')
   .description('Report missing files for participant(s)')
   .action(report)
