@@ -17,10 +17,11 @@ const headers = {
 
 class Logger {
 
-  constructor({ logDir, config = { debug: false, error: false, warn: false, info: false, success: false } }) {
+  constructor({ logDir, label = false, config = { debug: false, error: false, warn: false, info: false, success: false } }) {
 
     this.logDir = logDir
     this.config = config
+    this.label = label
 
   }
 
@@ -48,9 +49,9 @@ class Logger {
 
   async _log(msg, level) {
 
-    const header = headers[level]
+    const header = this.label ? `${headers[level]}: ` : ''
     const unpackedMsg = typeof msg === 'string' ? msg : inspect(msg, {depth: null})
-    console.log(`${header}: ${unpackedMsg}`)
+    console.log(`${header} ${unpackedMsg}`)
 
   }
 
@@ -89,6 +90,7 @@ class Logger {
 
 const defaultLogger = new Logger({
   logDir: APP_CONFIG.LOGS_PATH,
+  label: true,
   config: {
     info: false,
     warn: false,
