@@ -164,6 +164,10 @@ function isDataResponse(day) {
 
 
 function generateQueryPaths({ dateStrings, metricEndpoints }) {
+  //TODO: dateStrings will become an object w/ top level keys of dateStrings that point to metrics then to endpoints,
+  // { datestring => metric => path }
+  // that actually lines up with what's going on here, can you use the metrics in the obj passed in, instead of 
+  // referring to the imported enum-like list?
 
   /* creates a nested map of date strings to metrics to endpoints for those metrics */
 
@@ -271,13 +275,16 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 }
 
 async function findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate, dateRange }) {
+  //TODO: return { dates => metrics => endpoints }
 
   const filenames = await getFiles({
     directory: RAW_DATA_PATH, // parameterize
     criterion: fname => fname.startsWith(participantId),
   })
 
-  // todo: turn date metadata into a map, shouldn't have duplicates. makes missing calc faster
+  // TODO: get metric-level breakdown for metrics to fetch
+  // so you don't say you have data for a day, when you only have partial data
+  // take filenames, reduce them to { date => { metric => path } }
   const metadata = filenames.map(filename => {
 
     const [ participantId, dateString, extension ] = filename.split(/[_.]/)
