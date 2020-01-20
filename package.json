@@ -24,6 +24,8 @@
     "express-handlebars": "^3.1.0",
     "fitbit-node": "^2.2.0",
     "module-alias": "^2.2.2",
+    "node-cron": "^2.0.3",
+    "readline-sync": "^1.4.10",
     "sqlite": "^3.0.3",
     "tape-promise": "^4.0.0"
   },

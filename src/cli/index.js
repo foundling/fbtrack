@@ -5,8 +5,9 @@ const { delayedRequire } = io
 const { validate, validators } = require('./validators')
 const { splitArgsOn } = formatters
 
-const { signup, query, report, revoke, apistatus } = [
+const { configure, signup, query, report, revoke, apistatus } = [
 
+  'configure',
   'signup',
   'query',
   'report',
@@ -28,6 +29,11 @@ cli
   .command('signup')
   .description('Initiate participant authorization process in Google Chrome.')
   .action(signup)
+
+cli
+  .command('configure')
+  .description('Configure the app parameters necessary for registering participants and collecting data')
+  .action(configure)
 
 cli
   .command('query')

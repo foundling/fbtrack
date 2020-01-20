@@ -60,6 +60,7 @@ const validators = {
 
   },
 
+  configure: id,
   report: id,
   signup: id,
   revoke: id,

@@ -1,25 +1,39 @@
-# fbt
+# Fbtrack
 
-`fbt` is a command-line application for collecting Fitbit participant data on your local Mac or Linux machine.
+Participant management platform and data collection tool for research studies collecting Fitbit data.
 
-## Why Would I Want This?
+## Install Instructions
 
-While Fitbit offers CSV web exports of participant data with a somewhat configurable export feature, the `fbt` app offers the following additional capabilities:
+At a terminal, run the following:
 
-- Collects the data at a configurable interval
-- Collectes the data intelligently:
-  + requests are made only for data not yet collected between a configurable [capture window](#capture-window)
-  + request are [rate-limit](https://dev.fitbit.com/build/reference/web-api/basics/#rate-limits) aware and will pause when that rate-limit is reached, continuing once the wait period has ended.
-- Can access daily, hourly or minute-level data (pending Fitbit's approval, see below) via Fitbit's REST API.
-- Can request data in JSON format, which might offer more programming flexibility, depending on your data analysis needs.
-- Offers some basic participant management features:
-  + browser-based OAuth2 registration
-  + participant study registration, OAuth-based authorization
-  + data collection reporting
+```
+# fetch the latest code from github
+$ git clone git@github.com:foundling/fbtrack
 
-## Requirements
+# enter the application directory of the downloaded repository
+$ cd fbtrack
 
-#### Technology
+# install the application dependencies
+$ npm install
+
+# add the command-line path to your startup configuration file so you can 
+# type 'fbtrack' from anywhere to run the command 
+$ fbtrack="$(pwd)/bin"; echo 'export PATH=$PATH:'$fbtrack >> ~/.bashrc
+
+# configure the app using your oauth keys and desired Fitbit Scopes
+$ fbtrack setup
+```
+
+## Usage
+
+Fbtrack is a command-line utility that you can use to  collection at a user-defined interval. 
+
+- Automates data collection at a user-defined interval and window-size
+- Collect data as granular as the minute-level (you need Fitbit's approval for this, see below)
+- browser-based study participant registration and Fitbit OAuth authorization
+- participant history and collection reporting
+
+
 
 - You have an internet-connected Mac or Linux, with Google Chrome and Node.js 12+ installed. 
 - You are registering subjects in person via this computer
@@ -28,7 +42,7 @@ While Fitbit offers CSV web exports of participant data with a somewhat configur
 - You are creating study-specific Fitbit accounts for your subjects, or otherwise have a way to request that they re-authorize the application to collect their data, should some technical issue occur that would de-authorize them.
 
 #### Fitbit
-- You or someone your behalf has configured an OAuth2 web application [here](https://dev.fitbit.com/apps/new) and have access to the resulting OAuth information required to install the `fbt` application:
+- You or someone your behalf has configured an OAuth2 web application [here](https://dev.fitbit.com/apps/new) and have access to the resulting OAuth information required to install the `fbtrack` application:
   + OAuth 2.0 Client ID
   + Client Secret
   + Callback URL
@@ -36,24 +50,4 @@ While Fitbit offers CSV web exports of participant data with a somewhat configur
   + OAuth 2.0: Access/Refresh Token Request URI
 - **NOTE:** If you need access for data on the **minute** or **hourly** level, you have placed an Intraday Access Request [here](https://dev.fitbit.com/build/reference/web-api/intraday-requests/) with Fitbit.
 
-## Install Instructions
 
-At a terminal, run the following:
-
-```bash
-# fetches the latest code from github
-git clone git@github.com:foundling/fbt
-
-# enter the application directory of the downloaded repository
-cd fbt
-
-# install the application dependencies
-npm install
-
-# add the command-line path to your startup configuration file so you can 
-# type 'fbt' from anywhere to run the command 
-fbt="$(pwd)/bin"; echo 'export PATH=$PATH:'$fbt >> ~/.bashrc
-
-# configure the app using your oauth keys and desired Fitbit Scopes
-fbt setup
-```
