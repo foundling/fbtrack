@@ -5,9 +5,10 @@ const { delayedRequire } = io
 const { validate, validators } = require('./validators')
 const { splitArgsOn } = formatters
 
-const { configure, signup, query, report, revoke, apistatus } = [
+const { configure, schedule, signup, query, report, revoke, apistatus } = [
 
   'configure',
+  'schedule',
   'signup',
   'query',
   'report',
@@ -62,6 +63,15 @@ cli
   .option('-m, --missing-only', 'Filter report to show missing data')
   .description('Report missing files for participant(s)')
   .action(report)
+
+cli
+  .command('schedule')
+  .option('-w, --weekday <...weekday>', 'recurring day and time of week', (value, previous) => previous.concat([value]), [])
+  .description('Run fbtrack on a given time /day of week. Pass flag repeatedly for multiple days')
+  .action(({parent}) => {
+    //console.log(parent)
+    return schedule({parent, weekday: parent.rawArgs.slice(3) })
+  })
 
 module.exports = exports = {
 

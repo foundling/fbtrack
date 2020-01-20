@@ -20,6 +20,8 @@ const validate = (validateFn, cliCommand) => (...args) => {
 
 const validators = {
 
+  apistatus: id,
+  configure: id,
   query: async function(...args) {
 
     const [{ all, participantIds, dateRange, windowSize, refresh }] = args
@@ -60,15 +62,9 @@ const validators = {
 
   },
 
-  configure: id,
   report: id,
+  schedule: id,
   signup: id,
-  revoke: id,
-  missing: id,
-  status: id,
-  apistatus: id,
-  update: id,
-  dump: id,
   undefined: (...args) => { throw new Error('no handler defined') }
 
 }
