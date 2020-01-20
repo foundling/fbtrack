@@ -26,7 +26,7 @@ $ fbtrack setup
 
 ## Usage
 
-Fbtrack is a command-line utility that you can use to  collection at a user-defined interval. 
+Fbtrack is a command-line utility supporting participant management and data collection at a user-defined interval. 
 
 - Automates data collection at a user-defined interval and window-size
 - Collect data as granular as the minute-level (you need Fitbit's approval for this, see below)
@@ -34,6 +34,7 @@ Fbtrack is a command-line utility that you can use to  collection at a user-defi
 - participant history and collection reporting
 
 
+## Assumptions
 
 - You have an internet-connected Mac or Linux, with Google Chrome and Node.js 12+ installed. 
 - You are registering subjects in person via this computer
