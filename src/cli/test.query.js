@@ -10,7 +10,7 @@ const {
 } = require('date-fns')
 
 const { FITBIT_CONFIG } = require('../config')
-const { generateQueryPaths } = require('./query')
+const { generateQueryPathsByDate } = require('./query')
 
 const {
   dates,
@@ -203,7 +203,7 @@ test('[ cli:query ] dateRangeFromDateStrings', (t) => {
   ].map(date => format(date, ymdFormat))
 
   const numMetrics = Object.keys(FITBIT_CONFIG.ENDPOINTS).length 
-  const pathMap = generateQueryPaths({
+  const pathMap = generateQueryPathsByDate({
     dateStrings,
     metricEndpoints: FITBIT_CONFIG.ENDPOINTS
   })

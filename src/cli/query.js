@@ -35,8 +35,9 @@ const {
 
 const Database = require(DB_PATH)
 const { defaultLogger: logger } = require('../lib/logger')
-const { dates, http, io } = require('../lib/utils')
+const { dates, http, io, formatters } = require('../lib/utils')
 
+const makeList = formatters.listFormatter('•')
 
 async function sleep(s) {
 
@@ -88,26 +89,30 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
 
   await db.init()
 
-  const today = new Date()
+  /* 
+   * participants determined by flag, or by array of ids. these options are exclusive and we 
+   * want to announce invalid ids up front
+   */ 
 
-  const allParticipants = await db.getParticipants({ active: true }) // fix db to get active only, w/ flag 
-  const targetParticipants = all ? allParticipants.filter(participant => participant.isActive) :
-                                   allParticipants.filter(participant => participant.isActive && 
-                                              participantIds.includes(participant.participantId))
+  const allParticipants = await db.getParticipants({ active: true })
+  const targetParticipants = all ? allParticipants :
+                                   allParticipants.filter(participant => participantIds.includes(participant.participantId))
 
+  /* find invalid participants */
   const targetParticipantIdMap = targetParticipants.reduce((memo, participant) => {
     memo[participant.participantId] = true
     return memo
   }, {})
-
-  const invalidParticipantIds = participantIds.filter(id =>  {
-    return !targetParticipantIdMap[id]
-  })
-
-  for (const participantId of invalidParticipantIds) {
-    await logger.error(`subject [ ${ participantId } ] is not in the database. Have they been registered?`)
+  const invalidParticipantIds = participantIds.filter(id => !targetParticipantIdMap[id])
+  if (invalidParticipantIds.length > 0) {
+    const invalidList = makeList(invalidParticipantIds)
+    await logger.error(
+      `The following subject ids were provided but are not in the database. Have they been registered?\n${invalidList}`
+    )
   }
 
+  /* query missing days for each participant */
+  const today = new Date()
   for (const participant of targetParticipants) {
 
     const { participantId, registrationDate } = participant
@@ -117,29 +122,40 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
       return
     }
 
-    const missingDates = await findUncapturedDatesInWindow({
-      dateRange,
-      participantId,
-      registrationDate: new Date(registrationDate),
-      today,
-      windowSize,
+    const [ start, stop ] = windowSize ?
+      dateRangeFromWindowSize({ registrationDate: new Date(registrationDate), today, windowSize }) :
+      dateRangeFromDateStrings({ dates: dateRange })
+    const expectedDateStrings = datesFromRange({ start, stop }).map(d => format(d, ymdFormat))
+
+    const filenames = await getFiles({
+      directory: RAW_DATA_PATH,
+      criterion: fname => fname.startsWith(participantId) && expectedDateStrings.some(dateString => fname.includes(dateString)),
     })
 
-    if (missingDates.length === 0) {
-      logger.info(`All dates captured for participant ${participantId} in this date range.`) 
-      return
+    // missing metrics by date
+    const missingMetricsByDate = await findUncapturedDates({
+      filenames,
+      expectedDateStrings,
+      metrics: Object.keys(ENDPOINTS),
+    })
+
+    console.log(missingMetricsByDate)
+    process.exit()
+
+    const allDataCaptured = Object.keys(missingMetricsByDate).map(date => Boolean(missingMetricsByDate[date])).length === 0
+    if (allDataCaptured) {
+      await logger.info(`All dates captured for participant ${participantId} in this date range.`) 
+      break
     }
 
-    const queryPathsByDate = generateQueryPaths({
-      dateStrings: missingDates,
-      metricEndpoints: FITBIT_CONFIG.ENDPOINTS
+    const queryPathsByDate = generateQueryPathsByDate({
+      metricsByDate: missingMetricsByDate,
+      endpoints: ENDPOINTS
     })
 
-    // where to handle errors so you can continue w/ rest if one fails?
     const datasets = await queryFitbit({
       participant, 
       queryPathsByDate,
-      endpoints: ENDPOINTS
     })
 
     await writeDatasetsToFiles({ 
@@ -148,6 +164,7 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
       outputDir: RAW_DATA_PATH,
       log: false,
     })
+
     logger.info(`All data for dates queried was written to ${RAW_DATA_PATH}.`)
 
   }
@@ -163,7 +180,8 @@ function isDataResponse(day) {
 }
 
 
-function generateQueryPaths({ dateStrings, metricEndpoints }) {
+function generateQueryPathsByDate({ metricsByDate, endpoints }) {
+
   //TODO: dateStrings will become an object w/ top level keys of dateStrings that point to metrics then to endpoints,
   // { datestring => metric => path }
   // that actually lines up with what's going on here, can you use the metrics in the obj passed in, instead of 
@@ -173,16 +191,15 @@ function generateQueryPaths({ dateStrings, metricEndpoints }) {
 
   const memo = {}
 
-  // organize paths by dateString, then by metric
-  for (const dateString of dateStrings) {
-    for (const metricKey in metricEndpoints) {
+  for (const dateString in metricsByDate) {
 
-      const resourcePath = metricEndpoints[metricKey].replace('%DATE%', dateString)
+    if (!memo[dateString]) {
+      memo[dateString] = {}
+    }
 
-      if (!memo[dateString])
-        memo[dateString] = {}
+    for (const metric in metricsByDate[dateString]) {
 
-      memo[dateString][metricKey] = resourcePath
+      memo[dateString][metric] = endpoints[metric].replace('%DATE%', dateString)
 
     }
   }
@@ -193,15 +210,16 @@ function generateQueryPaths({ dateStrings, metricEndpoints }) {
 
 async function queryFitbit({ participant, queryPathsByDate }) {
 
-  const collectedData = {}
-
   console.log(`PARTICIPANT: ${participant.participantId}`)
+
+  const collectedData = {}
   for (const date in queryPathsByDate) {
+
+    console.log(`DATE: ${date}`)
 
     collectedData[date] = {}
     const queriesForDate = queryPathsByDate[date]
 
-    console.log(`DATE: ${date}`)
     for (const metric in queriesForDate) {
       const queryPath = queriesForDate[metric]
 
@@ -274,38 +292,31 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
 }
 
-async function findUncapturedDatesInWindow({ participantId, today, windowSize, registrationDate, dateRange }) {
-  //TODO: return { dates => metrics => endpoints }
+async function findUncapturedDates({ filenames, expectedDateStrings, metrics }) {
 
-  const filenames = await getFiles({
-    directory: RAW_DATA_PATH, // parameterize
-    criterion: fname => fname.startsWith(participantId),
-  })
+  // filenames is what you have, need to check for ALL dates
+  const allDatesMap = expectedDateStrings.reduce((memo, dateString) => {
+    memo[dateString] = null 
+    return memo 
+  }, {})
 
-  // TODO: get metric-level breakdown for metrics to fetch
-  // so you don't say you have data for a day, when you only have partial data
-  // take filenames, reduce them to { date => { metric => path } }
-  const metadata = filenames.map(filename => {
+  const missing = filenames.reduce((memo, filename) => {
 
-    const [ participantId, dateString, extension ] = filename.split(/[_.]/)
+    const [ participantId, dateString, metric, extension ] = filename.split(/[_.]/)
 
-    return {
-      participantId,
-      filename,
-      dateString,
-    }
+    memo[dateString] = metrics.reduce((o, metric) => {
+      o[metric] = true // true = missing
+      return o
+    }, {})
 
-  })
+    // this metric is present, so we delete it
+    //delete memo[dateString][metric]
 
-  const [ start, stop ] = windowSize ?
-                    dateRangeFromWindowSize({ registrationDate, today, windowSize }) :
-                    dateRangeFromDateStrings({ dates: dateRange })
+    return memo
 
-  const expectedDates = datesFromRange({ start, stop }).map(d => format(d, ymdFormat))
-  const capturedDates = metadata.map(md => md.dateString)
-  const missingDates = expectedDates.filter(date => !capturedDates.includes(date))
+  }, allDatesMap)
 
-  return missingDates
+  return missing
 
 }
 
@@ -313,7 +324,6 @@ async function refreshAccessToken({ accessToken, refreshToken, participantId }) 
 
   try {
     const expirationWindow = 3600
-    console.log({ accessToken, refreshToken })
     return await fbClient.refreshAccessToken(accessToken, refreshToken, expirationWindow)
   } catch(e) {
     logger.error(`Failed to refresh participant ${participantId}'s Refresh Access Token`)
@@ -328,8 +338,8 @@ module.exports = exports = {
 
   isValidDataset,
   isDataResponse,
-  findUncapturedDatesInWindow,
-  generateQueryPaths,
+  findUncapturedDates,
+  generateQueryPathsByDate,
   queryFitbit,
   refreshAccessToken,
 

@@ -1,6 +1,7 @@
 const path = require('path')
 const { question } = require('readline-sync')
 const { io, formatters } = require('../lib/utils')
+const { defaultLogger } = require('../lib/logger')
 const { writeFilePromise } = io
 const { splitArgsOn } = formatters
 
