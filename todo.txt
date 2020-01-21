@@ -1,1 +1,2 @@
 write a setup command to gather information and update the USER_CONFIG file
+signup: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
