@@ -38,6 +38,7 @@ const { defaultLogger: logger } = require('../lib/logger')
 const { dates, http, io, formatters } = require('../lib/utils')
 
 const makeList = formatters.listFormatter('•')
+const objectIsEmpty = o => Object.entries(o).length === 0
 
 async function sleep(s) {
 
@@ -139,10 +140,7 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
       metrics: Object.keys(ENDPOINTS),
     })
 
-    console.log(missingMetricsByDate)
-    process.exit()
-
-    const allDataCaptured = Object.keys(missingMetricsByDate).map(date => Boolean(missingMetricsByDate[date])).length === 0
+    const allDataCaptured = Object.entries(missingMetricsByDate).every(metricsByDate => Object.entries(metricsByDate).length === 0)
     if (allDataCaptured) {
       await logger.info(`All dates captured for participant ${participantId} in this date range.`) 
       break
@@ -157,6 +155,10 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
       participant, 
       queryPathsByDate,
     })
+
+    if (!datasets) {
+      return
+    }
 
     await writeDatasetsToFiles({ 
       datasets,
@@ -181,13 +183,6 @@ function isDataResponse(day) {
 
 
 function generateQueryPathsByDate({ metricsByDate, endpoints }) {
-
-  //TODO: dateStrings will become an object w/ top level keys of dateStrings that point to metrics then to endpoints,
-  // { datestring => metric => path }
-  // that actually lines up with what's going on here, can you use the metrics in the obj passed in, instead of 
-  // referring to the imported enum-like list?
-
-  /* creates a nested map of date strings to metrics to endpoints for those metrics */
 
   const memo = {}
 
@@ -217,8 +212,13 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
     console.log(`DATE: ${date}`)
 
-    collectedData[date] = {}
     const queriesForDate = queryPathsByDate[date]
+    if (objectIsEmpty(queriesForDate)) {
+      console.log(`all data retrieved`)
+      continue
+    }
+
+    collectedData[date] = {}
 
     for (const metric in queriesForDate) {
       const queryPath = queriesForDate[metric]
@@ -236,11 +236,18 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
           if (accessTokenExpired(response)) {
 
-            const { access_token:accessToken, refresh_token:refreshToken } = await refreshAccessToken({
-              participantId: participant.participantId,
-              accessToken: participant.accessToken,
-              refreshToken: participant.refreshToken
-            })
+            try {
+              const { access_token:accessToken, refresh_token:refreshToken } = await refreshAccessToken({
+                participantId: participant.participantId,
+                accessToken: participant.accessToken,
+                refreshToken: participant.refreshToken
+              })
+            } catch(e) {
+              if (e.status === 400 && e.context.errors[0].errorType === 'invalid_grant') {
+                logger.error(`Failed to refresh participant ${participant.participantId}'s Refresh Access Token. Contact Alex.`)
+                return
+              }
+            }
 
             // warning: if this fails, you will have to re-auth the subject. important!
             await db.updateAccessTokensById({
@@ -294,27 +301,18 @@ async function queryFitbit({ participant, queryPathsByDate }) {
 
 async function findUncapturedDates({ filenames, expectedDateStrings, metrics }) {
 
-  // filenames is what you have, need to check for ALL dates
-  const allDatesMap = expectedDateStrings.reduce((memo, dateString) => {
-    memo[dateString] = null 
-    return memo 
-  }, {})
-
-  const missing = filenames.reduce((memo, filename) => {
-
-    const [ participantId, dateString, metric, extension ] = filename.split(/[_.]/)
-
-    memo[dateString] = metrics.reduce((o, metric) => {
-      o[metric] = true // true = missing
+  const missing = {}
+  for (const dateString of expectedDateStrings) {
+    missing[dateString] = metrics.reduce((o, metric) => {
+      o[metric] = true;
       return o
-    }, {})
+    }, {}) 
+  }
 
-    // this metric is present, so we delete it
-    //delete memo[dateString][metric]
-
-    return memo
-
-  }, allDatesMap)
+  for (const filename of filenames) {
+    const [ id, dateString, metric, extension ] = filename.split(/[._]/)
+    delete missing[dateString][metric]
+  }
 
   return missing
 
@@ -322,13 +320,8 @@ async function findUncapturedDates({ filenames, expectedDateStrings, metrics }) 
 
 async function refreshAccessToken({ accessToken, refreshToken, participantId }) {
 
-  try {
-    const expirationWindow = 3600
-    return await fbClient.refreshAccessToken(accessToken, refreshToken, expirationWindow)
-  } catch(e) {
-    logger.error(`Failed to refresh participant ${participantId}'s Refresh Access Token`)
-    logger.error(e)
-  }
+  const expirationWindow = 3600
+  return await fbClient.refreshAccessToken(accessToken, refreshToken, expirationWindow)
 
 }
 
