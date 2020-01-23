@@ -33,7 +33,7 @@ async function main() {
   ].reduce((config, param) => {
     const { value, prompt, example } = param
     const formattedPrompt = Boolean(example) ? `${prompt} [ e.g., ${example} ]: ` : `${param}: `
-    config[value] = question(formattedPrompt)
+    config[value] = question(formattedPrompt).trim() || example
     return config
   }, {})
 
@@ -44,7 +44,7 @@ async function main() {
   const answer = question(`\nYou Entered: \n${temp}\n\nType 'yes' to confirm or 'no' / ENTER to abort: `)
   if (answer.toLowerCase().trim() === 'yes') {
     const finalOutput = Object.keys(config).reduce((output, param) => output + `${param}=${config[param]}\n`, '')
-    const outputPath = path.join(__dirname, '..', '..', 'USER_CONFIG.env.test')
+    const outputPath = path.join(__dirname, '..', '..', 'USER_CONFIG.env')
     await writeFilePromise(outputPath, finalOutput)
     console.log('\nApplication successfully configured!')
   } else {
