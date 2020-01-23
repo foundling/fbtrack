@@ -26,8 +26,8 @@ async function main() {
     { prompt: 'Study Name',   value: 'STUDY_NAME', example: 'XYZ Study' },
     { prompt: 'OAuth 2.0 Client ID', value: 'CLIENT_ID', example: '31B1A0' },
     { prompt: 'OAuth 2.0 Access/Refresh Token Request URI', value: 'REFRESH_URI', example: 'https://api.fitbit.com/oauth2/token' },
-    { prompt: 'Scope',        value: 'SCOPE',            example: 'heart activities sleep' },
-    { prompt: 'Callback URL', value: 'CALLBACK_URL',     example: 'localhost:3000/callback' },  
+    { prompt: 'Scope',        value: 'SCOPE',            example: 'heartrate activity sleep' },
+    { prompt: 'Callback URL', value: 'CALLBACK_URL',     example: 'http://localhost:3000/store_subject_data' },  
     { prompt: 'Window Size',  value: 'WINDOW_SIZE', example: 3 },
 
   ].reduce((config, param) => {

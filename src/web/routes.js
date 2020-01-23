@@ -42,6 +42,7 @@ const authorize = async (req, res) => {
 
   try {
 
+    await db.init()
     participant = await db.getParticipantById(participantId)
 
   } catch(e) {
