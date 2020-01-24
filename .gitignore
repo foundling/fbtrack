@@ -2,5 +2,6 @@ node_modules/
 .DS_Store
 .env
 *.env
+!USER_CONFIG.env
 src/db/*.sqlite
 data/**/*.json
