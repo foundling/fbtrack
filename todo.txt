@@ -1,4 +1,7 @@
 - signup: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
 - refactor: add study and participant models to centralize business logic, making handlers much shorter and clean up data manipulation methods.  (also make data/raw/ subdirs w/ participant ids) 
 create 
-- handle server shutdown from browser 'quit' button
+- web interface: 
+  - handle server shutdown from browser 'quit' button
+  - checkbox for re-registration
+  - link back to / to allow admin to register participants in series
