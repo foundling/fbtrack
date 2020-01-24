@@ -4,7 +4,8 @@
   "description": "fbtrack app",
   "main": "index.js",
   "scripts": {
-    "test": "tape src/**/test.*.js | tap-spec"
+    "test": "tape src/**/test.*.js | tap-spec",
+    "postinstall": "node bin/fbt configure"
   },
   "keywords": [],
   "author": "Alex Ramsdell",
