@@ -1,2 +1,4 @@
-write a setup command to gather information and update the USER_CONFIG file
-signup: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
+- signup: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
+- refactor: add study and participant models to centralize business logic, making handlers much shorter and clean up data manipulation methods.  (also make data/raw/ subdirs w/ participant ids) 
+create 
+- handle server shutdown from browser 'quit' button
