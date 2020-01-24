@@ -99,10 +99,12 @@ async function addParticipant(req, res) {
       access_token,
       refresh_token
     } = await client.getAccessToken(code, FITBIT_CONFIG.CALLBACK_URL)
+    console.log({tokens})
 
   } catch(e) {
 
     logger.error(`Error getting access tokens: ${e}`)
+    logger.debug(e)
     return res.render('signup_status', {
       layout: 'main.hbs',
       error: e
@@ -127,7 +129,7 @@ async function addParticipant(req, res) {
 
   } catch (e) {
 
-    logger.error(e)
+    logger.debug(e)
     return res.render('signup_status', {
       error: e,
       layout: 'main.hbs',
