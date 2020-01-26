@@ -2,7 +2,7 @@
 
 Participant management platform and data collection tool for research studies collecting Fitbit data.
 
-## Install Instructions
+## Command-Line Install Instructions
 
 At a terminal, run the following:
 
