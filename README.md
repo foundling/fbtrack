@@ -6,12 +6,13 @@ Participant management platform and data collection tool for research studies co
 
 At a terminal, run the following:
 
+
 ```console
-git clone git@github.com:foundling/fbtrack
-cd fbtrack
-npm install
-fbtrack="$(pwd)/bin"; echo 'export PATH=$PATH:'$fbtrack >> ~/.bashrc
-fbtrack setup
+user@system:~$ git clone git@github.com:foundling/fbtrack
+user@system:~$ cd fbtrack
+user@system:~$ npm install
+user@system:~$ fbtrack="$(pwd)/bin"; echo 'export PATH=$PATH:'$fbtrack >> ~/.bashrc
+user@system:~$ fbtrack setup
 ```
 
 ## Usage
