@@ -6,22 +6,12 @@ Participant management platform and data collection tool for research studies co
 
 At a terminal, run the following:
 
-```
-# fetch the latest code from github
-$ git clone git@github.com:foundling/fbtrack
-
-# enter the application directory of the downloaded repository
-$ cd fbtrack
-
-# install the application dependencies
-$ npm install
-
-# add the command-line path to your startup configuration file so you can 
-# type 'fbtrack' from anywhere to run the command 
-$ fbtrack="$(pwd)/bin"; echo 'export PATH=$PATH:'$fbtrack >> ~/.bashrc
-
-# configure the app using your oauth keys and desired Fitbit Scopes
-$ fbtrack setup
+```console
+git clone git@github.com:foundling/fbtrack
+cd fbtrack
+npm install
+fbtrack="$(pwd)/bin"; echo 'export PATH=$PATH:'$fbtrack >> ~/.bashrc
+fbtrack setup
 ```
 
 ## Usage
