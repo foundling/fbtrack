@@ -1,4 +1,5 @@
 const path = require('path')
+const fs = require('fs')
 
 const { readdirPromise, statPromise } = require('../lib/utils/io')
 const Participant = require('./Participant')
@@ -7,17 +8,28 @@ const { APP_CONFIG } = require('../config')
 
 class Study {
 
-  constructor({ name = '', admin = [], participants = []  } = {}) {
+  constructor({ name = '', admin = [], participants = [], dataPath = null  } = {}) {
+
+    if (dataPath === null || !fs.existsSync(dataPath)) {
+      throw new Error(`Study constructor's 'dataPath' argument can't be null!`)
+    }
 
     this.name = name
     this.participants = participants
     this.admin = admin
+    this.dataPath = path.isAbsolute(dataPath) ? dataPath : path.join(__dirname, dataPath)
 
   }
 
-  async init({ dataPath }) {
-    const data = await this.loadDataFromDisk({ dataPath, flat: false })
+  async init() {
+
+    const fitbitData = await this.loadDataFromDisk({
+      dataPath: this.dataPath,
+      flat: false
+    })
+
     //also load data from database here to know which subjects you're looking for
+    //const participantInformation = ?? 
   }
 
   //async query({ by, date, dates }) {}
@@ -31,7 +43,7 @@ class Study {
 
   async loadDataFromDisk({ dataPath, flat }) {
 
-    const data = await (flat ? this.loadFlat({ dataPath }) : this.loadHierarchical({ dataPath }))
+    this.data = await (flat ? this.loadFlat({ dataPath }) : this.loadHierarchical({ dataPath }))
 
   }
 
@@ -81,8 +93,5 @@ class Study {
 
   }
 }
-
-const s = new Study()
-s.init({ dataPath: APP_CONFIG.RAW_DATA_PATH }).then(console.log)
 
 module.exports = exports = Study
