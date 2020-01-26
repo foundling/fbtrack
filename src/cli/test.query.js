@@ -190,32 +190,3 @@ test('[ cli:query ] dateRangeFromDateStrings: fails when start is after stop', (
   })
 
 })
-
-test('[ cli:query ] dateRangeFromDateStrings', (t) => {
-
-  // improve these tests
-  t.plan(2)
-
-  const dateStrings = [
-    new Date(2020, 0, 4),
-    new Date(2020, 0, 5),
-    new Date(2020, 0, 6)
-  ].map(date => format(date, ymdFormat))
-
-  const numMetrics = Object.keys(FITBIT_CONFIG.ENDPOINTS).length 
-  const pathMap = generateQueryPathsByDate({
-    dateStrings,
-    metricEndpoints: FITBIT_CONFIG.ENDPOINTS
-  })
-
-  t.equal(
-    Object.keys(pathMap).every(dateString => Object.keys(pathMap[dateString]).length === numMetrics),
-    true
-  )  
-
-  t.equal(
-    Object.keys(pathMap).length,
-    dateStrings.length
-  )
-
-})
