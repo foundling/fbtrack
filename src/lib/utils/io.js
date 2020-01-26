@@ -3,12 +3,14 @@ const path = require('path')
 const {
   readdir,
   readFile,
+  stat,
   writeFile
 } = require('fs')
 
 const readdirPromise = util.promisify(readdir)
 const readFilePromise = util.promisify(readFile)
 const writeFilePromise = util.promisify(writeFile)
+const statPromise = util.promisify(stat)
 
 const delayedRequire = function(path) { 
   return function(...args) {
@@ -64,6 +66,7 @@ module.exports = exports = {
   getFiles,
   readdirPromise,
   readFilePromise,
+  statPromise,
   writeDatasetsToFiles,
   writeFilePromise,
 }
