@@ -27,7 +27,21 @@ const rmDir = (path) => {
   return execSync(`rm -rf ${path}`, { encoding: 'utf8' })
 }
 
-const seedTestData = (dirPath) => {
+const seedTestDataFlat = (dirPath) => {
+
+  fs.mkdirSync(dirPath) 
+  const participantIds = ['test1', 'test2']
+
+  for (let pid of participantIds) {
+    for (let part of testFileParts) {
+      const fitbitFile = `${pid}_${part}`
+      fs.writeFileSync(path.join(dirPath, fitbitFile))
+    }
+  }
+
+}
+
+const seedTestDataHierarchical = (dirPath) => {
 
   fs.mkdirSync(dirPath) 
   const participantIds = ['test1', 'test2']
@@ -46,16 +60,14 @@ const seedTestData = (dirPath) => {
 
 }
 
-test('Study model :: Setup', async (t) => {
-
+test('Study model :: create test data', async (t) => {
   rmDir(testDataDir)
-  seedTestData(testDataDir)
-
+  seedTestDataHierarchical(testDataDir)
 })
 
 test('Study model :: should throw if dataPath not a directory', (t) => {
 
-  t.plan(5)
+  t.plan(1)
 
   rmDir(testDataDir)
 
@@ -67,61 +79,64 @@ test('Study model :: should throw if dataPath not a directory', (t) => {
     })
   })
 
-  t.doesNotThrow(() => {
-
-    seedTestData(testDataDir)
-
-    const s = new Study({
-      name: 'TEST_STUDY',
-      dataPath: testDataDir
-    })
-
-    t.equals(s.name, 'TEST_STUDY')
-    t.equals(s.dataPath, testDataDir)
-    t.equals(path.isAbsolute(s.dataPath), true)
-
-  })
-
 })
 
+test('Study model :: initialized values', (t) => {
 
-test('Study model :: initialize study and test indexing', async (t) => {
+  t.plan(3)
 
-  t.plan(6)
-
-  rmDir(testDataDir)
-  seedTestData(testDataDir)
+  seedTestDataHierarchical(testDataDir)
 
   const s = new Study({
     name: 'TEST_STUDY',
     dataPath: testDataDir
   })
 
-  await s.init({ dataPath: testDataDir })
+  t.equals(s.name, 'TEST_STUDY')
+  t.equals(s.dataPath, testDataDir)
+  t.equals(path.isAbsolute(s.dataPath), true)
 
-  t.equal(s.data instanceof Map, true) 
-  const participantIds = [...s.data.keys()].sort()
-
-  // has the right keys
-  t.deepEquals(participantIds, ['test1','test2'])
-
-  // values have the right type
-  t.equals(s.data.get('test1') instanceof Array, true)
-  t.equals(s.data.get('test2') instanceof Array, true)
-
-  // values contain the right data
-  t.deepEquals(
-    s.data.get('test1').sort(),
-    testFileParts.map(part => `test1_${part}`).sort()
-  )
-  t.deepEquals(
-    s.data.get('test2').sort(),
-    testFileParts.map(part => `test2_${part}`).sort()
-  )
 
 })
 
-test('Study model :: Teardown', async (t) => {
+test('Study model :: loadFlat', async (t) => {
+ 
+  rmDir(testDataDir)
+  seedTestDataFlat(testDataDir)
+
+  const s = new Study({
+    name: 'TEST_STUDY',
+    dataPath: testDataDir,
+    flat: false,
+  })
+
+  const data = await s.loadFlat()
+
+  t.deepEquals(
+    [...data.get('test1')].sort(),
+    testFileParts.map(part => `test1_${part}`).sort()
+  )
+
+  t.deepEquals(
+    [...data.get('test2')].sort(),
+    testFileParts.map(part => `test2_${part}`).sort()
+  )
+ 
+})
+
+test('Study model :: loadHierarchical', async (t) => {
+
+  const s = new Study({
+    name: 'TEST_STUDY',
+    dataPath: testDataDir,
+    flat: true,
+  })
+
+  const data = await s.loadHierarchical()
+
+})
+
+test('Study model :: delete test data', async (t) => {
 
   rmDir(testDataDir)
 
