@@ -27,7 +27,8 @@ class Study {
     this.participants = []
 
     const participantIdMap = await this.loadDataFromDisk({ dataPath: this.dataPath })
-    const participantRecords = await db.getAllParticipants({ active: true }) // maybe allow a filter in study?
+    const participantRecords = await this.database.getParticipants({ active: true }) // maybe allow a filter in study?
+    console.log({ participantIdMap, participantRecords })
 
     for (const record of participantRecords) {
 
@@ -44,7 +45,7 @@ class Study {
 
   async loadDataFromDisk({ dataPath }) {
 
-    this.data = await (this.flat ? this.loadFlat({ dataPath }) : this.loadHierarchical({ dataPath }))
+    return await (this.flat ? this.loadFlat({ dataPath }) : this.loadHierarchical({ dataPath }))
 
   }
 

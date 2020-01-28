@@ -20,6 +20,11 @@ const testFileParts = [
   '2020-01-04_activities-heartrate.json',
 ]
 
+const { APP_CONFIG } = require('../config')
+const { DB_PATH, DB_NAME } = APP_CONFIG
+const Database = require(DB_PATH)
+const testDatabaseName = 'study-test-database'
+const database = new Database({ databaseFile: testDatabaseName })
 
 const test = tapePromise(tape)
 
@@ -60,12 +65,16 @@ const seedTestDataHierarchical = (dirPath) => {
 
 }
 
+test('setup :: init db' , async (t) => {
+  await database.init()
+})
+
 test('Study model :: create test data', async (t) => {
   rmDir(testDataDir)
   seedTestDataHierarchical(testDataDir)
 })
 
-test('Study model :: should throw if dataPath not a directory', (t) => {
+test('Study model :: should throw if dataPath not a directory', async (t) => {
 
   t.plan(1)
 
@@ -75,6 +84,7 @@ test('Study model :: should throw if dataPath not a directory', (t) => {
   t.throws(() => {
     const s = new Study({
       name: 'TEST_STUDY',
+      database,
       dataPath: testDataDir
     })
   })
@@ -83,21 +93,45 @@ test('Study model :: should throw if dataPath not a directory', (t) => {
 
 test('Study model :: initialized values', (t) => {
 
-  t.plan(3)
+  t.plan(4)
 
+  rmDir(testDataDir)
   seedTestDataHierarchical(testDataDir)
 
   const s = new Study({
     name: 'TEST_STUDY',
+    database,
     dataPath: testDataDir
   })
 
   t.equals(s.name, 'TEST_STUDY')
   t.equals(s.dataPath, testDataDir)
+  t.deepEquals(s.database, database)
   t.equals(path.isAbsolute(s.dataPath), true)
 
 
 })
+
+test('Study model :: init method', async (t) => {
+
+  t.plan(1)
+
+  rmDir(testDataDir)
+  seedTestDataHierarchical(testDataDir)
+
+  const s = new Study({
+    name: 'TEST_STUDY',
+    database,
+    dataPath: testDataDir,
+    flat: true,
+  })
+
+  await s.init()
+
+  t.equal(Array.isArray(s.participants),  true)
+
+})
+
 
 test('Study model :: loadFlat', async (t) => {
  
@@ -106,6 +140,7 @@ test('Study model :: loadFlat', async (t) => {
 
   const s = new Study({
     name: 'TEST_STUDY',
+    database,
     dataPath: testDataDir,
     flat: false,
   })
@@ -128,6 +163,7 @@ test('Study model :: loadHierarchical', async (t) => {
 
   const s = new Study({
     name: 'TEST_STUDY',
+    database,
     dataPath: testDataDir,
     flat: true,
   })

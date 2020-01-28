@@ -8,7 +8,7 @@ class Database {
   constructor({ databaseFile }) {
 
     this.databaseFile = databaseFile
-    this.dbPromise = sqlite.open(`${ path.join(__dirname, databaseFile) }.sqlite`, { Promise }) 
+    this.dbPromise = sqlite.open(`${ path.join(__dirname, databaseFile) }.sqlite`, { Promise, cached: true }) 
     // add {cached: true} so you can reuse the db handle?
 
   }
