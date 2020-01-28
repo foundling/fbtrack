@@ -8,29 +8,39 @@ const { APP_CONFIG } = require('../config')
 
 class Study {
 
-  constructor({ name = '', admin = [], participants = [], dataPath = null, flat = false  } = {}) {
+  constructor({ name = '', dataPath = null, flat = false, database = null  } = {}) {
 
     if (dataPath === null || !fs.existsSync(dataPath)) {
       throw new Error(`Study constructor's 'dataPath' argument can't be null!`)
     }
 
-    this.admin = admin
     this.dataPath = path.isAbsolute(dataPath) ? dataPath : path.join(__dirname, dataPath)
+    this.database = database
     this.flat = flat
     this.name = name
-    this.participants = participants
+    this.participants = null
 
   }
 
   async init() {
 
-    const fitbitData = await this.loadDataFromDisk({ dataPath: this.dataPath })
+    this.participants = []
 
-    //also load data from database here to know which subjects you're looking for
-    //const participantInformation = ?? 
+    const participantIdMap = await this.loadDataFromDisk({ dataPath: this.dataPath })
+    const participantRecords = await db.getAllParticipants({ active: true }) // maybe allow a filter in study?
+
+    for (const record of participantRecords) {
+
+      const participant = new Participant({
+        ...record,
+        files: participantIdMap.get(participantId) || [],
+      })
+
+      this.participants.push(participant)
+
+    }
+
   }
-
-  //async query({ by, date, dates }) {}
 
   async loadDataFromDisk({ dataPath }) {
 
@@ -92,6 +102,10 @@ class Study {
     }
 
     return data
+
+  }
+
+  query({ participantIds=[], allParticipants=false, dateRange=[], windowSize=null }) {
 
   }
 
