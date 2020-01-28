@@ -82,7 +82,23 @@ const fbClient = new FitbitClient({
   clientSecret: CLIENT_SECRET
 })
 
-async function main({ participantIds=[], all=false, dateRange=[], windowSize=null, refresh=false }) {
+async function main({ participantIds=[], all=false, dateRange=[], windowSize=null }) {
+
+  /*
+   *
+   * const db = new Database({ databaseFile: DB_NAME })
+   * await db.init()
+   *
+   * const study = new Study({
+   *   name: STUDY_NAME,
+   *   database: db,
+   *   flat: true
+   * })
+   * await study.init({ dataPath: RAW_DATA_PATH })
+   * 
+   * await study.query({ participantIds, allParticipants, dateRange, windowSize })
+   *
+   */
 
   if (dateRange.length === 0 && windowSize == null) {
     windowSize = WINDOW_SIZE
