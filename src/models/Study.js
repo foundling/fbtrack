@@ -2,6 +2,7 @@ const path = require('path')
 const fs = require('fs')
 
 const { readdirPromise, statPromise } = require('../lib/utils/io')
+const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils/utils')
 const Participant = require('./Participant')
 
 const { APP_CONFIG } = require('../config')
@@ -58,14 +59,10 @@ class Study {
       const entryStat = await statPromise(path.join(dataPath, entry))
 
       if (entryStat.isFile()) {
-
-        const parts = entry.split(/[._]/)
-        const [participantId, date, metric, extension] = parts
-
-        if (!parts.every(Boolean)) {
-          // probably a better way to validate that it's a participant file?
+        if (!isValidParticipantFilename(entry)) {
           continue
         }
+        const { participantId } = parseParticipantFilename(entry)
         if (!data.has(participantId)) {
           data.set(participantId, [])
         }
