@@ -28,13 +28,12 @@ class Study {
 
     const participantIdMap = await this.loadDataFromDisk({ dataPath: this.dataPath })
     const participantRecords = await this.database.getParticipants({ active: true }) // maybe allow a filter in study?
-    console.log({ participantIdMap, participantRecords })
 
     for (const record of participantRecords) {
 
       const participant = new Participant({
         ...record,
-        files: participantIdMap.get(participantId) || [],
+        files: participantIdMap.get(record.participantId) || [],
       })
 
       this.participants.push(participant)

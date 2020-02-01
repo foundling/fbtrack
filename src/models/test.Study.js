@@ -6,6 +6,7 @@ const { default: tapePromise } = require('tape-promise')
 
 const Study = require('./Study') 
 const testDataDir = path.join(__dirname, 'test-data')
+const testParticipantIds = ['test1','test2']
 const testFileParts = [
   '2020-01-01_sleep.json',
   '2020-01-01_activities-heartrate.json',
@@ -35,9 +36,8 @@ const rmDir = (path) => {
 const seedTestDataFlat = (dirPath) => {
 
   fs.mkdirSync(dirPath) 
-  const participantIds = ['test1', 'test2']
 
-  for (let pid of participantIds) {
+  for (let pid of testParticipantIds) {
     for (let part of testFileParts) {
       const fitbitFile = `${pid}_${part}`
       fs.writeFileSync(path.join(dirPath, fitbitFile))
@@ -49,9 +49,8 @@ const seedTestDataFlat = (dirPath) => {
 const seedTestDataHierarchical = (dirPath) => {
 
   fs.mkdirSync(dirPath) 
-  const participantIds = ['test1', 'test2']
 
-  for (let pid of participantIds) {
+  for (let pid of testParticipantIds) {
 
     const participantDir = path.join(dirPath, pid) 
     fs.mkdirSync(participantDir) 
@@ -65,22 +64,30 @@ const seedTestDataHierarchical = (dirPath) => {
 
 }
 
-test('setup :: init db' , async (t) => {
-  await database.init()
-})
+test('setup :: init db, create test fitbit json filenames on disk' , async (t) => {
 
-test('Study model :: create test data', async (t) => {
+  await database.init()
+
+  testParticipantIds.forEach(participantId => {
+    database.addParticipant({
+      participantId,
+      registrationDate: '2020-01-01',
+      accessToken: `${participantId}_ACCESS_TOKEN`,
+      refreshToken: `${participantId}_REFRESH_TOKEN`,
+    })
+  })
+
   rmDir(testDataDir)
   seedTestDataHierarchical(testDataDir)
+
 })
 
-test('Study model :: should throw if dataPath not a directory', async (t) => {
+test('Study model :: should throw if dataPath doesnt exist', async (t) => {
 
   t.plan(1)
 
   rmDir(testDataDir)
 
-  // test data path doesn't exist
   t.throws(() => {
     const s = new Study({
       name: 'TEST_STUDY',
@@ -91,7 +98,7 @@ test('Study model :: should throw if dataPath not a directory', async (t) => {
 
 })
 
-test('Study model :: initialized values', (t) => {
+test('Study model :: constructor', (t) => {
 
   t.plan(4)
 
@@ -112,12 +119,12 @@ test('Study model :: initialized values', (t) => {
 
 })
 
-test('Study model :: init method', async (t) => {
+test('Study model :: init()', async (t) => {
 
-  t.plan(1)
+  t.plan(2)
 
   rmDir(testDataDir)
-  seedTestDataHierarchical(testDataDir)
+  seedTestDataFlat(testDataDir)
 
   const s = new Study({
     name: 'TEST_STUDY',
@@ -129,9 +136,9 @@ test('Study model :: init method', async (t) => {
   await s.init()
 
   t.equal(Array.isArray(s.participants),  true)
+  t.deepEqual(s.participants.map(p => p.participantId).sort(), testParticipantIds.sort())
 
 })
-
 
 test('Study model :: loadFlat', async (t) => {
  
@@ -147,15 +154,12 @@ test('Study model :: loadFlat', async (t) => {
 
   const data = await s.loadFlat()
 
-  t.deepEquals(
-    [...data.get('test1')].sort(),
-    testFileParts.map(part => `test1_${part}`).sort()
-  )
-
-  t.deepEquals(
-    [...data.get('test2')].sort(),
-    testFileParts.map(part => `test2_${part}`).sort()
-  )
+  testParticipantIds.forEach(testParticipantId => {
+    t.deepEquals(
+      [...data.get(testParticipantId)].sort(),
+      testFileParts.map(part => `${testParticipantId}_${part}`).sort()
+    )
+  })
  
 })
 
@@ -175,5 +179,6 @@ test('Study model :: loadHierarchical', async (t) => {
 test('Study model :: delete test data', async (t) => {
 
   rmDir(testDataDir)
+  database.clearParticipants()
 
 })
