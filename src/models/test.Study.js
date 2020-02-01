@@ -88,55 +88,62 @@ test('setup :: init db, create test fitbit json filenames on disk' , async (t) =
 
   await database.init()
 
-  testParticipantIds.forEach(participantId => {
-    database.addParticipant({
+  rmDir(testDataDir)
+
+  testParticipantIds.forEach(async(participantId) => {
+    await database.addParticipant({
       participantId,
       registrationDate: '2020-01-01',
       accessToken: `${participantId}_ACCESS_TOKEN`,
       refreshToken: `${participantId}_REFRESH_TOKEN`,
     })
   })
-
-  rmDir(testDataDir)
   seedTestDataHierarchical(testDataDir)
   seedTestDataFlat(testDataDir)
 
 })
 
-test('Study model :: should throw if dataPath doesnt exist', async (t) => {
-
-  t.plan(1)
-
-  rmDir(testDataDir)
-
-  t.throws(() => {
-    const s = new Study({
-      name: 'TEST_STUDY',
-      database,
-      dataPath: testDataDir
-    })
-  })
-
-})
 
 test('Study model :: constructor', (t) => {
 
-  t.plan(4)
+  t.plan(12)
 
   rmDir(testDataDir)
   seedTestDataHierarchical(testDataDir)
 
   const s = new Study({
     name: 'TEST_STUDY',
+    flat: true,
     database,
     dataPath: testDataDir
   })
 
   t.equals(s.name, 'TEST_STUDY')
   t.equals(s.dataPath, testDataDir)
+  t.equals(s.flat, true)
   t.deepEquals(s.database, database)
   t.equals(path.isAbsolute(s.dataPath), true)
+  t.equals(s.participants, null)
 
+  const s2 = new Study({
+    dataPath: testDataDir
+  })
+
+  t.equals(s2.name, '')
+  t.equals(s2.dataPath, testDataDir)
+  t.equals(s2.flat, false)
+  t.equals(s2.database, null)
+  t.equals(s2.participants, null)
+
+
+  rmDir(testDataDir)
+  t.throws(() => {
+    new Study({
+      name: 'TEST_STUDY',
+      database,
+      dataPath: testDataDir
+    })
+  })
 
 })
 
@@ -191,6 +198,10 @@ test('Study model :: loadFlat', async (t) => {
 })
 
 test('Study model :: loadHierarchical', async (t) => {
+
+  rmDir(testDataDir)
+  seedTestDataFlat(testDataDir)
+  seedTestDataHierarchical(testDataDir)
 
   const s = new Study({
     name: 'TEST_STUDY',

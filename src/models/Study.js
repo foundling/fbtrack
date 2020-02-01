@@ -81,20 +81,16 @@ class Study {
     const entries = await readdirPromise(dataPath)
 
     for (let entry of entries) {
-      try {
-        const entryStat = await statPromise(path.join(dataPath, entry))
-        if (entryStat.isDirectory()) {
-          data.set(entry, [])
-          const filenames = await readdirPromise(path.join(dataPath, entry))
-          for (let filename of filenames) {
-            const filenameStat = await statPromise(path.join(dataPath,entry,filename))
-            if (filenameStat.isFile()) {
-              data.get(entry).push(filename)
-            }
+      const entryStat = await statPromise(path.join(dataPath, entry))
+      if (entryStat.isDirectory()) {
+        data.set(entry, [])
+        const filenames = await readdirPromise(path.join(dataPath, entry))
+        for (let filename of filenames) {
+          const filenameStat = await statPromise(path.join(dataPath,entry,filename))
+          if (filenameStat.isFile()) {
+            data.get(entry).push(filename)
           }
         }
-      } catch (e) {
-        throw e
       }
     }
 
