@@ -4,7 +4,7 @@
   "description": "fbtrack app",
   "main": "index.js",
   "scripts": {
-    "test": "tape src/**/test.*.js | tap-spec",
+    "test": "nyc tape src/**/test.*.js | tap-nyc",
     "postinstall": "node bin/fbt configure"
   },
   "keywords": [],
@@ -36,6 +36,7 @@
     "tap-colorize": "^1.2.0",
     "tap-dot": "^2.0.0",
     "tap-min": "^2.0.0",
+    "tap-nyc": "^1.0.3",
     "tap-spec": "^5.0.0",
     "tape": "^4.12.1"
   }
