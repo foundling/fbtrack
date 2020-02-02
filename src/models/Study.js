@@ -98,8 +98,7 @@ class Study {
 
   }
 
-  query({ participantIds=[], allParticipants=false, dateRange=[], windowSize=null }) {
-
+  query({ participant: { ids }, date: { range, window } } = {}) {
   }
 
 }

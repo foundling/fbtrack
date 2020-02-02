@@ -96,7 +96,7 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
    * })
    * await study.init({ dataPath: RAW_DATA_PATH })
    * 
-   * await study.query({ participantIds, allParticipants, dateRange, windowSize })
+   * await study.query({ participant: {all, ids}, dates: {range,window} })
    *
    */
 
