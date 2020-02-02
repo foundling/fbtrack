@@ -1,8 +1,10 @@
 const path = require('path')
 const fs = require('fs')
+const { parseISO, format } = require('date-fns')
 
 const { defaultLogger: logger } = require('../lib/logger')
 const { listFormatter } = require('../lib/utils/formatters')
+const { dateRangeFromWindowSize, dateRangeFromDateStrings, ymdFormat } = require('../lib/utils/dates')
 const { readdirPromise, statPromise } = require('../lib/utils/io')
 const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils/utils')
 const Participant = require('./Participant')
@@ -124,32 +126,33 @@ class Study {
     const missing = all ? [] : ids.filter(id => !this.participants.has(id))
     if (missing.length) {
       const makeList = listFormatter('•')
-      const missingList = logger.warn(`The following participants were queried but are not in the database: \n${makeList(missing)}`)
+      const warning = `The following participants were queried but are not in the database: \n${makeList(missing)}`
+      logger.warn(warning)
     }
 
     const targetParticipants = all ? this.participants : ids.filter(id => this.participants.has(id)).map(id =>
       this.participants.get(id))
-    console.log(targetParticipants)
-    // considerations: what to return from query, and when to write the results.
-    // can we prevent large build up of file content in memory?
-    //
-    // i want to:
-    //   take a query from the cli interface
-    //   query for all the matching results
-    //   get results back as they come in
-    //   write them out
-    //   keep track of
 
-    // participants
-    // what happens here?
-    // warm up database, create study object from db, use participants object on study.
-    // study.query()
-    // gets you fitbit json data for participants with dates matching the query criteria
-    // wait till you have all data before reporting results, but if stuff isn't locally available,
-    // fetch the metrics for the participant.
-    //   - make sure to 'flatten' the request format from an array of metric query arrays into an array of metric queries
-    //   - this makes it so that none of the requests from each participant id metric blocks any other
+    for (const p of targetParticipants) {
 
+      console.log(p)
+
+      // considerations: what to return from query, and when to write the results.
+      // can we prevent large build up of file content in memory? and avoid losing retrieved data if 
+      // something causes the application to crash (internet outage, unexpected errors)
+ 
+      // pull in dateRange from window and dateRange from dateStrings
+      const [start, stop] = dateRangeFromWindowSize({
+        windowSize: dates.window, 
+        today: new Date(),
+        registrationDate: parseISO(p.record.registrationDate),
+      })
+      console.log(dates.window)
+      console.log(format(start, ymdFormat), format(stop, ymdFormat))
+      //const results = await p.query({ start, stop })
+
+
+    }
   }
 
 }
