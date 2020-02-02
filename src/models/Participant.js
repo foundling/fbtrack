@@ -41,9 +41,7 @@ const makeList = formatters.listFormatter('•')
 const objectIsEmpty = o => Object.entries(o).length === 0
 
 async function sleep(s) {
-
-  function timeout(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function timeout(ms) { return new Promise(resolve => setTimeout(resolve, ms));
   }
   await timeout(s * 1000);
 
@@ -87,17 +85,16 @@ const fbClient = new FitbitClient({
 class Participant {
 
   constructor({ participantId, files }) {
+
     this.participantId = participantId 
     this.files = files
+
   }
 
 }
 
-function addMetoParticipant() {
+async function addMetoParticipant() {
 
-  if (dateRange.length === 0 && windowSize == null) {
-    windowSize = WINDOW_SIZE
-  }
 
   await db.init()
 
@@ -298,6 +295,8 @@ async function queryFitbit({ participant, queryPathsByDate }) {
       }
     }
 
+
+  }
 
   return collectedData
 

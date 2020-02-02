@@ -41,7 +41,7 @@ cli
   .description('Query the FitBit API for participant(s)')
   .option('-a, --all', 'query fitbit for all participants, no participant id is required')
   .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participants', splitArgsOn(','))
-  .option('-w, --window-size <windowSize>', 'window size')
+  .option('-w, --window-size <windowSize>', 'window size', Number)
   .option('-r, --refresh', 'refresh oauth token')
   .option('-d, --date-range <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', splitArgsOn('..'))
   .action(query)

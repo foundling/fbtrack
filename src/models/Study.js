@@ -5,7 +5,12 @@ const { readdirPromise, statPromise } = require('../lib/utils/io')
 const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils/utils')
 const Participant = require('./Participant')
 
-const { APP_CONFIG } = require('../config')
+const { APP_CONFIG, USER_CONFIG } = require('../config')
+
+const defaultQueryArgs = { 
+  participant: { ids: null, all: false },
+  dates: { range: [], window: null }
+}
 
 class Study {
 
@@ -98,7 +103,19 @@ class Study {
 
   }
 
-  query({ participant: { ids, all }, date: { range, window } } = {}) {
+  query({ participant={ ids, all }, dates={ range, window } } = defaultQueryArgs) {
+
+    console.log(participant,dates)
+    // participants
+    // what happens here?
+    // warm up database, create study object from db, use participants object on study.  
+    // study.query()
+    // gets you fitbit json data for participants with dates matching the query criteria 
+    // wait till you have all data before reporting results, but if stuff isn't locally available, 
+    // fetch the metrics for the participant.
+    //   - make sure to 'flatten' the request format from an array of metric query arrays into an array of metric queries
+    //   - this makes it so that none of the requests from each participant id metric blocks any other
+
   }
 
 }

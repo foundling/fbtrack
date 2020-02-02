@@ -16,9 +16,9 @@ module.exports = {
     CALLBACK_URL,
     CLIENT_ID,
     CLIENT_SECRET,
-    WINDOW_SIZE,
     SCOPE,
     STUDY_NAME,
+    WINDOW_SIZE,
   } = parsedFromConfig,
   APP_CONFIG: {
     DB_NAME: 'fbtrack',
