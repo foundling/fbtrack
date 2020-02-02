@@ -84,7 +84,7 @@ const seedTestDataHierarchical = (dirPath) => {
 
 }
 
-test('setup :: init db, create test fitbit json filenames on disk' , async (t) => {
+test('study model :: setup :: init db, create test fitbit json filenames on disk' , async (t) => {
 
   await database.init()
 
@@ -104,7 +104,7 @@ test('setup :: init db, create test fitbit json filenames on disk' , async (t) =
 })
 
 
-test('Study model :: constructor', (t) => {
+test('study model :: constructor() ', (t) => {
 
   t.plan(12)
 
@@ -171,7 +171,7 @@ test('Study model :: init()', async (t) => {
 
 })
 
-test('Study model :: loadFlat', async (t) => {
+test('Study model :: loadFlat()', async (t) => {
 
   rmDir(testDataDir)
   seedTestDataFlat(testDataDir)
@@ -197,7 +197,7 @@ test('Study model :: loadFlat', async (t) => {
 
 })
 
-test('Study model :: loadHierarchical', async (t) => {
+test('Study model :: loadHierarchical()', async (t) => {
 
   rmDir(testDataDir)
   seedTestDataFlat(testDataDir)
@@ -214,7 +214,7 @@ test('Study model :: loadHierarchical', async (t) => {
 
 })
 
-test('Study model :: clear test database, delete test fitbit json files', async (t) => {
+test('study model :: teardown :: clear test database, delete test fitbit json files', async (t) => {
 
   rmDir(testDataDir)
   database.clearParticipants()

@@ -9,7 +9,7 @@ const { ymdFormat } = dates
 
 const db = new Database({ databaseFile: 'test' })
 
-test('[ database:setup ] clear participants', async (t) => {
+test('database:setup :: clearParticipants()', async (t) => {
 
   await db.init()
   await db.clearParticipants()
@@ -18,7 +18,7 @@ test('[ database:setup ] clear participants', async (t) => {
 
 })
 
-test('[ database ] create participant', async (t) => {
+test('database :: addParticipant()', async (t) => {
 
   t.plan(1)
 
@@ -43,7 +43,7 @@ test('[ database ] create participant', async (t) => {
 })
 
 
-test('[ database ] getParticipants', async (t) => {
+test('database :: getParticipants()', async (t) => {
 
   t.plan(1)
 
@@ -54,7 +54,7 @@ test('[ database ] getParticipants', async (t) => {
 })
 
 
-test('[ database ] getParticipantById', async (t) => {
+test('database :: getParticipantById()', async (t) => {
 
   t.plan(4)
 
@@ -71,7 +71,7 @@ test('[ database ] getParticipantById', async (t) => {
 
 })
 
-test('[ database ] updateAccessTokensById', async (t) => {
+test('database :: updateAccessTokensById()', async (t) => {
 
   t.plan(3)
 
@@ -92,5 +92,5 @@ test('[ database ] updateAccessTokensById', async (t) => {
 
 })
 
-test('[ database:teardown ]', async (t) => {
+test('database :: teardown', async (t) => {
 })

@@ -57,7 +57,7 @@ test('[ cli:query ] datesFromRange', (t) => {
 
 })
 
-test('[ cli:query ] dateRangeFromWindowSize (registration date before window start)', (t) => {
+test('cli :: query :: dateRangeFromWindowSize() - registration date before window start', (t) => {
 
   t.plan(1)
 
@@ -83,7 +83,7 @@ test('[ cli:query ] dateRangeFromWindowSize (registration date before window sta
 
 })
 
-test('[ cli:query ] dateRangeFromWindowSize (registration date after window start)', (t) => {
+test('cli :: query :: dateRangeFromWindowSize() - registration date after window start', (t) => {
 
   t.plan(1)
 
@@ -109,7 +109,7 @@ test('[ cli:query ] dateRangeFromWindowSize (registration date after window star
 
 })
 
-test('[ cli:query ] dateRangeFromWindowSize (registration date on window start)', (t) => {
+test('cli :: query :: dateRangeFromWindowSize() - registration date on window start', (t) => {
 
   t.plan(1)
 
@@ -135,7 +135,7 @@ test('[ cli:query ] dateRangeFromWindowSize (registration date on window start)'
 
 })
 
-test('[ cli:query ] dateRangeFromWindowSize (invalid window)', (t) => {
+test('cli :: query :: dateRangeFromWindowSize() - invalid window', (t) => {
 
   t.plan(1)
 
@@ -155,7 +155,7 @@ test('[ cli:query ] dateRangeFromWindowSize (invalid window)', (t) => {
 })
 
 
-test('[ cli:query ] dateRangeFromDateStrings', (t) => {
+test('cli :: query :: dateRangeFromDateStrings()', (t) => {
 
   t.plan(1)
 
@@ -174,7 +174,7 @@ test('[ cli:query ] dateRangeFromDateStrings', (t) => {
 
 })
 
-test('[ cli:query ] dateRangeFromDateStrings: fails when start is after stop', (t) => {
+test('cli :: query :: dateRangeFromDateStrings() - fails when start is after stop', (t) => {
 
   t.plan(1)
 
