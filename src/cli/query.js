@@ -4,7 +4,6 @@ const Database = require(APP_CONFIG.DB_PATH)
 async function main({ participantIds=[], all=false, dateRange=[], windowSize=null }) {
 
   const db = new Database({ databaseFile: DB_NAME })
-  await db.init()
 
   const study = new Study({
     name: STUDY_NAME,
@@ -12,6 +11,7 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
     flat: true, // participant fitbit .json files stored in a single dir
   })
 
+  await db.init()
   await study.init({ dataPath: APP_CONFIG.RAW_DATA_PATH })
   await study.query({ 
     participant: { 
