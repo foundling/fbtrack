@@ -56,7 +56,7 @@ const validators = {
 
     } else if (windowSize == null) {
 
-      logger.info(`Using default window size of ${ USER_CONFIG.WINDOW_SIZE } days`)
+      logger.info(`No date range or window flag passed. Using default window size of ${ USER_CONFIG.WINDOW_SIZE } days`)
 
     } else if (isNaN(windowSize) || windowSize <= 0) {
 
