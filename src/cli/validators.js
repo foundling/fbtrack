@@ -32,7 +32,7 @@ const validators = {
     }
 
     if (!all && !participantIds) {
-      logger.error('Please provide at least one participant id')
+      logger.error('Please provide at least one participant id or use the -a flag for all participants.')
       process.exit(1)
     }
 
