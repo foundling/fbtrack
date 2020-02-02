@@ -20,18 +20,6 @@ async function main({ participantIds=null, all=false, dateRange=[], windowSize=n
 
   await study.init()
 
-  // considerations: what to return from query, and when to write the results.
-  // can we prevent large build up of file content in memory?
-  //
-  // i want to:
-  //   take a query from the cli interface
-  //   query for all the matching results
-  //   get results back as they come in
-  //   write them out
-  //   keep track of
-
-  // it's ambiguous what the query does. am i looking for fitbit, collected data, or both?
-
   const queryOptions = {
     participant: { 
       ids: participantIds, 

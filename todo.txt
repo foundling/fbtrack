@@ -1,6 +1,7 @@
 - immediately fix: 
   - write data out  data immediately upon capture.  w/ a long running query, you are building it all up into memory over time.  if app crashes, you have to rerun!
   - write data out if it exists on a specific signal?
+- interface issue? -p -a doesn't throw, but it means participant ids are ['-a']
 
 - signup: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
 - refactor: add study and participant models to centralize business logic, making handlers much shorter and clean up data manipulation methods.  (also make data/raw/ subdirs w/ participant ids) 

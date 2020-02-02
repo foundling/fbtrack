@@ -41,10 +41,10 @@ const makeList = formatters.listFormatter('•')
 const objectIsEmpty = o => Object.entries(o).length === 0
 
 async function sleep(s) {
-function timeout(ms) { return new Promise(resolve => setTimeout(resolve, ms));
+  function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
   await timeout(s * 1000);
-
 }
 
 const {
@@ -84,10 +84,11 @@ const fbClient = new FitbitClient({
 
 class Participant {
 
-  constructor({ participantId, files }) {
+  constructor({ participantId, files, record }) {
 
-    this.participantId = participantId 
+    this.participantId = record.participantId 
     this.files = files
+    this.record = record
 
   }
 

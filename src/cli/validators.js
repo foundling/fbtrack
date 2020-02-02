@@ -26,6 +26,11 @@ const validators = {
 
     const [{ all, participantIds, dateRange, windowSize, refresh }] = args
 
+    if (participantIds && participantIds.length >= 1 && participantIds.includes('-a')) {
+      logger.error('-a flag and -p are exclusive.  use -a for all participants, or -p for specific participant ids, but not both.')
+      process.exit(1)
+    }
+
     if (!all && !participantIds) {
       logger.error('Please provide at least one participant id')
       process.exit(1)

@@ -1,6 +1,8 @@
 const path = require('path')
 const fs = require('fs')
 
+const { defaultLogger: logger } = require('../lib/logger')
+const { listFormatter } = require('../lib/utils/formatters')
 const { readdirPromise, statPromise } = require('../lib/utils/io')
 const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils/utils')
 const Participant = require('./Participant')
@@ -25,26 +27,36 @@ class Study {
     this.flat = flat
     this.name = name
     this.participants = null
+    this.initialized = false
 
   }
 
   async init() {
 
-    this.participants = []
+    this.participants = await this.buildParticipants()
+    this.initialized = true
 
+  }
+
+  async buildParticipants() {
+
+    const participants = new Map() 
     const participantIdMap = await this.loadDataFromDisk({ dataPath: this.dataPath })
     const participantRecords = await this.database.getParticipants({ active: true }) // maybe allow a filter in study?
 
     for (const record of participantRecords) {
 
-      const participant = new Participant({
-        ...record,
-        files: participantIdMap.get(record.participantId) || [],
-      })
-
-      this.participants.push(participant)
+      participants.set(
+        record.participantId, 
+        new Participant({
+          record,
+          files: participantIdMap.get(record.participantId) || [],
+        })
+      )
 
     }
+
+    return participants 
 
   }
 
@@ -103,9 +115,29 @@ class Study {
 
   }
 
-  query({ participant={ ids, all }, dates={ range, window } } = defaultQueryArgs) {
+  async query({ participant={ ids, all }, dates={ range, window } } = defaultQueryArgs) {
 
-    console.log(participant,dates)
+    // if ids are there, get list of ids that match, report mismatched.
+    // if all flag is there, use participant ids we have
+
+    const { ids, all }  = participant
+    const missing = all ? [] : ids.filter(id => !this.participants.has(id))
+    if (missing.length) {
+      const makeList = listFormatter('•')
+      const missingList = logger.warn(`The following participants were queried but are not in the database: \n${makeList(missing)}`)
+    }
+
+    const targetParticipants = all ? this.participants : ids.filter(id => this.participants.has(id))
+    // considerations: what to return from query, and when to write the results.
+    // can we prevent large build up of file content in memory?
+    //
+    // i want to:
+    //   take a query from the cli interface
+    //   query for all the matching results
+    //   get results back as they come in
+    //   write them out
+    //   keep track of
+
     // participants
     // what happens here?
     // warm up database, create study object from db, use participants object on study.  
