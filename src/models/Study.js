@@ -9,7 +9,7 @@ const Participant = require('./Participant')
 
 const { APP_CONFIG, USER_CONFIG } = require('../config')
 
-const defaultQueryArgs = { 
+const defaultQueryArgs = {
   participant: { ids: null, all: false },
   dates: { range: [], window: null }
 }
@@ -40,14 +40,14 @@ class Study {
 
   async buildParticipants() {
 
-    const participants = new Map() 
+    const participants = new Map()
     const participantIdMap = await this.loadDataFromDisk({ dataPath: this.dataPath })
     const participantRecords = await this.database.getParticipants({ active: true }) // maybe allow a filter in study?
 
     for (const record of participantRecords) {
 
       participants.set(
-        record.participantId, 
+        record.participantId,
         new Participant({
           record,
           files: participantIdMap.get(record.participantId) || [],
@@ -56,7 +56,7 @@ class Study {
 
     }
 
-    return participants 
+    return participants
 
   }
 
@@ -127,7 +127,9 @@ class Study {
       const missingList = logger.warn(`The following participants were queried but are not in the database: \n${makeList(missing)}`)
     }
 
-    const targetParticipants = all ? this.participants : ids.filter(id => this.participants.has(id))
+    const targetParticipants = all ? this.participants : ids.filter(id => this.participants.has(id)).map(id =>
+      this.participants.get(id))
+    console.log(targetParticipants)
     // considerations: what to return from query, and when to write the results.
     // can we prevent large build up of file content in memory?
     //
@@ -140,10 +142,10 @@ class Study {
 
     // participants
     // what happens here?
-    // warm up database, create study object from db, use participants object on study.  
+    // warm up database, create study object from db, use participants object on study.
     // study.query()
-    // gets you fitbit json data for participants with dates matching the query criteria 
-    // wait till you have all data before reporting results, but if stuff isn't locally available, 
+    // gets you fitbit json data for participants with dates matching the query criteria
+    // wait till you have all data before reporting results, but if stuff isn't locally available,
     // fetch the metrics for the participant.
     //   - make sure to 'flatten' the request format from an array of metric query arrays into an array of metric queries
     //   - this makes it so that none of the requests from each participant id metric blocks any other
