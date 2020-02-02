@@ -98,7 +98,7 @@ class Study {
 
   }
 
-  query({ participant: { ids }, date: { range, window } } = {}) {
+  query({ participant: { ids, all }, date: { range, window } } = {}) {
   }
 
 }
