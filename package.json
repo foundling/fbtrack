@@ -6,7 +6,7 @@
   "scripts": {
     "test-coverage": "nyc tape src/**/test.*.js | tap-nyc",
     "test": "tape src/**/test.*.js | tap-spec",
-    "postinstall": "node bin/fbt configure"
+    "postinstall": "node bin/fbtrack configure"
   },
   "keywords": [],
   "author": "Alex Ramsdell",
