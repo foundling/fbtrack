@@ -33,7 +33,11 @@ const index = (req, res) => {
 
 const authorize = async (req, res) => {
 
-  const { participantId } = req.query
+  const { 
+    participantId,
+    participantStartDate
+  } = req.query
+
   let participant
 
   if (!participantId) {
@@ -63,7 +67,7 @@ const authorize = async (req, res) => {
     /* let front-end client perform redirect to fibit. if redirecting via ajax response,
        it's a cross-domain request, which fitbit blocks. */
 
-    const state = qs.encode({ participantId })
+    const state = qs.encode({ participantId, participantStartDate })
     const prompt = 'login consent'
     const redirectURI = client.getAuthorizeUrl(FITBIT_CONFIG.SCOPE, FITBIT_CONFIG.CALLBACK_URL, prompt, state)
 
@@ -80,9 +84,8 @@ const authorize = async (req, res) => {
 async function addParticipant(req, res) {
 
   const { code, state } = req.query;
-  const { participantId } = qs.decode(state)
+  const { participantId, participantStartDate } = qs.decode(state)
   const error = req.query.error_description;
-  const todaysDate = format(new Date(), ymdFormat);
 
   if (error) {
 
@@ -99,6 +102,7 @@ async function addParticipant(req, res) {
       access_token,
       refresh_token
     } = await client.getAccessToken(code, FITBIT_CONFIG.CALLBACK_URL)
+
     console.log({tokens})
 
   } catch(e) {
@@ -113,7 +117,7 @@ async function addParticipant(req, res) {
   }
   const newParticipantData = {
     participantId,
-    registrationDate: todaysDate,
+    registrationDate: participantStartDate,
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
     isActive: 1,

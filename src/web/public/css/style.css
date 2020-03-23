@@ -60,7 +60,8 @@ form > h1,
 
 form > .input-groups {
   width: 100%;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
@@ -85,7 +86,6 @@ form > #error-box.error {
 
 .input-group {
   display: flex;
-  flex-direction: row;
   padding: 20px;
   justify-content: center;
   align-items: center;
@@ -94,7 +94,7 @@ form > #error-box.error {
 input {
   padding: 5px 10px;
   font-size: 1.5em;
-  width: 180px;
+  width: auto;
 }
 
 label, button {
@@ -118,8 +118,9 @@ a.register-another-subject:hover {
   color: white;
   background: rgb(3, 169, 244);
 }
+
 a.register-another-subject {
-  color: rgb(3, 169, 244);
+  color: black;
   background: white;
 }
 

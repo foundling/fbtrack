@@ -1,5 +1,6 @@
 const subjectIdInput = document.getElementById('subject_id');
 const submitButton = document.querySelector('button[type="submit"]');
+const participantStartDateInput = document.querySelector('input[type="date"]');
 const form = document.getElementById('subject_id_form');
 const errorBox = document.getElementById('error-box');
 
@@ -25,7 +26,9 @@ async function getAuthUrl(e) {
 
   e.preventDefault()
 
-  const participantId = subjectIdInput.value.trim()
+  const participantId = subjectIdInput.value.trim();
+  const participantStartDate = participantStartDateInput.value;
+  console.log(participantStartDate);
 
   if (!participantId) {
 
@@ -40,8 +43,9 @@ async function getAuthUrl(e) {
 
     try {
 
-      const authorizePath = `http://localhost:3000/authorize?participantId=${participantId}`
-      const response = await fetch(authorizePath, { method: 'post' })
+      const authorizePath = `http://localhost:3000/authorize`
+      const authorizeQueryParams = `participantId=${participantId}&participantStartDate=${participantStartDate}`
+      const response = await fetch(`${authorizePath}?${authorizeQueryParams}`, { method: 'post' })
       const parsedResponse = await response.json()
 
       if (response.ok) {
