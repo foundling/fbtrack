@@ -142,7 +142,14 @@ async function addParticipant(req, res) {
 const stopServer = (req, res) => {
 
   logger.info('Stopping server ...')
-  process.exit()
+
+  res.render('server_shutdown', {
+    layout: 'main.hbs',
+  });
+
+  setTimeout(() => {
+    process.exit()
+  }, 1000);
 
 };
 

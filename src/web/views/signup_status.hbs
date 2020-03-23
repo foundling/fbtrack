@@ -9,10 +9,20 @@
       <h1 class="success">Authorization for participant {{ participantId }} was a Success!</h1>
     {{/if}}
 
-    <button class="quit">Quit</button>
+    <a href="/quit" class="quit">Quit</a>
+    <a href="/" class="register-another-subject">Register Another Subject</a>
 
     <script type="text/javascript">
-      document.querySelector('.quit').addEventListener('click', function() { window.close() })
+      document
+        .querySelector('.quit')
+        .addEventListener('click', function() { 
+          window.location = 'http://localhost:3000/quit';
+        })
+      document
+        .querySelector('.register-another-subject')
+        .addEventListener('click', function() { 
+          window.location = 'http://localhost:3000';
+        })
     </script>
 
   </div>

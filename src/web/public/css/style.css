@@ -29,7 +29,8 @@ header {
 }
 
 section.signup-window,
-section.auth-results {
+section.auth-results,
+section.shutdown {
   height: calc(100% - calc(1.5em + 20px));
   width: 100%;
   padding: 20px;
@@ -73,6 +74,15 @@ form > #error-box.error {
   background: white;
 }
 
+.shutdown {
+}
+
+.shutdown-notice {
+
+  padding: 10px;
+  background: white;
+}
+
 .input-group {
   display: flex;
   flex-direction: row;
@@ -97,17 +107,34 @@ button.authorize.invalid {
 }
 
 button.authorize,
-button.quit {
+a.register-another-subject,
+a.quit {
+  padding: 10px;
   border-radius: 10px;
   border: 1px solid lightgray;
-  height: 60px;
-  width: 170px;
 }
 
-button.quit:hover,
+a.register-another-subject:hover {
+  color: white;
+  background: rgb(3, 169, 244);
+}
+a.register-another-subject {
+  color: rgb(3, 169, 244);
+  background: white;
+}
+
 button.authorize:hover {
   background: rgb(3, 169, 244);
   color: white;
+}
+
+a.quit {
+  background: white;
+  color: red;
+}
+a.quit:hover {
+  color: white;
+  background: red;
 }
 
 button.authorize:focus {
