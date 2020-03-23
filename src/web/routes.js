@@ -25,7 +25,7 @@ const {
 } = dates 
 
 const index = (req, res) => {
-  res.render('index', {
+  res.render('signup', {
     layout: 'main.hbs',
     studyName: USER_CONFIG.STUDY_NAME
   })
