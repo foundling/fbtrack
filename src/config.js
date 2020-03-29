@@ -7,8 +7,6 @@ const parsedFromConfig = require('dotenv').config({
 if (!parsedFromConfig) {
   console.log(`Could not locate user config at path: ${path.join(__dirname, '..')}`) 
   process.exit(1)
-
-
 }
 
 module.exports = {

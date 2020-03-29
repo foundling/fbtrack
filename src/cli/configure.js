@@ -9,7 +9,6 @@ const {
 
   FITBIT_CONFIG,
   APP_CONFIG,
-  USER_CONFIG,
 
 } = require('../config')
 
