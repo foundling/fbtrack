@@ -10,7 +10,7 @@ const {
 
 
 // e.g. 201_2020-01-10_activities-calories.json
-const filenamePattern = /^.*_[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_.*_.json$/
+const filenamePattern = /^.+_[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[^.]*\.json$/
 const ymdFormat = 'yyyy-MM-dd' // this is fitbit's resource url format
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 const dateREStrict = /^[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/
