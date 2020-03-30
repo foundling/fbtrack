@@ -1,4 +1,4 @@
-const { APP_CONFIG} = require('../config')
+const { APP_CONFIG } = require('../config').getConfig();
 const fs = require('fs');
 const format = require('date-fns/format');
 const { inspect, promisify } = require('util');

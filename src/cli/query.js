@@ -1,4 +1,4 @@
-const { APP_CONFIG, USER_CONFIG } = require('../config')
+const { APP_CONFIG, USER_CONFIG } = require('../config').getConfig();
 const Database = require(APP_CONFIG.DB_PATH)
 const Study = require('../models/Study')
 

@@ -5,7 +5,7 @@ const expressHandlebars = require('express-handlebars')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 
-const { APP_CONFIG } = require('../config')
+const { APP_CONFIG } = require('../config').getConfig()
 const routes = require('./routes')
 const { defaultLogger:logger } = require('../lib/logger')
 

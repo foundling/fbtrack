@@ -9,7 +9,7 @@ const { readdirPromise, statPromise } = require('../lib/utils/io')
 const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils/utils')
 const Participant = require('./Participant')
 
-const { APP_CONFIG, USER_CONFIG } = require('../config')
+const { APP_CONFIG } = require('../config').getConfig()
 
 const defaultQueryArgs = {
   participant: { ids: null, all: false },

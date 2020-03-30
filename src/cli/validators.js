@@ -1,4 +1,5 @@
-const { USER_CONFIG, APP_CONFIG } = require('../config')
+const { USER_CONFIG, APP_CONFIG } = require('../config').getConfig();
+const windowSize = USER_CONFIG.WINDOW_SIZE;
 
 const {
   dates
@@ -56,7 +57,7 @@ const validators = {
 
     } else if (windowSize == null) {
 
-      logger.info(`No date range or window flag passed. Using default window size of ${ USER_CONFIG.WINDOW_SIZE } days`)
+      logger.info(`No date range or window flag passed. Using default window size of ${ WINDOW_SIZE } days`)
 
     } else if (isNaN(windowSize) || windowSize <= 0) {
 

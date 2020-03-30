@@ -3,7 +3,7 @@ const {
   FITBIT_CONFIG,
   APP_CONFIG,
   USER_CONFIG,
-} = require('../config')
+} = require('../config').getConfig({ requiresInit: true })
 
 const FitBitApiClient = require('fitbit-node')
 const { format } = require('date-fns')

@@ -2,7 +2,7 @@ const { format, parseISO, subDays } = require('date-fns')
 const { groupBy } = require('lodash')
 const { defaultLogger:logger } = require('../lib/logger')
 
-const { FITBIT_CONFIG, APP_CONFIG } = require('../config')
+const { FITBIT_CONFIG, APP_CONFIG } = require('../config').getConfig()
 const {
   DB_NAME,
   DB_PATH,
@@ -20,7 +20,6 @@ const {
 const {
     dateRE,
     datesFromRange,
-    filenamePattern,
     ymdFormat,
 } = dates
 

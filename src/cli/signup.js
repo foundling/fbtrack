@@ -1,4 +1,4 @@
-const { APP_CONFIG } = require('../config')
+const { APP_CONFIG } = require('../config').getConfig();
 const { exec } = require('child_process')
 const server = require(APP_CONFIG.SERVER_PATH)
 

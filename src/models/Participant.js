@@ -16,7 +16,7 @@ const {
   APP_CONFIG,
   USER_CONFIG,
 
-} = require('../config')
+} = require('../config').getConfig({ requiresInit: true })
 
 const {
   CLIENT_ID,
