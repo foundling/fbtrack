@@ -1,19 +1,9 @@
 const path = require('path')
 const { question } = require('readline-sync')
 const { io, formatters } = require('../lib/utils')
-const { defaultLogger } = require('../lib/logger')
 const { writeFilePromise } = io
-const { splitArgsOn } = formatters
-
-const {
-
-  FITBIT_CONFIG,
-  APP_CONFIG,
-
-} = require('../config')
 
 async function main() {
-
 
   console.log('\nConfigure FBTRACK for your app:\n') 
   console.log('Specific config values can be found in your Fitbit app panel.')
@@ -51,8 +41,6 @@ async function main() {
   } else {
     console.log('Configuration was aborted.')
   }
-
-
 
 }
 
