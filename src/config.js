@@ -33,7 +33,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
     } = (parsedFromConfig || defaultUserConfig),
 
     APP_CONFIG: {
-      DB_NAME: 'fbtrack',
+      DB_NAME: (parsedFromConfig || defaultUserConfig).STUDY_NAME,
       DB_PATH: path.join(__dirname, 'db'),
       SERVER_PATH: path.join(__dirname, 'web'),
       SERVER_PORT: 3000,

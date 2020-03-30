@@ -1,10 +1,10 @@
-const { APP_CONFIG, USER_CONFIG } = require('../config').getConfig();
+const { APP_CONFIG, USER_CONFIG } = require('../config').getConfig({ requiresInit: true });
 const Database = require(APP_CONFIG.DB_PATH)
 const Study = require('../models/Study')
 
 async function main({ participantIds=null, all=false, dateRange=[], windowSize=null }) {
 
-  const db = new Database({ databaseFile: 'test' })
+  const db = new Database({ databaseFile: USER_CONFIG.STUDY_NAME })
   await db.init()
 
   if (dateRange.length === 0 && windowSize == null) {
