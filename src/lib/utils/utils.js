@@ -1,5 +1,7 @@
-const { dateREStrict } = require('./dates')
-const { FITBIT_CONFIG } = require('../../config')
+const {
+  dateREStrict,
+  filenamePattern
+} = require('./dates')
 
 const parseParticipantFilename = (filename => {
 
@@ -8,7 +10,7 @@ const parseParticipantFilename = (filename => {
     date,
     metric,
     extension,
-  ] = filename.split(/[._]/)
+  ] = filename.split(/[._]/).map(s => s.trim())
 
   return {
     participantId,
@@ -19,15 +21,7 @@ const parseParticipantFilename = (filename => {
 
 })
 
-const isValidParticipantFilename = filename => {
-
-  const { participantId, date, metric, extension } = parseParticipantFilename(filename)
-  return participantId.trim().length > 0 &&
-         dateREStrict.test(date.trim()) &&
-         Object.keys(FITBIT_CONFIG.ENDPOINTS).includes(metric.trim()) &&
-         extension.trim() === 'json'
-
-}
+const isValidParticipantFilename = filename => filenamePattern.test(filename);
 
 module.exports = exports = {
   isValidParticipantFilename,
