@@ -88,7 +88,6 @@ function dateRangeFromDateStrings({ dates }) {
 
 }
 
-
 module.exports = exports = {
   datesFromRange,
   dateRangeFromWindowSize,

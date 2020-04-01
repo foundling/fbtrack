@@ -33,31 +33,23 @@ async function getFiles({ criterion=()=>true, directory }) {
 
 }
 
-async function writeDatasetsToFiles({ participantId, datasets, outputDir, log=false }) {
+async function writeDatasetToDisk({ participantId, date, data, metric, outputDir, log=false }) {
 
   console.log(`\nData collected for participant ${participantId}\n`)
 
-  for (const date in datasets) {
+  const filepath = path.join(outputDir,`${participantId}_${date}_${metric}.json`)
+  const serialized = JSON.stringify(dataset[metric], null, 2)
 
-    const dataset = datasets[date]
+  try {
 
-    for (const metric in dataset) {
+    await writeFilePromise(filepath, serialized)
 
-
-      const filepath = path.join(outputDir,`${participantId}_${date}_${metric}.json`)
-      const serialized = JSON.stringify(dataset[metric], null, 2)
-      try {
-
-        await writeFilePromise(filepath, serialized)
-        if (log) {
-          console.log('wrote: ', filepath) 
-        }
-      } catch (e) {
-        logger.error(e)
-      }
-
+    if (log) {
+      console.log('wrote: ', filepath) 
     }
 
+  } catch (e) {
+    logger.error(e)
   }
 }
 
@@ -67,6 +59,6 @@ module.exports = exports = {
   readdirPromise,
   readFilePromise,
   statPromise,
-  writeDatasetsToFiles,
+  writeDatasetToDisk,
   writeFilePromise,
 }

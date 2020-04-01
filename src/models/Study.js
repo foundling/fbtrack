@@ -48,13 +48,14 @@ class Study {
 
     for (const record of participantRecords) {
 
-      participants.set(
-        record.participantId,
-        new Participant({
-          record,
-          files: participantIdMap.get(record.participantId) || [],
-        })
-      )
+      const { participantId } = record 
+      const participant = new Participant({
+        files: participantIdMap.get(record.participantId) || [],
+        participantId,
+        record,
+      })
+
+      participants.set(participantId, participant);
 
     }
 
@@ -135,22 +136,16 @@ class Study {
 
     for (const p of targetParticipants) {
 
-      console.log(p)
-
-      // considerations: what to return from query, and when to write the results.
-      // can we prevent large build up of file content in memory? and avoid losing retrieved data if 
+      // considerations: 
       // something causes the application to crash (internet outage, unexpected errors)
  
-      // pull in dateRange from window and dateRange from dateStrings
-      const [start, stop] = dateRangeFromWindowSize({
-        windowSize: dates.window, 
+      // FIXME: function shouldn't include today in range, but it seems to
+      const [start, stop] = dates.range.length ? dateRangeFromDateStrings({ dates: range }) : dateRangeFromWindowSize({
+        windowSize: dates.window,
         today: new Date(),
         registrationDate: parseISO(p.record.registrationDate),
       })
-      console.log(dates.window)
-      console.log(format(start, ymdFormat), format(stop, ymdFormat))
-      //const results = await p.query({ start, stop })
-
+      const results = await p.query(start, stop)
 
     }
   }
