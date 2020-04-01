@@ -24,7 +24,7 @@ async function main() {
   ].reduce((config, param) => {
     const { value, prompt, example } = param
     const formattedPrompt = Boolean(example) ? `${prompt} [ e.g., ${example} ]: ` : `${param}: `
-    config[value] = question(formattedPrompt).trim() || example
+    config[value] = question(formattedPrompt).trim() || example // dont use example, provide default.
     return config
   }, {})
 
