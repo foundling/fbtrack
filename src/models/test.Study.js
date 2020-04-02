@@ -147,7 +147,7 @@ test('study model :: constructor() ', (t) => {
 
 })
 
-test('Study model :: init()', async (t) => {
+test('Study model :: init() with a single data directory for all participants', async (t) => {
 
   t.plan(2)
 
@@ -163,18 +163,21 @@ test('Study model :: init()', async (t) => {
 
   await s.init()
 
-  t.equal(Array.isArray(s.participants),  true)
+  t.equal([...s.participants.keys()].length > 0, true)
   t.deepEqual(
-    s.participants.map(p => p.participantId).sort(),
+    [...s.participants.keys()].sort(),
     testParticipantIds.sort()
   )
 
 })
 
-test('Study model :: loadFlat()', async (t) => {
+
+test('Study model :: init() with a data directory with subdirs for each participant', async (t) => {
+
+  t.plan(2)
 
   rmDir(testDataDir)
-  seedTestDataFlat(testDataDir)
+  seedTestDataHierarchical(testDataDir)
 
   const s = new Study({
     name: 'TEST_STUDY',
@@ -183,34 +186,13 @@ test('Study model :: loadFlat()', async (t) => {
     flat: false,
   })
 
-  const data = await s.loadFlat()
+  await s.init()
 
-  testParticipantIds.forEach(testParticipantId => {
-    t.deepEquals(
-      [...data.get(testParticipantId)].sort(),
-      testFileParts
-        .map(part => `${testParticipantId}_${part}`)
-        .filter(isValidParticipantFilename)
-        .sort()
-    )
-  })
-
-})
-
-test('Study model :: loadHierarchical()', async (t) => {
-
-  rmDir(testDataDir)
-  seedTestDataFlat(testDataDir)
-  seedTestDataHierarchical(testDataDir)
-
-  const s = new Study({
-    name: 'TEST_STUDY',
-    database,
-    dataPath: testDataDir,
-    flat: true,
-  })
-
-  const data = await s.loadHierarchical()
+  t.equal([...s.participants.keys()].length > 0, true)
+  t.deepEqual(
+    [...s.participants.keys()].sort(),
+    testParticipantIds.sort()
+  )
 
 })
 
