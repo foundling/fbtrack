@@ -1,30 +1,24 @@
-const fs = require('fs')
 const path = require('path')
 const FitbitClient = require('fitbit-node')
-const {
-  addDays,
-  addSeconds,
-  differenceInDays,
-  format,
-  parseISO,
-  subDays
-} = require('date-fns')
+const { addSeconds, format } = require('date-fns')
+
+const { defaultLogger: logger } = require('../lib/logger')
+const { dates, http, io, formatters, utils } = require('../lib/utils')
+const config = require('../config').getConfig({ requiresUserSetup: true })
 
 const {
-
-  FITBIT_CONFIG,
   APP_CONFIG,
+  FITBIT_CONFIG,
   USER_CONFIG,
+} = config
 
-} = require('../config').getConfig({ requiresInit: true })
+const { WINDOW_SIZE } = USER_CONFIG
 
 const {
   CLIENT_ID,
   CLIENT_SECRET,
   ENDPOINTS
 } = FITBIT_CONFIG
-
-const { WINDOW_SIZE } = USER_CONFIG
 
 const {
   DB_NAME,
@@ -34,18 +28,6 @@ const {
 } = APP_CONFIG
 
 const Database = require(DB_PATH)
-const { defaultLogger: logger } = require('../lib/logger')
-const { dates, http, io, formatters } = require('../lib/utils')
-
-const makeList = formatters.listFormatter('•')
-const objectIsEmpty = o => Object.entries(o).length === 0
-
-async function sleep(s) {
-  function timeout(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-  await timeout(s * 1000);
-}
 
 const {
   datesFromRange,
@@ -144,7 +126,7 @@ async function queryFitbit(queryPath) {
     logger.error(`Rate limit exceeded. Waiting ${secondsToWait} seconds to resume`)
     logger.error(`Starting againt at ${resumeTime}.`)
 
-    await sleep(secondsToWait + leeway)
+    await utils.sleep(secondsToWait + leeway)
 
     const [ retryBody, retryResponse ] = await fbClient.get(queryPath, participant.accessToken)
 
@@ -239,6 +221,7 @@ class Participant {
 
   async query(start, stop) {
 
+    const objectIsEmpty = o => Object.entries(o).length === 0
     const queryPathsByDate = await this.buildQueryPathsByDate(start, stop)
 
     for (const [date, paths] of queryPathsByDate.entries()) {

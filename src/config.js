@@ -13,9 +13,9 @@ const defaultUserConfig = {
   WINDOW_SIZE: 3,
 }
 
-function getConfig (requiresInit = false) {
+function getConfig (requiresUserSetup = false) {
 
-  if (requiresInit && !parsedFromConfig) {
+  if (requiresUserSetup && !parsedFromConfig) {
     console.log(`\nERROR: Could not find configuration file ${path.join(__dirname, '..', 'USER_CONFIG.env')}.
 If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
     process.exit(1);
