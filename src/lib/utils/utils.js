@@ -21,9 +21,17 @@ const parseParticipantFilename = (filename => {
 
 })
 
+async function sleep(s) {
+  function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  await timeout(s * 1000);
+}
+
 const isValidParticipantFilename = filename => filenamePattern.test(filename);
 
 module.exports = exports = {
   isValidParticipantFilename,
   parseParticipantFilename,
+  sleep,
 }

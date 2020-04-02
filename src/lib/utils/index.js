@@ -3,4 +3,5 @@ module.exports = exports = {
   dates: require('./dates'),
   io: require('./io'),
   formatters: require('./formatters'),
+  utils: require('./utils'),
 }
