@@ -13,6 +13,15 @@ const defaultUserConfig = {
   WINDOW_SIZE: 3,
 }
 
+const ENDPOINTS = new Map([
+  [ "sleep",                "/sleep/date/%DATE%.json" ],
+  [ "activities",           "/activities/date/%DATE%.json" ],
+  [ "activities-calories",  "/activities/calories/date/%DATE%/1d/1min.json" ],
+  [ "activities-steps",     "/activities/steps/date/%DATE%/1d/1min.json" ],
+  [ "activities-distance",  "/activities/distance/date/%DATE%/1d/1min.json" ],
+  [ "activities-heartrate", "/activities/heart/date/%DATE%/1d/1min.json" ],
+])
+
 function getConfig (requiresUserSetup = false) {
 
   if (requiresUserSetup && !parsedFromConfig) {
@@ -48,14 +57,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
       CLIENT_ID,
       CLIENT_SECRET,
       RESPONSE_TYPE: 'code',
-      ENDPOINTS: {
-        "sleep":     "/sleep/date/%DATE%.json",
-        "activities": "/activities/date/%DATE%.json",
-        "activities-calories":  "/activities/calories/date/%DATE%/1d/1min.json",
-        "activities-steps":     "/activities/steps/date/%DATE%/1d/1min.json",
-        "activities-distance":  "/activities/distance/date/%DATE%/1d/1min.json",
-        "activities-heartrate": "/activities/heart/date/%DATE%/1d/1min.json",
-      },
+      ENDPOINTS,
       SCOPE,
     },
 
