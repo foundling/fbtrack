@@ -11,6 +11,7 @@ const Participant = require('./Participant')
 
 const { APP_CONFIG } = require('../config').getConfig()
 
+// this is basically a interface
 const defaultQueryArgs = {
   participant: { ids: null, all: false },
   dates: { range: [], window: null }
@@ -48,7 +49,7 @@ class Study {
 
     for (const record of participantRecords) {
 
-      const { participantId } = record 
+      const { participantId } = record
       const participant = new Participant({
         files: participantIdMap.get(record.participantId) || [],
         participantId,
@@ -120,36 +121,40 @@ class Study {
 
   async query({ participant={ ids, all }, dates={ range, window } } = defaultQueryArgs) {
 
-    // if ids are there, get list of ids that match, report mismatched.
+    // if ids are there, get list of ids matching current participants,reporting any not matched.
     // if all flag is there, use participant ids we have
 
-    const { ids, all }  = participant
+    const { ids, all } = participant
     const missing = all ? [] : ids.filter(id => !this.participants.has(id))
-    if (missing.length) {
+
+    if (missing.length > 0) {
+
       const makeList = listFormatter('•')
-      const warning = `The following participants were queried but are not in the database: \n${makeList(missing)}`
+      const warning = `the following participants were queried
+                        but are not in the database: \n${makeList(missing)}`
       logger.warn(warning)
+
     }
 
-    const targetParticipants = all ? this.participants : ids.filter(id => this.participants.has(id)).map(id =>
-      this.participants.get(id))
+    // use existing participants or filter what we have by provided ids
+    const filteredParticipants = ids.map(id => this.participants.get(id)).filter(Boolean)
+    const targetParticipants = all ? this.participants : filteredParticipants
 
     for (const p of targetParticipants) {
 
-      // considerations: 
-      // something causes the application to crash (internet outage, unexpected errors)
- 
-      // FIXME: function shouldn't include today in range, but it seems to
-      const [start, stop] = dates.range.length ? dateRangeFromDateStrings({ dates: range }) : dateRangeFromWindowSize({
-        windowSize: dates.window,
-        today: new Date(),
-        registrationDate: parseISO(p.record.registrationDate),
-      })
-      const results = await p.query(start, stop)
+      const [ dateStart, dateStop ] = dates.range.length ?
+        dateRangeFromDateStrings({ dates: dates.range }) :
+        dateRangeFromWindowSize({
+          windowSize: dates.window,
+          today: new Date(),
+          registrationDate: parseISO(p.record.registrationDate),
+        })
+
+      const results = await p.query(dateStart, dateStop)
 
     }
   }
 
 }
 
-module.exports = exports = Study
+module.exports = exports = exports = Study
