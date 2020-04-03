@@ -152,14 +152,17 @@ class Study {
     const filteredParticipants = ids.map(id => this.participants.get(id)).filter(Boolean)
     const targetParticipants = all ? this.participants : filteredParticipants
 
+    console.log('\n')
     for (const p of targetParticipants) {
 
+      console.log(`Participant: ${p.participantId}`)
       const [ dateStart, dateStop ] = this.calculateDateRange({
         range: dates.range,
         window: dates.window,
         registrationDate: p.record.registrationDate
       })
-      const results = await p.query(dateStart, dateStop)
+
+      await p.query(dateStart, dateStop)
 
     }
   }

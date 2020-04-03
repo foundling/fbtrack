@@ -89,7 +89,7 @@ class Participant {
     const noMissingDataForDates = [...missingMetricsByDate.values()].every(metricsForDate => metricsForDate.size === 0)
 
     if (noMissingDataForDates) {
-      await logger.info(`All dates captured for participant ${this.participantId} in this date range.`)
+      console.log(`All dates captured for participant ${this.participantId} in this date range.`)
       return new Map()
     }
 
@@ -106,10 +106,10 @@ class Participant {
 
     for (const [date, paths] of queryPathsByDate) {
 
-      console.log(`DATE: ${date}`)
+      console.log(`\n Date: ${date}\n`)
 
       if (paths.size === 0) {
-        logger.info(`All metrics for participant ${this.participantId} have been captured for dates in range.`)
+        console.log(`  All metrics have been captured for date ${date}.`)
         continue
       }
 
@@ -121,11 +121,12 @@ class Participant {
 
         await writeFilePromise(outputPath, JSON.stringify(metricData))
 
-        console.log(`${metric} ✓`)
+        console.log(`  ${metric} ✓`)
 
       }
 
     }
+    console.log('\n')
 
   }
 
