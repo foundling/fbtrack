@@ -4,7 +4,7 @@
   "description": "fbtrack app",
   "main": "index.js",
   "scripts": {
-    "test-coverage": "nyc tape src/**/test.*.js | tap-nyc",
+    "test-coverage": "tape src/**/test.*.js | tap-nyc",
     "test": "tape src/**/test.*.js | tap-spec",
     "postinstall": "node bin/fbtrack configure"
   },
@@ -26,18 +26,11 @@
     "express-handlebars": "^3.1.0",
     "fitbit-node": "^2.2.0",
     "module-alias": "^2.2.2",
-    "node-cron": "^2.0.3",
-    "pm2": "^4.2.2",
     "readline-sync": "^1.4.10",
     "sqlite": "^3.0.3",
     "tape-promise": "^4.0.0"
   },
   "devDependencies": {
-    "nyc": "^15.0.0",
-    "tap-colorize": "^1.2.0",
-    "tap-dot": "^2.0.0",
-    "tap-min": "^2.0.0",
-    "tap-nyc": "^1.0.3",
     "tap-spec": "^5.0.0",
     "tape": "^4.12.1"
   }
