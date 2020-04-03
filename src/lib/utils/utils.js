@@ -22,10 +22,24 @@ const parseParticipantFilename = (filename => {
 })
 
 async function sleep(s) {
-  function timeout(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+
+  if (isNaN(Number(s))) {
+    throw new Error(`sleep takes a single numeric paramater, but ${s} is not a number.`)
   }
-  await timeout(s * 1000);
+
+  const ms = s * 1000
+  const stopTime = (new Date()).getTime() + ms
+
+  return new Promise(resolve => {
+    setInterval(() => {
+
+      if ((new Date()).getTime() > stopTime) {
+        return resolve()
+      }
+
+    }, 5000)
+  })
+
 }
 
 const isValidParticipantFilename = filename => filenamePattern.test(filename);
