@@ -28,23 +28,23 @@ module.exports = exports = {
       );
     `,
     getAll: `
-      select 
-        rowid, participantId, registrationDate, isActive, accessToken, refreshToken 
-      from 
-        participants`, 
+      select
+        rowid, participantId, registrationDate, isActive, accessToken, refreshToken
+      from
+        participants`,
     getAllActive: `
-      select 
-        rowid, participantId, registrationDate, isActive, accessToken, refreshToken 
-      from 
+      select
+        rowid, participantId, registrationDate, isActive, accessToken, refreshToken
+      from
         participants
       where
         isActive=1`,
     getById: `
-      select 
-        * 
-      from 
-        participants 
-      where 
+      select
+        rowid, participantId, registrationDate, isActive, accessToken, refreshToken
+      from
+        participants
+      where
         participantId = $participantId
     `,
     deleteAll: `
@@ -54,8 +54,8 @@ module.exports = exports = {
       delete from participants where id = $participantId;
     `,
     updateAccessTokensById: `
-      update participants 
-      set 
+      update participants
+      set
         accessToken = $accessToken,
         refreshToken = $refreshToken
       where
