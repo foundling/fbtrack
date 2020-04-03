@@ -3,3 +3,4 @@ USER_CONFIG.env
 .DS_Store
 src/db/*.sqlite
 data/**/*.json
+.nyc_output
