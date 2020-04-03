@@ -119,6 +119,18 @@ class Study {
 
   }
 
+  calculateDateRange({ range, window, registrationDate }) {
+
+    return range.length ?
+      dateRangeFromDateStrings({ dates: dates.range }) :
+      dateRangeFromWindowSize({
+        windowSize: window,
+        today: new Date(),
+        registrationDate: parseISO(registrationDate),
+      })
+
+  }
+
   async query({ participant={ ids, all }, dates={ range, window } } = defaultQueryArgs) {
 
     // if ids are there, get list of ids matching current participants,reporting any not matched.
@@ -142,14 +154,11 @@ class Study {
 
     for (const p of targetParticipants) {
 
-      const [ dateStart, dateStop ] = dates.range.length ?
-        dateRangeFromDateStrings({ dates: dates.range }) :
-        dateRangeFromWindowSize({
-          windowSize: dates.window,
-          today: new Date(),
-          registrationDate: parseISO(p.record.registrationDate),
-        })
-
+      const [ dateStart, dateStop ] = this.calculateDateRange({
+        range: dates.range,
+        window: dates.window,
+        registrationDate: p.record.registrationDate
+      })
       const results = await p.query(dateStart, dateStop)
 
     }
