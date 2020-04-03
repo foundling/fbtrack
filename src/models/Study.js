@@ -122,7 +122,7 @@ class Study {
   calculateDateRange({ range, window, registrationDate }) {
 
     return range.length ?
-      dateRangeFromDateStrings({ dates: dates.range }) :
+      dateRangeFromDateStrings({ dates: range }) :
       dateRangeFromWindowSize({
         windowSize: window,
         today: new Date(),
