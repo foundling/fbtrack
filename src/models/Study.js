@@ -13,7 +13,7 @@ const { APP_CONFIG } = require('../config').getConfig()
 
 // this is basically a interface
 const defaultQueryArgs = {
-  participant: { ids: null, all: false },
+  participant: { ids: [], all: false },
   dates: { range: [], window: null }
 }
 
@@ -29,7 +29,7 @@ class Study {
     this.database = database
     this.flat = flat
     this.name = name
-    this.participants = null
+    this.participants = new Map()
     this.initialized = false
 
   }
@@ -149,20 +149,26 @@ class Study {
     }
 
     // use existing participants or filter what we have by provided ids
-    const filteredParticipants = ids.map(id => this.participants.get(id)).filter(Boolean)
-    const targetParticipants = all ? this.participants : filteredParticipants
+    const targetParticipants = all ?
+      this.participants :
+      ids.reduce((memo, id) => {
+        if (this.participants.get(id)) {
+          memo.set(id, this.participants.get(id))
+        }
+        return memo
+      }, new Map())
 
     console.log('\n')
-    for (const p of targetParticipants) {
+    for (const [ participantId, participant ] of targetParticipants) {
 
-      console.log(`Participant: ${p.participantId}`)
+      console.log(`Participant: ${participantId}`)
       const [ dateStart, dateStop ] = this.calculateDateRange({
         range: dates.range,
         window: dates.window,
-        registrationDate: p.record.registrationDate
+        registrationDate: participant.record.registrationDate
       })
 
-      await p.query(dateStart, dateStop)
+      await participant.query(dateStart, dateStop)
 
     }
   }
