@@ -159,24 +159,59 @@ class Study {
       }, new Map())
 
     console.log('\n')
-    for (const [ participantId, participant ] of targetParticipants) {
 
-      // could do better here in terms of performance
-      // iteration mechanism to increase parallelism to something
-      // better than sequential without causing econnreset.
+    const collected = new Map()
+    const participantQueryFns = [...targetParticipants.values()].map(participant => {
 
-      console.log(`Participant: ${participantId}`)
-      const [ dateStart, dateStop ] = this.calculateDateRange({
-        range: dates.range,
-        window: dates.window,
-        registrationDate: participant.record.registrationDate
-      })
+      return async () => {
 
-      await participant.query(dateStart, dateStop)
+        const [ dateStart, dateStop ] = this.calculateDateRange({
+          range: dates.range,
+          window: dates.window,
+          registrationDate: participant.record.registrationDate
+        })
 
-    }
+        const stats = await participant.query(dateStart, dateStop)
+        collected.set(participant.participantId, stats);
+
+      }
+
+    })
+
+    await runConcurrently(participantQueryFns, 2)
+    logCollectionStats(collected)
+
   }
 
+}
+
+function logCollectionStats(collected) {
+
+  for (const [participantId, stats] of collected) {
+
+    console.log(`Participant: ${participant.participantId}`)
+    for (const [date, metrics] of stats) {
+
+      console.log(`  Date: ${date}`)
+      for (const [metric, wasCollected] of metrics) {
+
+        if (wasCollected) {
+          console.log(wasCollected ? `  ${metric} ✓` : ` ${metric} ✖ `)
+        }
+
+      }
+
+    }
+
+  }
+
+}
+
+async function runConcurrently(funcs, chunkSize=1) {
+  while (funcs.length > 0) {
+    const chunk = funcs.splice(0, chunkSize)
+    await Promise.all(chunk.map(f => f()))
+  }
 }
 
 module.exports = exports = exports = Study

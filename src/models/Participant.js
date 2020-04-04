@@ -104,12 +104,15 @@ class Participant {
 
     const queryPathsByDate = await this.buildQueryPathsByDate(start, stop)
 
+    const collected = new Map()
     for (const [date, paths] of queryPathsByDate) {
 
-      console.log(`\n Date: ${date}\n`)
+      collected.set(date, new Map())
+
+      //console.log(`\n Date: ${date}\n`)
 
       if (paths.size === 0) {
-        console.log(`  All metrics have been captured for date ${date}.`)
+        //console.log(`  All metrics have been captured for date ${date}.`)
         continue
       }
 
@@ -125,12 +128,14 @@ class Participant {
 
         await writeFilePromise(outputPath, JSON.stringify(metricData))
 
-        console.log(`  ${metric} ✓`)
+        collected.get(date).set(metric, true)
 
       }
 
     }
-    console.log('\n')
+
+    return collected
+    //console.log('\n')
 
   }
 
@@ -181,8 +186,8 @@ class Participant {
       const secondsToWait = parseInt(response.headers['retry-after']) + leeway
       const resumeTime = format(addSeconds(new Date(), secondsToWait), 'hh:mm')
 
-      logger.error(`queryFitbit error: - rate limit exceeded. Waiting ${secondsToWait} seconds to resume ...`)
-      logger.error(`Starting again at ${resumeTime}.`)
+      logger.error(`queryFitbit error for participant ${this.participantId} - rate limit exceeded.`)
+      logger.error(`Waiting ${secondsToWait/60} minutes to resume ... Starting again at ${resumeTime}.\n`)
 
       await utils.sleep(secondsToWait + leeway)
 
