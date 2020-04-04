@@ -16,9 +16,8 @@ function invalidRefreshToken(response) {
 }
 
 
-function accessTokenExpired(response) {
-  return response.statusCode === 401 &&
-         response.body.errors[0].errorType === 'expired_token'
+function accessTokenExpired(body) {
+  return body.success === false && body.errors[0].errorType === 'expired_token'
 }
 
 function invalidGrantToken(response) {
