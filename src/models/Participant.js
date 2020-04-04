@@ -230,6 +230,7 @@ class Participant {
         tokenExpiresIn
       )
 
+      await db.init()
       await db.updateAccessTokensById({
         participantId: this.participantId,
         accessToken: access_token,
