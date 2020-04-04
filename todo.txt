@@ -1,14 +1,22 @@
-- immediately fix: 
-  - write data out  data immediately upon capture.  w/ a long running query, you are building it all up into memory over time.  if app crashes, you have to rerun!
-  - write data out if it exists on a specific signal?
-- interface issue? -p -a doesn't throw, but it means participant ids are ['-a']
+TO-DO LIST 
+----------
 
-- signup: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
-- refactor: add study and participant models to centralize business logic, making handlers much shorter and clean up data manipulation methods.  (also make data/raw/ subdirs w/ participant ids) 
-create 
-- run requests for multiple participants in parallel
-- web interface: 
-  - handle server shutdown from browser 'quit' button
-  - checkbox for re-registration (toggles a registration date option so you don't have to go back into the database and change it)
-  - link back to / to allow admin to register participants in series
+architectural
 
+- logging:
+  - main logger instance that can log info, errors, etc. as well as log to file
+  - figure out what should be logged to a file to debug failures later on.
+
+- concurrency
+  - the ECONNRESET error: fixed ... but now it's slower.  
+  - how to can you multiplex and maintain logging?
+  - have query function return metadata about what was collected, log those upon participant query completion.
+  - write some iteration mechanism on the study level to always pull n number of participants and query
+    - on the participant level, it will do one day/metric at a time.
+    - on the study level, it will do n participants at a time.
+
+
+backlog
+- signup ui: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
+- cli interface issue: -p -a doesn't throw, but it means participant ids are ['-a']
+- study api: is allowing either a flat data dir or subject_id based data subdirs worth it?

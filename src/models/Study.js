@@ -161,6 +161,10 @@ class Study {
     console.log('\n')
     for (const [ participantId, participant ] of targetParticipants) {
 
+      // could do better here in terms of performance
+      // iteration mechanism to increase parallelism to something
+      // better than sequential without causing econnreset.
+
       console.log(`Participant: ${participantId}`)
       const [ dateStart, dateStop ] = this.calculateDateRange({
         range: dates.range,
