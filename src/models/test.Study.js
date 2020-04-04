@@ -123,7 +123,7 @@ test('study model :: constructor() ', (t) => {
   t.equals(s.flat, true)
   t.deepEquals(s.database, database)
   t.equals(path.isAbsolute(s.dataPath), true)
-  t.equals(s.participants, null)
+  t.deepEquals(s.participants, new Map())
 
   const s2 = new Study({
     dataPath: testDataDir
@@ -133,7 +133,7 @@ test('study model :: constructor() ', (t) => {
   t.equals(s2.dataPath, testDataDir)
   t.equals(s2.flat, false)
   t.equals(s2.database, null)
-  t.equals(s2.participants, null)
+  t.deepEquals(s2.participants, new Map())
 
 
   rmDir(testDataDir)
