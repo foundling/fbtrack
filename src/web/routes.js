@@ -22,7 +22,7 @@ const {
 
 const {
   ymdFormat
-} = dates 
+} = dates
 
 const index = (req, res) => {
   res.render('signup', {
@@ -33,9 +33,10 @@ const index = (req, res) => {
 
 const authorize = async (req, res) => {
 
-  const { 
+  const {
     participantId,
-    participantStartDate
+    participantStartDate,
+    reauthorize,
   } = req.query
 
   let participant
@@ -56,7 +57,7 @@ const authorize = async (req, res) => {
 
   }
 
-  if (participant) {
+  if (participant && !reauthorize) {
 
     return res.status(409).send({ errorMessage: 'This participant id already exists in the database.' })
 
@@ -103,8 +104,6 @@ async function addParticipant(req, res) {
       refresh_token
     } = await client.getAccessToken(code, FITBIT_CONFIG.CALLBACK_URL)
 
-    console.log({tokens})
-
   } catch(e) {
 
     logger.error(`Error getting access tokens: ${e}`)
@@ -126,6 +125,10 @@ async function addParticipant(req, res) {
   try {
 
     await db.addParticipant(newParticipantData)
+    const newParticipant = db.getParticipantById(participantId)
+
+    logger.info(`Participant Record Created: ${JSON.stringify(newParticipant, null, 2)}`)
+
     return res.render('signup_status', {
       layout: 'main.hbs',
       participantId
@@ -133,7 +136,7 @@ async function addParticipant(req, res) {
 
   } catch (e) {
 
-    logger.debug(e)
+    logger.error(e)
     return res.render('signup_status', {
       error: e,
       layout: 'main.hbs',

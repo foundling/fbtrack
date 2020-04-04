@@ -1,6 +1,6 @@
 <section class="signup-window">
 
-  <form 
+  <form
     class="registration-form"
     name="subject_id_form"
     id="subject_id_form">
@@ -11,25 +11,34 @@
 
       <div class="input-group subject-id-input">
         <label>Subject Id</label>
-        <input 
+        <input
           name="subject_id"
-          id="subject_id" 
-          type="text"></input> 
+          id="subject_id"
+          type="text"></input>
       </div>
 
       <div class="input-group subject-start-date">
         <label>Start Date</label>
-        <input 
+        <input
           name="subject_start_date"
           type="date"
           id="subject_start_date"></input>
       </div>
 
+      <div class="input-group subject-start-date">
+        <label>Re-authorize ?</label>
+        <input
+          type="checkbox"
+          name="subject_reauthorize"
+          id="subject_reauthorize" />
+      </div>
+
       <div class="input-group authorize">
-        <button 
+        <button
           class="authorize"
           title="Let Fitbit share your data with our study"
-          type="submit" 
+          id="subject_signup_submit"
+          type="submit"
           value="Authorize">
           Authorize
         </button>

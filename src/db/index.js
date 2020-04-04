@@ -8,7 +8,7 @@ class Database {
   constructor({ databaseFile }) {
 
     this.databaseFile = databaseFile
-    this.dbPromise = sqlite.open(`${ path.join(__dirname, databaseFile) }.sqlite`, { Promise, cached: true }) 
+    this.dbPromise = sqlite.open(`${ path.join(__dirname, databaseFile) }.sqlite`, { Promise, cached: true })
 
   }
 
@@ -37,7 +37,7 @@ class Database {
       return this
 
     } catch(e) {
-      throw e 
+      throw e
     }
 
   }
@@ -70,7 +70,7 @@ class Database {
 
   }
 
-  async updateAccessTokensById({ 
+  async updateAccessTokensById({
     participantId=requireParam('participantId'),
     accessToken=requireParam('accessToken'),
     refreshToken=requireParam('refreshToken')
@@ -85,7 +85,7 @@ class Database {
     try {
 
       const db = await this.dbPromise
-      const params = { 
+      const params = {
         $participantId: participantId,
         $accessToken: accessToken,
         $refreshToken: refreshToken
@@ -100,29 +100,32 @@ class Database {
 
   }
 
-  async addParticipant({ 
-    participantId=requireParam('participantId'),
-    registrationDate=requireParam('registrationDate'),
-    refreshToken=requireParam('refreshToken'),
+  async addParticipant({
     accessToken=requireParam('accessToken'),
-    isActive=true
+    isActive=true,
+    participantId=requireParam('participantId'),
+    refreshToken=requireParam('refreshToken'),
+    registrationDate=requireParam('registrationDate'),
   }) {
 
     const params = {
       $accessToken: accessToken,
-      $refreshToken: refreshToken,
+      $isActive: Number(Boolean(isActive)),
       $participantId: participantId,
+      $refreshToken: refreshToken,
       $registrationDate: registrationDate,
-      $isActive: Number(Boolean(isActive)) 
     }
 
-    try {
-      const db = await this.dbPromise
-      const newParticipant = await db.run(participants.insert, params)
-      return newParticipant
-    } catch(e) {
-      throw new Error(e)
+    const db = await this.dbPromise
+
+    const participantExists = Boolean(await db.get(participants.getById, { $participantId: participantId }))
+
+    if (participantExists) {
+      return await db.run(participants.updateById, params)
+    } else {
+      return await db.run(participants.insert, params)
     }
+
 
   }
 

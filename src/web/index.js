@@ -42,7 +42,7 @@ function start() {
 
     exec(
         `open -a '/Applications/Google Chrome.app' ${ localUrl }`,
-        { 'cwd': __dirname }, 
+        { 'cwd': __dirname },
     )
 
   })

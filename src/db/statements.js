@@ -53,6 +53,16 @@ module.exports = exports = {
     deleteById: `
       delete from participants where id = $participantId;
     `,
+    updateById: `
+      update participants
+      set
+        registrationDate = $registrationDate,
+        accessToken = $accessToken,
+        refreshToken = $refreshToken,
+        isActive = $isActive
+      where
+        participantId = $participantId;
+    `,
     updateAccessTokensById: `
       update participants
       set

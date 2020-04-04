@@ -1,9 +1,11 @@
 const subjectIdInput = document.getElementById('subject_id');
-const submitButton = document.querySelector('button[type="submit"]');
-const participantStartDateInput = document.querySelector('input[type="date"]');
+const participantStartDateInput = document.getElementById('subject_start_date');
+const reauthorizeCheckbox = document.getElementById('subject_reauthorize');
+const submitButton = document.getElementById('subject_signup_submit');
 const form = document.getElementById('subject_id_form');
 const errorBox = document.getElementById('error-box');
 
+submitButton.addEventListener('click', getAuthUrl);
 errorBox.addEventListener('click', (e) => {
 
     hideError(e.target);
@@ -11,7 +13,6 @@ errorBox.addEventListener('click', (e) => {
 
 });
 
-submitButton.addEventListener('click', getAuthUrl);
 
 function hideError(el) {
   el.classList.remove('error');
@@ -28,11 +29,11 @@ async function getAuthUrl(e) {
 
   const participantId = subjectIdInput.value.trim();
   const participantStartDate = participantStartDateInput.value;
-  console.log(participantStartDate);
+  const reauthorize = reauthorizeCheckbox.checked;
 
   if (!participantId) {
 
-      notify(errorBox, 'Please enter a subject id.');             
+      notify(errorBox, 'Please enter a subject id.');
 
   } else {
 
@@ -43,9 +44,14 @@ async function getAuthUrl(e) {
 
     try {
 
-      const authorizePath = `http://localhost:3000/authorize`
-      const authorizeQueryParams = `participantId=${participantId}&participantStartDate=${participantStartDate}`
-      const response = await fetch(`${authorizePath}?${authorizeQueryParams}`, { method: 'post' })
+      const authorizeURL = new URL(`http://localhost:3000/authorize`)
+      const authorizeQueryParams = [
+        [ 'participantId', participantId ],
+        [ 'participantStartDate', participantStartDate ],
+        [ 'reauthorize', reauthorize ? '1' : '' ],
+      ].map(([ param, value]) => `${param}=${value}`).join('&')
+
+      const response = await fetch(`${authorizeURL}?${authorizeQueryParams}`, { method: 'post' })
       const parsedResponse = await response.json()
 
       if (response.ok) {
