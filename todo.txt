@@ -23,4 +23,5 @@ backlog
 - handle edge case where '_' in participant id
 - prevent refresh token errors. got a 400 invalid refresh token, with an old refresh token in db.
 - allow people to reauthorize participants via the web interface by choosing a registration date (for database)
-- might as well let them pass the subject id via cli to web (optional), by running 'fbt signup <subjectId>`. 
+- let user pass subject id via cli to web (optional), by running 'fbt signup <subjectId>`. 
+- simplify utils
