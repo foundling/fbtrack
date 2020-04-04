@@ -17,6 +17,7 @@ architectural
 
 backlog
 x signup ui: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
+- update report cli command with new subject/participant models
 - cli interface issue: -p -a doesn't throw, but it means participant ids are ['-a']
 - study api: is allowing either a flat data dir or subject_id based data subdirs worth it?
 - handle edge case where '_' in participant id
