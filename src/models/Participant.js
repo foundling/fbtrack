@@ -116,6 +116,10 @@ class Participant {
       for (const [metric, queryPath] of paths) {
 
         const metricData = await this.queryFitbit(queryPath)
+        if (!metricData) {
+          continue;
+        }
+
         const filename = this.buildFilename({ participantId: this.participantId, date, metric, extension: 'json' })
         const outputPath = path.join(RAW_DATA_PATH, filename)
 
@@ -152,8 +156,9 @@ class Participant {
 
     }
 
-    if (accessTokenExpired(response)) {
+    if (accessTokenExpired(body)) {
 
+      logger.info(`queryFitbit - accessToken expired for participant ${this.participantId} ... refreshing`);
       await this.refreshAccessToken()
 
       try {
@@ -176,8 +181,8 @@ class Participant {
       const secondsToWait = parseInt(response.headers['retry-after']) + leeway
       const resumeTime = format(addSeconds(new Date(), secondsToWait), 'hh:mm')
 
-      logger.error(`queryFitbit - rate limit exceeded. Waiting ${secondsToWait} seconds to resume`)
-      logger.error(`Starting againt at ${resumeTime}.`)
+      logger.error(`queryFitbit error: - rate limit exceeded. Waiting ${secondsToWait} seconds to resume ...`)
+      logger.error(`Starting again at ${resumeTime}.`)
 
       await utils.sleep(secondsToWait + leeway)
 
@@ -188,7 +193,7 @@ class Participant {
 
       } catch(e) {
 
-        logger.error(`queryFitbit - retry after rateLimitExceeded has failed: ${e}`)
+        logger.error(`queryFitbit error: retry after rateLimitExceeded has failed: ${e}`)
         throw e
 
       }
@@ -214,7 +219,11 @@ class Participant {
     try {
 
       const tokenExpiresIn = 3600
-      const { access_token, refresh_token } = await fbClient.refreshAccessToken(accessToken, refreshToken, tokenExpiresIn)
+      const { access_token, refresh_token } = await fbClient.refreshAccessToken(
+        this.record.accessToken,
+        this.record.refreshToken,
+        tokenExpiresIn
+      )
 
       await db.updateAccessTokensById({
         participantId: this.participantId,
@@ -226,10 +235,7 @@ class Participant {
 
     } catch(e) {
 
-      if (e.status === 400 && e.context.errors[0].errorType === 'invalid_grant') {
-        logger.error(`Failed to refresh participant ${this.participantId}'s Refresh Access Token.`)
-        return
-      }
+      logger.error(`Error - attempt to refresh Access Token failed: ${e}`)
 
     }
   }

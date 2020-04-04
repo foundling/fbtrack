@@ -133,7 +133,7 @@ class Study {
 
   async query({ participant={ ids, all }, dates={ range, window } } = defaultQueryArgs) {
 
-    // if ids are there, get list of ids matching current participants,reporting any not matched.
+    // if ids are there, get list of ids matching current participants, reporting any not matched.
     // if all flag is there, use participant ids we have
 
     const { ids, all } = participant
