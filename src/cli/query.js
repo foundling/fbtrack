@@ -2,7 +2,7 @@ const { APP_CONFIG, USER_CONFIG } = require('../config').getConfig({ requiresUse
 const Database = require(APP_CONFIG.DB_PATH)
 const Study = require('../models/Study')
 
-async function main({ participantIds=[], all=false, dateRange=[], windowSize=null }) {
+async function main({ participantIds=[], all=false, dateRange=[], windowSize=null, chunkSize=APP_CONFIG.CHUNK_SIZE }) {
 
   const db = new Database({ databaseFile: USER_CONFIG.STUDY_NAME })
   await db.init()
@@ -21,8 +21,9 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
   await study.init()
 
   const queryOptions = {
-    participant: { 
-      ids: participantIds, 
+    concurrency: chunkSize,
+    participant: {
+      ids: participantIds,
       all // boolean flag
     },
     dates: {

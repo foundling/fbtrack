@@ -48,6 +48,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
       SERVER_PORT: 3000,
       RAW_DATA_PATH: path.join(__dirname, '../data/raw'),
       LOGS_PATH: path.join(__dirname, '../logs'),
+      CHUNK_SIZE: 3,
     },
 
     FITBIT_CONFIG: {

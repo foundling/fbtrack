@@ -25,7 +25,12 @@ const validators = {
   configure: id,
   query: async function(...args) {
 
-    const [{ all, participantIds, dateRange, windowSize, refresh }] = args
+    const [{ all, chunkSize, participantIds, dateRange, windowSize, refresh }] = args
+
+    if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
+      logger.error('-n, --chunk-size requires a non-negative integer argument.')
+      process.exit(1)
+    }
 
     if (participantIds && participantIds.length >= 1 && participantIds.includes('-a')) {
       logger.error('-a flag and -p are exclusive.  use -a for all participants, or -p for specific participant ids, but not both.')
