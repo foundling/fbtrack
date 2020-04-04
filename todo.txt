@@ -10,10 +10,10 @@ architectural
 - concurrency
   - the ECONNRESET error: fixed ... but now it's slower.  
   - how to can you multiplex and maintain logging?
-  - have query function return metadata about what was collected, log those upon participant query completion.
-  - write some iteration mechanism on the study level to always pull n number of participants and query
-    - on the participant level, it will do one day/metric at a time.
-    - on the study level, it will do n participants at a time.
+  x have query function return metadata about what was collected, log those upon participant query completion.
+  x write some iteration mechanism on the study level to always pull n number of participants and query
+    x on the participant level, it will do one day/metric at a time.
+    x on the study level, it will do n participants at a time.
 
 backlog
 x signup ui: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)

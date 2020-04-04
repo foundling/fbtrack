@@ -158,8 +158,6 @@ class Study {
         return memo
       }, new Map())
 
-    console.log('\n')
-
     const collected = new Map()
     const participantQueryFns = [...targetParticipants.values()].map(participant => {
 
