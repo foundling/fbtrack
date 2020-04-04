@@ -189,7 +189,7 @@ function logCollectionStats(collected) {
 
   for (const [participantId, stats] of collected) {
 
-    console.log(`Participant: ${participant.participantId}`)
+    console.log(`Participant: ${participantId}`)
     for (const [date, metrics] of stats) {
 
       console.log(`  Date: ${date}`)
