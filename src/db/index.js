@@ -9,15 +9,18 @@ class Database {
 
     this.databaseFile = databaseFile
     this.dbPromise = sqlite.open(`${ path.join(__dirname, databaseFile) }.sqlite`, { Promise, cached: true }) 
-    // add {cached: true} so you can reuse the db handle?
 
   }
 
   async init() {
 
     try {
+
       const db = await this.dbPromise
       await db.run(participants.createTable)
+
+      return this
+
     } catch(e) {
       throw new Error(e)
     }
@@ -25,30 +28,42 @@ class Database {
   }
 
   async clearParticipants() {
+
     try {
+
       const db = await this.dbPromise
       await db.run(participants.deleteAll)
+
+      return this
+
     } catch(e) {
       throw e 
     }
+
   }
 
   async getParticipants({ active = false } = {}) {
 
     try {
+
       const db = await this.dbPromise
       return await db.all(active ? participants.getAllActive : participants.getAll)
+
     } catch(e) {
       throw new Error(e)
     }
+
   }
 
   async getParticipantById(participantId=requireParam('participantId')) {
 
     try {
+
       const db = await this.dbPromise
       const params = { $participantId: participantId }
+
       return await db.get(participants.getById, params)
+
     } catch(e) {
       throw new Error(['getParticipantByParticipantId failed', e])
     }
@@ -68,13 +83,17 @@ class Database {
       throw MissingParameterError('refreshToken')
 
     try {
+
       const db = await this.dbPromise
       const params = { 
         $participantId: participantId,
         $accessToken: accessToken,
         $refreshToken: refreshToken
       }
-      return await db.run(participants.updateAccessTokensById, params)
+
+      await db.run(participants.updateAccessTokensById, params)
+      return this
+
     } catch(e) {
       throw new Error(['updating participant by id failed', e])
     }
