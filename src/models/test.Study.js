@@ -6,9 +6,9 @@ const tape = require('tape')
 const { default: tapePromise } = require('tape-promise')
 
 const Study = require('./Study')
-const testDataDir = path.join(__dirname, 'test-data')
-const testParticipantIds = ['test1','test2']
-const testFileParts = [
+const TEST_DATA_DIR = path.join(__dirname, 'test-data')
+const TEST_PARTICIPANT_IDS = ['test1','test2']
+const TEST_FILE_PARTS = [
   '2020-01-01_sleep.json',
   '2020-01-01_activities-heartrate.json',
 
@@ -21,7 +21,6 @@ const testFileParts = [
   '2020-01-04_sleep.json',
   '2020-01-04_activities-heartrate.json',
 
-  // should be filtered out
   '',
   '.json',
 ]
@@ -34,26 +33,30 @@ const database = new Database({ databaseFile: testDatabaseName })
 
 const test = tapePromise(tape)
 
-const rmDir = (path) => {
-  return execSync(`rm -rf ${path}`, { encoding: 'utf8' })
-}
+const rmDir = (path) => execSync(`rm -rf ${path}`, { encoding: 'utf8' })
 
 const seedTestDataFlat = (dirPath) => {
 
   try {
+
     fs.mkdirSync(dirPath)
+
   } catch(e) {
+
     if (e.code !== 'EEXIST') {
       throw e
     }
+
   }
 
-  for (let pid of testParticipantIds) {
-    for (let part of testFileParts) {
+  for (let pid of TEST_PARTICIPANT_IDS) {
+
+    for (let part of TEST_FILE_PARTS) {
       const fitbitFile = `${pid}_${part}`
       // dont filter files here for valid ones, need to test that
       fs.writeFileSync(path.join(dirPath, fitbitFile))
     }
+
   }
 
 }
@@ -68,12 +71,12 @@ const seedTestDataHierarchical = (dirPath) => {
     }
   }
 
-  for (let pid of testParticipantIds) {
+  for (let pid of TEST_PARTICIPANT_IDS) {
 
     const participantDir = path.join(dirPath, pid)
     fs.mkdirSync(participantDir)
 
-    for (let part of testFileParts) {
+    for (let part of TEST_FILE_PARTS) {
       const fitbitFile = `${pid}_${part}`
       if (isValidParticipantFilename(fitbitFile)) {
         fs.writeFileSync(path.join(participantDir, fitbitFile))
@@ -88,9 +91,9 @@ test('study model :: setup :: init db, create test fitbit json filenames on disk
 
   await database.init()
 
-  rmDir(testDataDir)
+  rmDir(TEST_DATA_DIR)
 
-  testParticipantIds.forEach(async(participantId) => {
+  TEST_PARTICIPANT_IDS.forEach(async(participantId) => {
     await database.addParticipant({
       participantId,
       registrationDate: '2020-01-01',
@@ -98,8 +101,8 @@ test('study model :: setup :: init db, create test fitbit json filenames on disk
       refreshToken: `${participantId}_REFRESH_TOKEN`,
     })
   })
-  seedTestDataHierarchical(testDataDir)
-  seedTestDataFlat(testDataDir)
+  seedTestDataHierarchical(TEST_DATA_DIR)
+  seedTestDataFlat(TEST_DATA_DIR)
 
 })
 
@@ -108,40 +111,40 @@ test('study model :: constructor() ', (t) => {
 
   t.plan(12)
 
-  rmDir(testDataDir)
-  seedTestDataHierarchical(testDataDir)
+  rmDir(TEST_DATA_DIR)
+  seedTestDataHierarchical(TEST_DATA_DIR)
 
   const s = new Study({
     name: 'TEST_STUDY',
     flat: true,
     database,
-    dataPath: testDataDir
+    dataPath: TEST_DATA_DIR
   })
 
   t.equals(s.name, 'TEST_STUDY')
-  t.equals(s.dataPath, testDataDir)
+  t.equals(s.dataPath, TEST_DATA_DIR)
   t.equals(s.flat, true)
   t.deepEquals(s.database, database)
   t.equals(path.isAbsolute(s.dataPath), true)
   t.deepEquals(s.participants, new Map())
 
   const s2 = new Study({
-    dataPath: testDataDir
+    dataPath: TEST_DATA_DIR
   })
 
   t.equals(s2.name, '')
-  t.equals(s2.dataPath, testDataDir)
+  t.equals(s2.dataPath, TEST_DATA_DIR)
   t.equals(s2.flat, false)
   t.equals(s2.database, null)
   t.deepEquals(s2.participants, new Map())
 
 
-  rmDir(testDataDir)
+  rmDir(TEST_DATA_DIR)
   t.throws(() => {
     new Study({
       name: 'TEST_STUDY',
       database,
-      dataPath: testDataDir
+      dataPath: TEST_DATA_DIR
     })
   })
 
@@ -151,13 +154,13 @@ test('Study model :: init() with a single data directory for all participants', 
 
   t.plan(2)
 
-  rmDir(testDataDir)
-  seedTestDataFlat(testDataDir)
+  rmDir(TEST_DATA_DIR)
+  seedTestDataFlat(TEST_DATA_DIR)
 
   const s = new Study({
     name: 'TEST_STUDY',
     database,
-    dataPath: testDataDir,
+    dataPath: TEST_DATA_DIR,
     flat: true,
   })
 
@@ -166,7 +169,7 @@ test('Study model :: init() with a single data directory for all participants', 
   t.equal([...s.participants.keys()].length > 0, true)
   t.deepEqual(
     [...s.participants.keys()].sort(),
-    testParticipantIds.sort()
+    TEST_PARTICIPANT_IDS.slice().sort()
   )
 
 })
@@ -176,13 +179,13 @@ test('Study model :: init() with a data directory with subdirs for each particip
 
   t.plan(2)
 
-  rmDir(testDataDir)
-  seedTestDataHierarchical(testDataDir)
+  rmDir(TEST_DATA_DIR)
+  seedTestDataHierarchical(TEST_DATA_DIR)
 
   const s = new Study({
     name: 'TEST_STUDY',
     database,
-    dataPath: testDataDir,
+    dataPath: TEST_DATA_DIR,
     flat: false,
   })
 
@@ -191,14 +194,14 @@ test('Study model :: init() with a data directory with subdirs for each particip
   t.equal([...s.participants.keys()].length > 0, true)
   t.deepEqual(
     [...s.participants.keys()].sort(),
-    testParticipantIds.sort()
+    TEST_PARTICIPANT_IDS.slice().sort()
   )
 
 })
 
 test('study model :: teardown :: clear test database, delete test fitbit json files', async (t) => {
 
-  rmDir(testDataDir)
+  rmDir(TEST_DATA_DIR)
   database.clearParticipants()
 
 })

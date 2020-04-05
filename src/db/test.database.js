@@ -7,11 +7,11 @@ const Database = require('.')
 const { dates, http, io } = require('../lib/utils')
 const { ymdFormat } = dates
 
-const db = new Database({ databaseFile: 'test' })
 
+let db
 test('database:setup :: clearParticipants()', async (t) => {
 
-  await db.init()
+  db = await (new Database({ databaseFile: 'test' })).init()
   await db.clearParticipants()
 
   t.end()
@@ -20,7 +20,7 @@ test('database:setup :: clearParticipants()', async (t) => {
 
 test('database :: addParticipant()', async (t) => {
 
-  t.plan(1)
+  t.plan(2)
 
   const r1 = await db.addParticipant({
     participantId: 1,
@@ -38,7 +38,10 @@ test('database :: addParticipant()', async (t) => {
     isActive: true,
   })
 
-  t.equal(r2.lastID, 2)
+  const p1 = await db.getParticipantById(1) 
+  const p2 = await db.getParticipantById(2) 
+  t.equal(p1.participantId, '1')
+  t.equal(p2.participantId, '2')
 
 })
 

@@ -1,7 +1,7 @@
 const sqlite = require('sqlite')
 const path = require('path')
-const format = require('date-fns/format')
 const { participants } = require('./statements')
+const { MissingParameterError, requireParam } = require('../lib/utils/utils');
 
 class Database {
 
@@ -121,30 +121,15 @@ class Database {
     const participantExists = Boolean(await db.get(participants.getById, { $participantId: participantId }))
 
     if (participantExists) {
-      return await db.run(participants.updateById, params)
+      await db.run(participants.updateById, params)
     } else {
-      return await db.run(participants.insert, params)
+      await db.run(participants.insert, params)
     }
 
+    return this
 
   }
 
-}
-
-function requireParam(p) {
-  throw new MissingParameterError(p)
-}
-
-class MissingParameterError extends Error {
-  constructor(message) {
-
-    super(message)
-
-    this.name = this.constructor.name
-
-    Error.captureStackTrace(this, this.constructor)
-
-  }
 }
 
 module.exports = exports = Database

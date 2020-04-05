@@ -44,8 +44,25 @@ async function sleep(s) {
 
 const isValidParticipantFilename = filename => filenamePattern.test(filename);
 
+function requireParam(p) {
+  throw new MissingParameterError(p)
+}
+
+class MissingParameterError extends Error {
+  constructor(message) {
+
+    super(message)
+
+    this.name = this.constructor.name
+
+    Error.captureStackTrace(this, this.constructor)
+
+  }
+}
 module.exports = exports = {
   isValidParticipantFilename,
+  MissingParameterError,
   parseParticipantFilename,
+  requireParam,
   sleep,
 }
