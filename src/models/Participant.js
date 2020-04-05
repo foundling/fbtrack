@@ -12,7 +12,11 @@ const {
   USER_CONFIG,
 } = config
 
-const { WINDOW_SIZE } = USER_CONFIG
+const {
+  DB_NAME,
+  DB_PATH,
+  RAW_DATA_PATH,
+} = APP_CONFIG
 
 const {
   CLIENT_ID,
@@ -20,34 +24,24 @@ const {
   ENDPOINTS,
 } = FITBIT_CONFIG
 
-const {
-  DB_NAME,
-  DB_PATH,
-  RAW_DATA_PATH,
-  LOGS_PATH,
-} = APP_CONFIG
+const { WINDOW_SIZE } = USER_CONFIG
 
 const Database = require(DB_PATH)
 
 const {
   datesFromRange,
-  dateRE,
   ymdFormat,
 } = dates
 
 const {
-  isServerError,
   isSuccess,
   invalidRefreshToken,
-  invalidAccessToken,
   rateLimitExceeded,
   accessTokenExpired,
 } = http
 
 const {
   getFiles,
-  readdirPromise,
-  writeDatasetToDisk,
   writeFilePromise,
 } = io
 
@@ -80,7 +74,7 @@ class Participant {
                           expectedDateStrings.some(s => fname.includes(s)),
     })
 
-    const missingMetricsByDate = await findUncapturedDates({
+    const missingMetricsByDate = await this.findUncapturedDates({
       filenames,
       expectedDateStrings,
       metrics: [...ENDPOINTS.keys()],
@@ -93,7 +87,7 @@ class Participant {
       return new Map()
     }
 
-    return generateQueryPathsByDate({
+    return this.generateQueryPathsByDate({
       metricsByDate: missingMetricsByDate,
       endpoints: ENDPOINTS,
     })
@@ -252,50 +246,50 @@ class Participant {
 
   }
 
-}
+  generateQueryPathsByDate({ metricsByDate, endpoints }) {
 
-function generateQueryPathsByDate({ metricsByDate, endpoints }) {
+    // 'metricToTemplatePathMap' is an example of where an explicit type system could
+    // liberate you from the ugly naming
+    const memo = new Map()
 
-  // 'metricToTemplatePathMap' is an example of where an explicit type system could
-  // liberate you from the ugly naming
-  const memo = new Map()
+    for (const [dateString, metricToTemplatePathMap] of metricsByDate) {
 
-  for (const [dateString, metricToTemplatePathMap] of metricsByDate) {
+      if (!memo.has(dateString)) {
+        memo.set(dateString, new Map())
+      }
 
-    if (!memo.has(dateString)) {
-      memo.set(dateString, new Map())
+      for (const [metric, templatePathMap] of metricToTemplatePathMap) {
+
+        const populatedTemplate = endpoints.get(metric).replace('%DATE%', dateString)
+        memo.get(dateString).set(metric, populatedTemplate)
+
+      }
     }
 
-    for (const [metric, templatePathMap] of metricToTemplatePathMap) {
+    return memo
 
-      const populatedTemplate = endpoints.get(metric).replace('%DATE%', dateString)
-      memo.get(dateString).set(metric, populatedTemplate)
+  }
 
+  async findUncapturedDates({ filenames, expectedDateStrings, metrics }) {
+
+    const missing = new Map()
+
+    for (const dateString of expectedDateStrings) {
+      missing.set(dateString, new Map())
+      for (const metric of metrics) {
+        missing.get(dateString).set(metric, true)
+      }
     }
-  }
 
-  return memo
 
-}
-
-async function findUncapturedDates({ filenames, expectedDateStrings, metrics }) {
-
-  const missing = new Map()
-
-  for (const dateString of expectedDateStrings) {
-    missing.set(dateString, new Map())
-    for (const metric of metrics) {
-      missing.get(dateString).set(metric, true)
+    for (const filename of filenames) {
+      const [ id, dateString, metric, extension ] = filename.split(/[._]/)
+      missing.get(dateString).delete(metric)
     }
+
+    return missing
+
   }
-
-
-  for (const filename of filenames) {
-    const [ id, dateString, metric, extension ] = filename.split(/[._]/)
-    missing.get(dateString).delete(metric)
-  }
-
-  return missing
 
 }
 

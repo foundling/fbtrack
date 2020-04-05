@@ -1,6 +1,6 @@
 const path = require('path')
 const fs = require('fs')
-const { parseISO, format } = require('date-fns')
+const { parseISO } = require('date-fns')
 
 const { defaultLogger: logger } = require('../lib/logger')
 const { listFormatter } = require('../lib/utils/formatters')
@@ -11,7 +11,6 @@ const Participant = require('./Participant')
 
 const { APP_CONFIG } = require('../config').getConfig()
 
-// this is basically a interface
 const defaultQueryArgs = {
   participant: { ids: [], all: false },
   dates: { range: [], window: null }
@@ -181,20 +180,20 @@ class Study {
 
   }
 
-}
+  logCollectionStats(collected) {
 
-function logCollectionStats(collected) {
+    for (const [participantId, stats] of collected) {
 
-  for (const [participantId, stats] of collected) {
+      console.log(`Participant: ${participantId}`)
+      for (const [date, metrics] of stats) {
 
-    console.log(`Participant: ${participantId}`)
-    for (const [date, metrics] of stats) {
+        console.log(`  Date: ${date}`)
+        for (const [metric, wasCollected] of metrics) {
 
-      console.log(`  Date: ${date}`)
-      for (const [metric, wasCollected] of metrics) {
+          if (wasCollected) {
+            console.log(wasCollected ? `  ${metric} ✓` : ` ${metric} ✖ `)
+          }
 
-        if (wasCollected) {
-          console.log(wasCollected ? `  ${metric} ✓` : ` ${metric} ✖ `)
         }
 
       }
@@ -203,13 +202,13 @@ function logCollectionStats(collected) {
 
   }
 
-}
-
-async function runConcurrently(funcs, chunkSize=1) {
-  while (funcs.length > 0) {
-    const chunk = funcs.splice(0, chunkSize)
-    await Promise.all(chunk.map(f => f()))
+  async runConcurrently(funcs, chunkSize=1) {
+    while (funcs.length > 0) {
+      const chunk = funcs.splice(0, chunkSize)
+      await Promise.all(chunk.map(f => f()))
+    }
   }
+
 }
 
 module.exports = exports = exports = Study
