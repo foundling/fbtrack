@@ -1,16 +1,14 @@
 const { USER_CONFIG, APP_CONFIG } = require('../config').getConfig();
 const windowSize = USER_CONFIG.WINDOW_SIZE;
 
-const {
-  dates
-} = require('../lib/utils')
+
+const dates = require('../lib/dates')
+const { defaultLogger: logger } = require('../lib/logger')
 
 const {
   dateREStrict,
   ymdFormat
 } = dates
-
-const { defaultLogger:logger } = require('../lib/logger')
 
 const id = (...args) => [...args]
 
@@ -25,7 +23,7 @@ const validators = {
   configure: id,
   query: async function(...args) {
 
-    const [{ all, chunkSize, participantIds, dateRange, windowSize, refresh }] = args
+    const [{ all, chunkSize=APP_CONFIG.CHUNK_SIZE, participantIds, dateRange, windowSize, refresh }] = args
 
     if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
       logger.error('-n, --chunk-size requires a non-negative integer argument.')

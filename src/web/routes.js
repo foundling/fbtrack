@@ -16,9 +16,7 @@ const client = new FitBitApiClient({
 })
 const { defaultLogger: logger } = require('../lib/logger')
 
-const {
-  dates
-} = require('../lib/utils')
+const { dates } = require('../lib')
 
 const {
   ymdFormat

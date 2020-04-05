@@ -2,8 +2,16 @@ const path = require('path')
 const FitbitClient = require('fitbit-node')
 const { addSeconds, format } = require('date-fns')
 
-const { defaultLogger: logger } = require('../lib/logger')
-const { dates, http, io, formatters, utils } = require('../lib/utils')
+const { 
+  dates,
+  http,
+  io,
+  formatters,
+  utils
+} = require('../lib')
+
+const { defaultLogger:logger } = require('../lib/logger')
+
 const config = require('../config').getConfig({ requiresUserSetup: true })
 
 const {

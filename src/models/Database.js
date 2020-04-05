@@ -1,6 +1,6 @@
 const sqlite = require('sqlite')
 const path = require('path')
-const { MissingParameterError, requireParam } = require('../lib/utils/utils');
+const { MissingParameterError, requireParam } = require('../lib/utils');
 const { APP_CONFIG } = require('../config').getConfig({ requiresUserSetup: true })
 
 const { participants } = require(path.join(APP_CONFIG.DB_PATH, 'statements'))

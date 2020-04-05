@@ -1,6 +1,5 @@
 const { format, parseISO, subDays } = require('date-fns')
 const { groupBy } = require('lodash')
-const { defaultLogger:logger } = require('../lib/logger')
 
 const { FITBIT_CONFIG, APP_CONFIG } = require('../config').getConfig()
 const {
@@ -12,10 +11,11 @@ const {
 
 const {
   dates,
+  defaultLogger:logger,
   formatters,
   http,
   io
-} = require('../lib/utils');
+} = require('../lib');
 
 const {
     dateRE,

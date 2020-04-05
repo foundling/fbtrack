@@ -2,11 +2,16 @@ const path = require('path')
 const fs = require('fs')
 const { parseISO } = require('date-fns')
 
+const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils')
 const { defaultLogger: logger } = require('../lib/logger')
-const { listFormatter } = require('../lib/utils/formatters')
-const { dateRangeFromWindowSize, dateRangeFromDateStrings, ymdFormat } = require('../lib/utils/dates')
-const { readdirPromise, statPromise } = require('../lib/utils/io')
-const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils/utils')
+const { listformatter } = require('../lib/formatters') 
+const {
+  dateRangeFromWindowSize,
+  dateRangeFromDateStrings,
+  ymdFormat
+} = require('../lib/dates')
+
+const { readdirPromise, statPromise } = require('../lib/io')
 const Participant = require('./Participant')
 
 const { APP_CONFIG } = require('../config').getConfig()
@@ -175,8 +180,8 @@ class Study {
 
     })
 
-    await runConcurrently(participantQueryFns, 2)
-    logCollectionStats(collected)
+    await this.runConcurrently(participantQueryFns, 2)
+    this.logCollectionStats(collected)
 
   }
 

@@ -1,6 +1,6 @@
 const fs = require('fs')
 const { execSync } = require('child_process')
-const { isValidParticipantFilename } = require('../lib/utils/utils')
+const { isValidParticipantFilename } = require('../lib/utils')
 const path = require('path')
 const tape = require('tape')
 const { default: tapePromise } = require('tape-promise')

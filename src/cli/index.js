@@ -1,9 +1,9 @@
 const cli = require('commander')
 const path = require('path')
-const { io, formatters } = require('../lib/utils')
-const { delayedRequire } = io
+const { delayedRequire } = require('../lib/io')
+const { splitArgsOn } = require('../lib/formatters')
+
 const { validate, validators } = require('./validators')
-const { splitArgsOn } = formatters
 
 const { configure, schedule, signup, query, report, revoke, apistatus } = [
 

@@ -4,4 +4,5 @@ module.exports = exports = {
   io: require('./io'),
   formatters: require('./formatters'),
   utils: require('./utils'),
+  logger: require('./logger'),
 }

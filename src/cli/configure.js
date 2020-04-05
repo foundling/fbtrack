@@ -1,7 +1,6 @@
 const path = require('path')
 const { question } = require('readline-sync')
-const { io, formatters } = require('../lib/utils')
-const { writeFilePromise } = io
+const { writeFilePromise } = require('../lib/io')
 
 async function main() {
 

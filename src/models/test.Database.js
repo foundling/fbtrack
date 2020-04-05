@@ -4,7 +4,7 @@ const test = tapePromise(tape)
 const { format } = require('date-fns')
 
 const Database = require('./Database')
-const { dates, http, io } = require('../lib/utils')
+const { dates, http, io } = require('../lib')
 const { ymdFormat } = dates
 
 

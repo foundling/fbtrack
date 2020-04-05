@@ -5,7 +5,7 @@ const {
 
 const { Database, Study } = require('../models')
 
-async function main({ participantIds=[], all=false, dateRange=[], windowSize=null, chunkSize=APP_CONFIG.CHUNK_SIZE }) {
+async function main({ participantIds=[], all=false, dateRange=[], windowSize=null, chunkSize }) {
 
   const db = new Database({ databaseName: USER_CONFIG.STUDY_NAME })
   await db.init()
