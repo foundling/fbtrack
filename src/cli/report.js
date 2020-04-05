@@ -35,8 +35,8 @@ const {
 
 const makeList = listFormatter('•')
 
-const Database = require(DB_PATH);
-const db = new Database({ databaseFile: DB_NAME });
+const { Database, Study } = require('../models');
+const db = new Database({ databaseName: DB_NAME });
 const metrics = Object.keys(FITBIT_CONFIG.ENDPOINTS)
 
 async function main({ all = false, participantIds:targetIds = [], missingOnly = false }) {

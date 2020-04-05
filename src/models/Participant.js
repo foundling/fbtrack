@@ -26,7 +26,7 @@ const {
 
 const { WINDOW_SIZE } = USER_CONFIG
 
-const Database = require(DB_PATH)
+const Database = require('./Database')
 
 const {
   datesFromRange,
@@ -45,9 +45,7 @@ const {
   writeFilePromise,
 } = io
 
-const db = new Database({
-  databaseFile: DB_NAME
-})
+const db = new Database({ databaseName: DB_NAME })
 
 const fbClient = new FitbitClient({
   clientId: CLIENT_ID,

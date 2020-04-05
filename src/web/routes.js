@@ -7,9 +7,9 @@ const {
 
 const FitBitApiClient = require('fitbit-node')
 const { format } = require('date-fns')
-const Database = require(APP_CONFIG.DB_PATH)
+const Database = require('../models/Database')
 
-const db = new Database({ databaseFile: APP_CONFIG.DB_NAME })
+const db = new Database({ databaseName: APP_CONFIG.DB_NAME })
 const client = new FitBitApiClient({
   clientId: FITBIT_CONFIG.CLIENT_ID,
   clientSecret: FITBIT_CONFIG.CLIENT_SECRET

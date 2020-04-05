@@ -27,9 +27,8 @@ const TEST_FILE_PARTS = [
 
 const { APP_CONFIG } = require('../config').getConfig()
 const { DB_PATH, DB_NAME } = APP_CONFIG
-const Database = require(DB_PATH)
-const testDatabaseName = 'study-test-database'
-const database = new Database({ databaseFile: testDatabaseName })
+const Database = require('./Database')
+const database = new Database({ databaseName: 'test-databases/test-database-study' })
 
 const test = tapePromise(tape)
 

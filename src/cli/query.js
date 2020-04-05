@@ -1,10 +1,13 @@
-const { APP_CONFIG, USER_CONFIG } = require('../config').getConfig({ requiresUserSetup: true });
-const Database = require(APP_CONFIG.DB_PATH)
-const Study = require('../models/Study')
+const { 
+  APP_CONFIG,
+  USER_CONFIG
+} = require('../config').getConfig({ requiresUserSetup: true });
+
+const { Database, Study } = require('../models')
 
 async function main({ participantIds=[], all=false, dateRange=[], windowSize=null, chunkSize=APP_CONFIG.CHUNK_SIZE }) {
 
-  const db = new Database({ databaseFile: USER_CONFIG.STUDY_NAME })
+  const db = new Database({ databaseName: USER_CONFIG.STUDY_NAME })
   await db.init()
 
   if (dateRange.length === 0 && windowSize == null) {

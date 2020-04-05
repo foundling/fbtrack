@@ -3,7 +3,7 @@ const tapePromise = require('tape-promise').default
 const test = tapePromise(tape) 
 const { format } = require('date-fns')
 
-const Database = require('.')
+const Database = require('./Database')
 const { dates, http, io } = require('../lib/utils')
 const { ymdFormat } = dates
 
@@ -11,7 +11,7 @@ const { ymdFormat } = dates
 let db
 test('database:setup :: clearParticipants()', async (t) => {
 
-  db = await (new Database({ databaseFile: 'test' })).init()
+  db = await (new Database({ databaseName: 'test-databases/test-database-db' })).init()
   await db.clearParticipants()
 
   t.end()
