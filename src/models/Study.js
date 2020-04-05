@@ -4,7 +4,7 @@ const { parseISO } = require('date-fns')
 
 const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils')
 const { defaultLogger: logger } = require('../lib/logger')
-const { listformatter } = require('../lib/formatters') 
+const { listFormatter } = require('../lib/formatters')
 const {
   dateRangeFromWindowSize,
   dateRangeFromDateStrings,

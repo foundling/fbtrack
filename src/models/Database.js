@@ -90,7 +90,8 @@ class Database {
       const params = {
         $participantId: participantId,
         $accessToken: accessToken,
-        $refreshToken: refreshToken
+        $refreshToken: refreshToken,
+        $lastUpdated: new Date(),
       }
 
       await db.run(participants.updateAccessTokensById, params)
@@ -116,6 +117,7 @@ class Database {
       $participantId: participantId,
       $refreshToken: refreshToken,
       $registrationDate: registrationDate,
+      $lastUpdated: new Date(),
     }
 
     const db = await this.dbPromise

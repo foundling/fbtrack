@@ -8,7 +8,8 @@ module.exports = exports = {
         registrationDate TEXT NOT NULL,
         accessToken      TEXT,
         refreshToken     TEXT,
-        isActive         INT  NOT NULL   CHECK(isActive in (0,1))
+        isActive         INT  NOT NULL   CHECK(isActive in (0,1)),
+        lastUpdated      TEXT
       );
     `,
     insert: `
@@ -17,14 +18,16 @@ module.exports = exports = {
         registrationDate,
         accessToken,
         refreshToken,
-        isActive
+        isActive,
+        lastUpdated
       )
       values (
         $participantId,
         $registrationDate,
         $accessToken,
         $refreshToken,
-        $isActive
+        $isActive,
+        $lastUpdated
       );
     `,
     getAll: `
@@ -59,7 +62,8 @@ module.exports = exports = {
         registrationDate = $registrationDate,
         accessToken = $accessToken,
         refreshToken = $refreshToken,
-        isActive = $isActive
+        isActive = $isActive,
+        lastUpdated = $lastUpdated
       where
         participantId = $participantId;
     `,
@@ -67,7 +71,8 @@ module.exports = exports = {
       update participants
       set
         accessToken = $accessToken,
-        refreshToken = $refreshToken
+        refreshToken = $refreshToken,
+        lastUpdated = $lastUpdated
       where
         participantId = $participantId;
     `,
