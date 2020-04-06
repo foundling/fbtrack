@@ -1,6 +1,7 @@
 USER_CONFIG.env
 node_modules/
-src/db/**/*.sqlite
+*/**/*.sqlite
+src/db/test-databases/
 data/**/*.json
 .nyc_output
 .DS_Store
