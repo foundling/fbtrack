@@ -15,6 +15,9 @@ architectural
     x on the participant level, it will do one day/metric at a time.
     x on the study level, it will do n participants at a time.
 
+buggy:
+- fix date range functions 
+
 backlog
 x signup ui: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
 - add quit button to main page.
