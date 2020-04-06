@@ -24,7 +24,7 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
   await study.init()
 
   const queryOptions = {
-    concurrency: chunkSize,
+    chunkSize,
     participant: {
       ids: participantIds,
       all // boolean flag

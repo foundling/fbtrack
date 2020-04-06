@@ -57,7 +57,7 @@ function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
     )
   )
 
-  return [ start, stop ]
+  return [ format(start, ymdFormat), format(stop, ymdFormat) ]
 
 }
 
@@ -71,8 +71,10 @@ function dateRangeFromDateStrings({ dates }) {
 
   if (dates.length === 1) {
     return [
-      parseISO(start),
-      parseISO(start)
+      start, ymdFormat,
+      stop, ymdFormat,
+      //parseISO(start),
+      //parseISO(start)
     ]
   }
 
@@ -81,8 +83,10 @@ function dateRangeFromDateStrings({ dates }) {
       throw new Error('DateRangeFromDateStrings Error: start (first param) must come before stop')
     }
     return [
-      parseISO(start),
-      parseISO(stop)
+      start,
+      stop
+      //parseISO(start),
+      //parseISO(stop)
     ]
   }
 

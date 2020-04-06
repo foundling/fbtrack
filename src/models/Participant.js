@@ -1,6 +1,6 @@
 const path = require('path')
 const FitbitClient = require('fitbit-node')
-const { addSeconds, format } = require('date-fns')
+const { addSeconds, format, parseISO } = require('date-fns')
 
 const { 
   dates,
@@ -67,12 +67,12 @@ class Participant {
     this.files = files
     this.participantId = record.participantId
     this.record = record
-
+    this.queryStats = null
   }
  
   async buildQueryPathsByDate(start, stop) {
 
-    const expectedDateStrings = datesFromRange({ start, stop }).map(d => format(d, ymdFormat))
+    const expectedDateStrings = datesFromRange({ start: parseISO(start), stop: parseISO(stop) }).map(d => format(d, ymdFormat))
 
     const filenames = await getFiles({
       directory: RAW_DATA_PATH,
@@ -100,19 +100,13 @@ class Participant {
 
   }
 
-  async query(start, stop) {
+  async * query(start, stop) {
 
     const queryPathsByDate = await this.buildQueryPathsByDate(start, stop)
 
-    const collected = new Map()
     for (const [date, paths] of queryPathsByDate) {
 
-      collected.set(date, new Map())
-
-      //console.log(`\n Date: ${date}\n`)
-
       if (paths.size === 0) {
-        //console.log(`  All metrics have been captured for date ${date}.`)
         continue
       }
 
@@ -123,19 +117,29 @@ class Participant {
           continue;
         }
 
-        const filename = this.buildFilename({ participantId: this.participantId, date, metric, extension: 'json' })
+        const filename = this.buildFilename({
+          date,
+          extension: 'json',
+          metric,
+          participantId: this.participantId,
+        })
+
         const outputPath = path.join(RAW_DATA_PATH, filename)
 
         await writeFilePromise(outputPath, JSON.stringify(metricData))
 
-        collected.get(date).set(metric, true)
+        const metadata = {
+          date,
+          metric,
+          participantId: this.participantId,
+          collected: true,
+        }
+
+        yield metadata
 
       }
 
     }
-
-    return collected
-    //console.log('\n')
 
   }
 
