@@ -48,7 +48,7 @@ test('[ cli:query ] datesWithinBoundaries', (t) => {
       start: new Date(2020,0,3),
       stop: new Date(2020,0,1)
     }
-    const dates = datesFromRange(invalidRange)
+    const dates = datesWithinBoundaries(invalidRange)
   })
 
 })

@@ -37,7 +37,7 @@ const { WINDOW_SIZE } = USER_CONFIG
 const Database = require('./Database')
 
 const {
-  datesFromRange,
+  datesWithinBoundaries,
   ymdFormat,
 } = dates
 
@@ -72,7 +72,7 @@ class Participant {
  
   async buildQueryPathsByDate(start, stop) {
 
-    const expectedDateStrings = datesFromRange({ start: parseISO(start), stop: parseISO(stop) }).map(d => format(d, ymdFormat))
+    const expectedDateStrings = datesWithinBoundaries({ start: parseISO(start), stop: parseISO(stop) }).map(d => format(d, ymdFormat))
 
     const filenames = await getFiles({
       directory: RAW_DATA_PATH,

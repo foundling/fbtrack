@@ -19,7 +19,7 @@ const {
 
 const {
     dateRE,
-    datesFromRange,
+    datesWithinBoundaries,
     ymdFormat,
 } = dates
 
@@ -79,7 +79,7 @@ async function main({ all = false, participantIds:targetIds = [], missingOnly = 
     }, {})
 
     // dates we should expect
-    const dateStringsToCheck = datesFromRange({ start, stop }).map(d => format(d, ymdFormat))
+    const dateStringsToCheck = datesWithinBoundaries({ start, stop }).map(d => format(d, ymdFormat))
 
     report[participantId] = dateStringsToCheck.reduce((memo, dateString) => {
 
