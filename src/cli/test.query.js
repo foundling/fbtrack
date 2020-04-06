@@ -17,17 +17,16 @@ const { dates, io } = require('../lib')
 const {
   dateRE,
   ymdFormat, 
-  datesFromRange,
-  dateRangeFromWindowSize,
-  dateRangeFromDateStrings,
-  findUncapturedDatesInWindow,
+  datesWithinBoundaries,
+  dateBoundariesFromWindowSize,
+  dateBoundariesFromDates,
 } = dates
 
 const { writeDatasetsToFiles } = io
 
 const test = tapePromise(tape)
 
-test('[ cli:query ] datesFromRange', (t) => {
+test('[ cli:query ] datesWithinBoundaries', (t) => {
 
   t.plan(2)
 
@@ -35,7 +34,7 @@ test('[ cli:query ] datesFromRange', (t) => {
     start: new Date(2020,0,1),
     stop: new Date(2020,0,3)
   }
-  const actualDates = datesFromRange(validRange).map(d => format(d, ymdFormat))
+  const actualDates = datesWithinBoundaries(validRange).map(d => format(d, ymdFormat))
   const expectedDates =  [
     '2020-01-01',
     '2020-01-02',
@@ -54,7 +53,7 @@ test('[ cli:query ] datesFromRange', (t) => {
 
 })
 
-test('cli :: query :: dateRangeFromWindowSize() - registration date before window start', (t) => {
+test('cli :: query :: dateBoundariesFromWindowSize() - registration date before window start', (t) => {
 
   t.plan(1)
 
@@ -63,11 +62,12 @@ test('cli :: query :: dateRangeFromWindowSize() - registration date before windo
   const windowSize = 3
   const windowOffset = 2
 
-  const actualDateRange = [ start, stop ] = dateRangeFromWindowSize({
+  const actualDateRange = [ start, stop ] = dateBoundariesFromWindowSize({
+    registrationDate,
     today,
     windowSize,
-    registrationDate,
   })
+
   const expectedDateRange = [
     new Date(2020, 0, 4),
     new Date(2020, 0, 6)
@@ -80,7 +80,7 @@ test('cli :: query :: dateRangeFromWindowSize() - registration date before windo
 
 })
 
-test('cli :: query :: dateRangeFromWindowSize() - registration date after window start', (t) => {
+test('cli :: query :: dateBoundariesFromWindowSize() - registration date after window start', (t) => {
 
   t.plan(1)
 
@@ -89,11 +89,12 @@ test('cli :: query :: dateRangeFromWindowSize() - registration date after window
   const windowSize = 3
   const windowOffset = 2
 
-  const actualDateRange = [ start, stop ] = dateRangeFromWindowSize({
+  const actualDateRange = [ start, stop ] = dateBoundariesFromWindowSize({
+    registrationDate,
     today,
     windowSize,
-    registrationDate,
   })
+
   const expectedDateRange = [
     new Date(2020, 0, 6),
     new Date(2020, 0, 6)
@@ -106,7 +107,7 @@ test('cli :: query :: dateRangeFromWindowSize() - registration date after window
 
 })
 
-test('cli :: query :: dateRangeFromWindowSize() - registration date on window start', (t) => {
+test('cli :: query :: dateBoundariesFromWindowSize() - registration date on window start', (t) => {
 
   t.plan(1)
 
@@ -115,11 +116,12 @@ test('cli :: query :: dateRangeFromWindowSize() - registration date on window st
   const windowSize = 3
   const windowOffset = 2
 
-  const actualDateRange = [ start, stop ] = dateRangeFromWindowSize({
+  const actualDateRange = [ start, stop ] = dateBoundariesFromWindowSize({
     today,
     windowSize,
     registrationDate,
   })
+
   const expectedDateRange = [
     new Date(2020, 0, 5),
     new Date(2020, 0, 6)
@@ -132,7 +134,7 @@ test('cli :: query :: dateRangeFromWindowSize() - registration date on window st
 
 })
 
-test('cli :: query :: dateRangeFromWindowSize() - invalid window', (t) => {
+test('cli :: query :: dateBoundariesFromWindowSize() - invalid window', (t) => {
 
   t.plan(1)
 
@@ -142,47 +144,47 @@ test('cli :: query :: dateRangeFromWindowSize() - invalid window', (t) => {
   const windowOffset = 0
 
   t.throws(() => {
-    dateRangeFromWindowSize({
+    dateBoundariesFromWindowSize({
+      registrationDate,
       today,
       windowSize: invalidWindowSize,
-      registrationDate,
     })
   })
 
 })
 
 
-test('cli :: query :: dateRangeFromDateStrings()', (t) => {
+test('cli :: query :: dateBoundariesFromDates()', (t) => {
 
   t.plan(1)
 
-  const start = format(new Date(2020, 0, 1), ymdFormat)
-  const stop = format(new Date(2020, 0, 4), ymdFormat)
+  const start = new Date(2020, 0, 1)
+  const stop = new Date(2020, 0, 4)
   const expectedDateRange = [ start, stop ]
 
-  const actualDateRange = dateRangeFromDateStrings({
+  const actualDateRange = dateBoundariesFromDates({
     dates: [start, stop]
-  }).map(date => format(date, ymdFormat))
+  })
 
   t.deepEqual(
-    actualDateRange,
-    expectedDateRange
+    actualDateRange.map(date => format(date, ymdFormat)),
+    expectedDateRange.map(date => format(date, ymdFormat)),
   )
 
 })
 
-test('cli :: query :: dateRangeFromDateStrings() - fails when start is after stop', (t) => {
+test('cli :: query :: dateBoundariesFromDates() - fails when stop is before start', (t) => {
 
   t.plan(1)
 
-  const start = format(new Date(2020, 0, 1), ymdFormat)
-  const stop = format(new Date(2020, 0, 4), ymdFormat)
 
   t.throws((t) => {
 
-    const actualDateRange = dateRangeFromDateStrings({
-      dates: [stop, start]
-    }).map(date => format(date, ymdFormat))
+    const start = new Date(2020, 0, 4) 
+    const stop = new Date(2020, 0, 1) 
+    const actualDateRange = dateBoundariesFromDates({
+      dates: [ start, stop ]
+    })
 
   })
 

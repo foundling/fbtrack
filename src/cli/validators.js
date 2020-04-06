@@ -47,6 +47,11 @@ const validators = {
 
     if (dateRange && dateRange.length > 0) {
 
+      if (dateRange.length > 2) {
+        logger.error('Invalid Date range.  please provide a max of two dates, separated by "..."')
+        process.exit(1)
+      }
+
       if (windowSize != null) {
         logger.error('Provide a window size or a date range, but not both.')
         process.exit(1)

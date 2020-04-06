@@ -3,4 +3,3 @@ module.exports = exports = {
   Participant: require('./Participant'),
   Study: require('./Study'),
 }
-

@@ -1,3 +1,4 @@
+const { parseISO } = require('date-fns')
 const { 
   APP_CONFIG,
   USER_CONFIG
@@ -30,7 +31,8 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
       all // boolean flag
     },
     dates: {
-      range: dateRange, // [start date, stop date], [] and [start date] are ok.
+      // TODO: convert dates here
+      range: dateRange.map(parseISO), // [start date, stop date], [] and [start date] are ok.
       window: windowSize // increasing dates starting windowSize # days before yesterday
     }
   }

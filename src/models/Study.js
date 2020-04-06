@@ -6,10 +6,10 @@ const { isValidParticipantFilename, parseParticipantFilename } = require('../lib
 const { defaultLogger: logger } = require('../lib/logger')
 const { listFormatter } = require('../lib/formatters')
 const {
-  datesFromRange,
-  dateRangeFromWindowSize,
-  dateRangeFromDateStrings,
-  ymdFormat
+  datesWithinBoundaries,
+  dateBoundariesFromWindowSize,
+  dateBoundariesFromDates,
+  ymdFormat,
 } = require('../lib/dates')
 
 const { readdirPromise, statPromise } = require('../lib/io')
@@ -38,11 +38,16 @@ class ProgressBar {
 
     for (const date of dates) {
 
-      this.participants.get(participantId).set(date, new Map()) 
+      this.participants
+        .get(participantId)
+        .set(date, new Map()) 
 
       for (const metric of metrics) {
 
-        this.participants.get(participantId).get(date).set(metric, false)
+        this.participants
+          .get(participantId)
+          .get(date)
+          .set(metric, false)
 
       }
     }
@@ -51,20 +56,10 @@ class ProgressBar {
 
   updateParticipantStats({ participantId, date, metric, collected, error }) {
 
-
-    if (collected) {
-
-      this.participants.get(participantId)
-        .get(date)
-        .set(metric, collected) 
-
-    } else {
-
-      this.participants.get(participantId)
-        .get(date)
-        .set(metric, error) 
-
-    }
+    // TODO: handle errors
+    this.participants.get(participantId)
+      .get(date)
+      .set(metric, collected) 
 
   }
 
@@ -81,7 +76,6 @@ class ProgressBar {
           metricsCollected += Number(collected)
         }
       }
-
 
       const nextLine = [
         `participant id: ${id}`,
@@ -210,13 +204,12 @@ class Study {
 
   }
 
-  calculateDateRange({ range, window, registrationDate }) {
+  calculateDateBoundaries({ range, window, registrationDate }) {
 
     return range.length ?
-      dateRangeFromDateStrings({ dates: range }) :
-      dateRangeFromWindowSize({
+      dateBoundariesFromDates({ dates: range }) : // 1 or 2 date args -> [start, stop]
+      dateBoundariesFromWindowSize({
         windowSize: window,
-        today: new Date(),
         registrationDate: parseISO(registrationDate),
       })
 
@@ -254,7 +247,7 @@ class Study {
     const collectionStats = new ProgressBar()
     targetParticipants.forEach(participant => {
 
-      const [ dateStart, dateStop ] = this.calculateDateRange({
+      const [ dateStart, dateStop ] = this.calculateDateBoundaries({
         range: dates.range,
         window: dates.window,
         registrationDate: participant.record.registrationDate
@@ -262,7 +255,7 @@ class Study {
 
       collectionStats.addParticipant({
         participantId: participant.participantId,
-        dates: dateRangeFromDateStrings({ dates: [ dateStart, dateStop ] }),
+        dates: datesWithinBoundaries({ dates: [ dateStart, dateStop ] }),
         metrics: [...FITBIT_CONFIG.ENDPOINTS.keys()],
       })
 
@@ -283,10 +276,14 @@ class Study {
   }
 
   async runConcurrently(funcs, chunkSize=1) {
+
     while (funcs.length > 0) {
+
       const chunk = funcs.splice(0, chunkSize)
       await Promise.all(chunk.map(f => f()))
+
     }
+
   }
 
 }

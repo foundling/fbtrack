@@ -15,7 +15,7 @@ const ymdFormat = 'yyyy-MM-dd' // this is fitbit's resource url format
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 const dateREStrict = /^[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/
 
-function datesFromRange({ start, stop }) {
+function datesWithinBoundaries({ start, stop }) {
 
   /* 
    * - range is inclusive 
@@ -38,7 +38,7 @@ function datesFromRange({ start, stop }) {
 
 }
 
-function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
+function dateBoundariesFromWindowSize({ windowSize, registrationDate, today=new Date() }) {
   /* get date range starting at (yesterday - window size) until yesterday (inclusive), unless registration date
    * occurs in between that, in which case, registration date is start of range. */
 
@@ -49,7 +49,7 @@ function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
   const stop = subDays(today, 1)
   const windowOffset = windowSize - 1
   /* note: date ranges are calculated in terms of offsets.
-   * subtract 1 from windowSize to get offset */
+   * windowSize is number of days, so subtract 1 to get offset */
   const start = new Date(
     Math.max(
       subDays(stop, windowOffset),
@@ -57,45 +57,29 @@ function dateRangeFromWindowSize({ windowSize, registrationDate, today }) {
     )
   )
 
-  return [ format(start, ymdFormat), format(stop, ymdFormat) ]
+  return [ start, stop ]
 
 }
 
-function dateRangeFromDateStrings({ dates }) {
+function dateBoundariesFromDates({ dates }) {
 
   if (!dates || dates.length < 1 || dates.length > 2) {
     throw new Error('Dates array requires exactly two elements. Received ', JSON.stringify(dates))
   }
 
+  if (dates.length === 2 && dates[0] > dates[1]) {
+    throw new Error('Stop Date before Start Date')
+  }
+
   const [ start, stop ] = dates
-
-  if (dates.length === 1) {
-    return [
-      start, ymdFormat,
-      stop, ymdFormat,
-      //parseISO(start),
-      //parseISO(start)
-    ]
-  }
-
-  if (dates.length == 2) {
-    if (parseISO(start) > parseISO(stop)) {
-      throw new Error('DateRangeFromDateStrings Error: start (first param) must come before stop')
-    }
-    return [
-      start,
-      stop
-      //parseISO(start),
-      //parseISO(stop)
-    ]
-  }
+  return start && stop ? [ start, stop ] : [ start || stop, start || stop ]
 
 }
 
 module.exports = exports = {
-  datesFromRange,
-  dateRangeFromWindowSize,
-  dateRangeFromDateStrings,
+  datesWithinBoundaries,
+  dateBoundariesFromWindowSize,
+  dateBoundariesFromDates,
   dateRE,
   dateREStrict,
   filenamePattern,
