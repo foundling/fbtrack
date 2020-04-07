@@ -11,6 +11,7 @@ regressions:
 - re-running query when all data in window is collected
 
 backlog
+- write cli sub-command to 'bundle' collected data
 x signup ui: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
 - add quit button to main page.
 - update error message to point out reauth checkbox if that's useful
