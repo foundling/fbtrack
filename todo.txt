@@ -7,16 +7,8 @@ architectural
   - main logger instance that can log info, errors, etc. as well as log to file
   - figure out what should be logged to a file to debug failures later on.
 
-- concurrency
-  - the ECONNRESET error: fixed ... but now it's slower.  
-  - how to can you multiplex and maintain logging?
-  x have query function return metadata about what was collected, log those upon participant query completion.
-  x write some iteration mechanism on the study level to always pull n number of participants and query
-    x on the participant level, it will do one day/metric at a time.
-    x on the study level, it will do n participants at a time.
-
-buggy:
-- fix date range functions 
+regressions:
+- re-running query when all data in window is collected
 
 backlog
 x signup ui: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
@@ -27,6 +19,4 @@ x signup ui: allow override checkbox (plus confirm) to overwrite subjectId in db
 - study api: is allowing either a flat data dir or subject_id based data subdirs worth it?
 - handle edge case where '_' in participant id
 - prevent refresh token errors. got a 400 invalid refresh token, with an old refresh token in db.
-- allow people to reauthorize participants via the web interface by choosing a registration date (for database)
 - let user pass subject id via cli to web (optional), by running 'fbt signup <subjectId>`. 
-- simplify utils

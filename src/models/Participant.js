@@ -119,7 +119,7 @@ class Participant {
 
           const metricData = await this.queryFitbit(queryPath)
           const filename = this.buildFilename({
-            date: format(date, ymdFormat),
+            date: date,
             extension: 'json',
             metric,
             participantId: this.participantId,
@@ -135,7 +135,6 @@ class Participant {
             metric,
             participantId: this.participantId,
           }
-
 
         } catch(e) {
 
@@ -267,8 +266,7 @@ class Participant {
 
       for (const [metric, templatePathMap] of metricToTemplatePathMap) {
 
-        const formattedDate = format(date, ymdFormat)
-        const populatedTemplate = endpoints.get(metric).replace('%DATE%', formattedDate)
+        const populatedTemplate = endpoints.get(metric).replace('%DATE%', date)
         memo.get(date).set(metric, populatedTemplate)
 
       }
@@ -283,11 +281,17 @@ class Participant {
     const missing = new Map()
 
     for (const date of expectedDates) {
-      missing.set(date, new Map())
+
+      const formattedDate = format(date, ymdFormat) 
+      missing.set(formattedDate, new Map())
+
       for (const metric of metrics) {
-        missing.get(date).set(metric, true)
+        missing.get(formattedDate).set(metric, true)
       }
+
     }
+
+    console.log('missing [pre] ', missing)
 
 
     // unfortunately, we need to go from formatted dates in filename back to date objects 
@@ -295,9 +299,10 @@ class Participant {
 
     for (const filename of filenames) {
       const [ id, dateString, metric, extension ] = filename.split(/[._]/)
-      const matchingDate = [...missing.keys()].find(date => format(date, ymdFormat) === dateString)
+      const matchingDate = [...missing.keys()].find(ds => ds === dateString)
       missing.get(matchingDate).delete(metric)
     }
+    console.log('missing [post] ', missing)
 
     return missing
 

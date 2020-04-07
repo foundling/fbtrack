@@ -1,6 +1,7 @@
 const path = require('path')
 const fs = require('fs')
 const { format, parseISO, differenceInDays } = require('date-fns')
+const { cursorTo } = require('readline')
 
 const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils')
 const { defaultLogger: logger } = require('../lib/logger')
@@ -31,10 +32,14 @@ const defaultQueryArgs = {
   chunkSize: APP_CONFIG.CHUNK_SIZE,
 }
 
-class ProgressBar {
+const makeList = listFormatter('•')
+
+class QueryStats {
 
   constructor() {
+
     this.participants = new Map()
+
   }
 
   addParticipant({ participantId, dates, metrics }) {
@@ -67,30 +72,50 @@ class ProgressBar {
 
   updateParticipantStats({ participantId, date, metric, collected, error }) {
 
-    try {
-
-      const dateAsKey = format(date, ymdFormat)
-      const dayLevelMetricToUpdate = this.participants.get(participantId)
-        .get(dateAsKey)
-        .get(metric)
-
-      dayLevelMetricToUpdate
-        .set('collected', collected)
-        .set('error', error)
-
-    } catch(e) {
-
-      console.log(e)
-      console.log('debug participantId:', this.participants.get(participantId))
-      console.log('debug metadata:', { participantId, dateAsKey, metric, collected, error })
-
-    }
+    this.participants.get(participantId).get(date)
+      .get(metric)
+      .set('collected', collected)
+      .set('error', error)
 
   }
 
-  export() {
+  get progress() {
 
-    let lines = ''
+    let total = 0;
+    let current = 0;
+
+    for (const [ id, participantDates ] of this.participants) {
+
+      let errorsCollected = 0
+      let metricsCollected = 0
+
+      const metricsExpected = participantDates.size * FITBIT_CONFIG.ENDPOINTS.size
+
+      for (const [date, metrics] of participantDates) {
+
+        for (const [metric, collectionInfo] of metrics) {
+
+          ++total
+
+          if (collectionInfo.get('collected')) {
+            ++current
+          }
+
+        }
+
+      }
+
+    }
+
+    return `${ Math.floor(current/total * 100) }%`
+
+  }
+
+  get stats() {
+
+    const header = 'Fbtrack Collection Summary:\n'
+    let lines = []
+
     for (const [ id, participantDates ] of this.participants) {
 
       let errorsCollected = 0
@@ -115,15 +140,15 @@ class ProgressBar {
         `errors encountered: ${errorsCollected}`,
       ].join(' | ')
 
-      lines += `${nextLine}\n`
+      lines.push(nextLine)
 
     }
 
-    return lines
+    return `${header}${makeList(lines)}`
 
   }
 
-  logErrors() {
+  get errors() {
 
     const errors = []
 
@@ -137,24 +162,16 @@ class ProgressBar {
       }
     }
 
-    if (errors.length > 0) {
-      console.log(`${errors.length} errors occurred`)
-      console.log(errors)
-    } else {
-      console.log('No errors occurred during collection')
-    }
+    return (errors.length > 0) ?
+      `\nErrors: ${ errors.length } errors occurred:\n${ errors.join('\n') }` : 
+      ''
 
   }
 
   rerender() {
 
-    console.clear();
-
-    const bannerTitle = `${ USER_CONFIG.STUDY_NAME} Fbtrack Collection:`
-    const underline = [...bannerTitle].map(letter => '-').join('')
-    const banner = `${bannerTitle}\n${underline}\n`
-
-    process.stdout.write(`${ banner }\n${ this.export() }\n`)
+    cursorTo(process.stdout, 0);
+    process.stdout.write(`fbtrack query progress: ${ this.progress }`)
 
   }
 
@@ -283,7 +300,6 @@ class Study {
 
     if (missing.length > 0) {
 
-      const makeList = listFormatter('•')
       const warning = `the following participants were queried
                         but are not in the database: \n${makeList(missing)}`
       logger.warn(warning)
@@ -302,7 +318,7 @@ class Study {
       }, new Map())
 
     const participantQueryFns = []
-    const collectionStats = new ProgressBar()
+    const queryStats = new QueryStats()
 
     targetParticipants.forEach(participant => {
 
@@ -312,7 +328,7 @@ class Study {
         registrationDate: participant.record.registrationDate
       })
 
-      collectionStats.addParticipant({
+      queryStats.addParticipant({
         participantId: participant.participantId,
         dates: datesWithinBoundaries(dateStart, dateStop),
         metrics: [...FITBIT_CONFIG.ENDPOINTS.keys()],
@@ -322,8 +338,8 @@ class Study {
         async () => {
           for await (const stats of participant.query(dateStart, dateStop)) {
 
-            collectionStats.updateParticipantStats(stats)
-            collectionStats.rerender()
+            queryStats.updateParticipantStats(stats)
+            queryStats.rerender()
 
           }
         }
@@ -333,7 +349,7 @@ class Study {
 
     await this.runConcurrently(participantQueryFns, chunkSize)
 
-    collectionStats.logErrors()
+    process.stdout.write(`\n${queryStats.stats}\n${queryStats.errors}`)
 
   }
 
