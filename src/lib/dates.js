@@ -15,10 +15,10 @@ const ymdFormat = 'yyyy-MM-dd' // this is fitbit's resource url format
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 const dateREStrict = /^[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/
 
-function datesWithinBoundaries({ start, stop }) {
+function datesWithinBoundaries(start, stop) {
 
-  /* 
-   * - range is inclusive 
+  /*
+   * - range is inclusive
    * - returns dates
    */
 
@@ -61,7 +61,7 @@ function dateBoundariesFromWindowSize({ windowSize, registrationDate, today=new 
 
 }
 
-function dateBoundariesFromDates({ dates }) {
+function dateBoundariesFromDates({ dates, registrationDate }) {
 
   if (!dates || dates.length < 1 || dates.length > 2) {
     throw new Error('Dates array requires exactly two elements. Received ', JSON.stringify(dates))
@@ -71,7 +71,9 @@ function dateBoundariesFromDates({ dates }) {
     throw new Error('Stop Date before Start Date')
   }
 
-  const [ start, stop ] = dates
+  const [ potentialStart, stop ] = dates
+  const start = Math.max(potentialStart, registrationDate)
+
   return start && stop ? [ start, stop ] : [ start || stop, start || stop ]
 
 }

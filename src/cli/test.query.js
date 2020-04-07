@@ -1,7 +1,7 @@
 const tape = require('tape')
 const { default: tapePromise } = require('tape-promise')
 
-const { 
+const {
   addDays,
   differenceInDays,
   parseISO,
@@ -16,7 +16,7 @@ const { dates, io } = require('../lib')
 
 const {
   dateRE,
-  ymdFormat, 
+  ymdFormat,
   datesWithinBoundaries,
   dateBoundariesFromWindowSize,
   dateBoundariesFromDates,
@@ -30,11 +30,11 @@ test('[ cli:query ] datesWithinBoundaries', (t) => {
 
   t.plan(2)
 
-  const validRange = {
-    start: new Date(2020,0,1),
-    stop: new Date(2020,0,3)
-  }
-  const actualDates = datesWithinBoundaries(validRange).map(d => format(d, ymdFormat))
+  const validRange = [
+    new Date(2020,0,1),
+    new Date(2020,0,3)
+  ]
+  const actualDates = datesWithinBoundaries(...validRange).map(d => format(d, ymdFormat))
   const expectedDates =  [
     '2020-01-01',
     '2020-01-02',
@@ -44,11 +44,11 @@ test('[ cli:query ] datesWithinBoundaries', (t) => {
   t.deepEqual(actualDates, expectedDates)
 
   t.throws(() => {
-    const invalidRange = {
-      start: new Date(2020,0,3),
-      stop: new Date(2020,0,1)
-    }
-    const dates = datesWithinBoundaries(invalidRange)
+    const invalidRange = [
+      new Date(2020,0,3),
+      new Date(2020,0,1),
+    ]
+    const dates = datesWithinBoundaries(...invalidRange)
   })
 
 })
@@ -154,16 +154,18 @@ test('cli :: query :: dateBoundariesFromWindowSize() - invalid window', (t) => {
 })
 
 
-test('cli :: query :: dateBoundariesFromDates()', (t) => {
+test('cli :: query :: dateBoundariesFromDates() - start and stop are correct, and after registration date', (t) => {
 
   t.plan(1)
 
+  const registrationDate = new Date(2019, 11, 12)
   const start = new Date(2020, 0, 1)
   const stop = new Date(2020, 0, 4)
   const expectedDateRange = [ start, stop ]
 
   const actualDateRange = dateBoundariesFromDates({
-    dates: [start, stop]
+    dates: [start, stop],
+    registrationDate,
   })
 
   t.deepEqual(
@@ -173,6 +175,29 @@ test('cli :: query :: dateBoundariesFromDates()', (t) => {
 
 })
 
+test('cli :: query :: dateBoundariesFromDates() - start before registrationDate', (t) => {
+
+  t.plan(1)
+
+  const registrationDate = new Date(2020, 0, 2)
+  const start = new Date(2020, 0, 1)
+  const stop = new Date(2020, 0, 4)
+  const expectedDateRange = [ registrationDate, stop ]
+
+  const actualDateRange = dateBoundariesFromDates({
+    dates: [start, stop],
+    registrationDate,
+  })
+
+  t.deepEqual(
+    actualDateRange.map(date => format(date, ymdFormat)),
+    expectedDateRange.map(date => format(date, ymdFormat)),
+  )
+
+})
+
+
+
 test('cli :: query :: dateBoundariesFromDates() - fails when stop is before start', (t) => {
 
   t.plan(1)
@@ -180,8 +205,8 @@ test('cli :: query :: dateBoundariesFromDates() - fails when stop is before star
 
   t.throws((t) => {
 
-    const start = new Date(2020, 0, 4) 
-    const stop = new Date(2020, 0, 1) 
+    const start = new Date(2020, 0, 4)
+    const stop = new Date(2020, 0, 1)
     const actualDateRange = dateBoundariesFromDates({
       dates: [ start, stop ]
     })
