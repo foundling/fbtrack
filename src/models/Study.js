@@ -12,12 +12,17 @@ const {
   ymdFormat,
 } = require('../lib/dates')
 
-const { readdirPromise, statPromise } = require('../lib/io')
+const {
+  readdirPromise,
+  statPromise
+} = require('../lib/io')
+
 const Participant = require('./Participant')
 
 const {
   APP_CONFIG,
-  FITBIT_CONFIG
+  FITBIT_CONFIG,
+  USER_CONFIG,
 } = require('../config').getConfig({ requiresUserSetup: true })
 
 const defaultQueryArgs = {
@@ -34,20 +39,26 @@ class ProgressBar {
 
   addParticipant({ participantId, dates, metrics }) {
 
+    // in: dates are objects
     this.participants.set(participantId, new Map())
 
     for (const date of dates) {
 
+      const dateAsKey = format(date, ymdFormat)
+
       this.participants
         .get(participantId)
-        .set(date, new Map()) 
+        .set(dateAsKey, new Map())
 
       for (const metric of metrics) {
 
         this.participants
           .get(participantId)
-          .get(date)
-          .set(metric, false)
+          .get(dateAsKey)
+          .set(metric, new Map([
+            [ 'collected', false ],
+            [ 'error', undefined ]
+          ]))
 
       }
     }
@@ -56,10 +67,24 @@ class ProgressBar {
 
   updateParticipantStats({ participantId, date, metric, collected, error }) {
 
-    // TODO: handle errors
-    this.participants.get(participantId)
-      .get(date)
-      .set(metric, collected) 
+    try {
+
+      const dateAsKey = format(date, ymdFormat)
+      const dayLevelMetricToUpdate = this.participants.get(participantId)
+        .get(dateAsKey)
+        .get(metric)
+
+      dayLevelMetricToUpdate
+        .set('collected', collected)
+        .set('error', error)
+
+    } catch(e) {
+
+      console.log(e)
+      console.log('debug participantId:', this.participants.get(participantId))
+      console.log('debug metadata:', { participantId, dateAsKey, metric, collected, error })
+
+    }
 
   }
 
@@ -68,18 +93,26 @@ class ProgressBar {
     let lines = ''
     for (const [ id, participantDates ] of this.participants) {
 
+      let errorsCollected = 0
       let metricsCollected = 0
       const metricsExpected = participantDates.size * FITBIT_CONFIG.ENDPOINTS.size
 
       for (const [date, metrics] of participantDates) {
-        for (const [metric, collected] of metrics) { 
-          metricsCollected += Number(collected)
+        for (const [metric, collectionInfo] of metrics) {
+
+          if (collectionInfo.get('collected')) {
+            metricsCollected += 1
+          } else if (collectionInfo.get('error')) {
+            errorsCollected += 1
+          }
+
         }
       }
 
       const nextLine = [
         `participant id: ${id}`,
         `collected: ${metricsCollected}/${metricsExpected}`,
+        `errors encountered: ${errorsCollected}`,
       ].join(' | ')
 
       lines += `${nextLine}\n`
@@ -87,16 +120,41 @@ class ProgressBar {
     }
 
     return lines
+
+  }
+
+  logErrors() {
+
+    const errors = []
+
+    for (const [ id, dates ] of this.participants) {
+      for (const [ date, metrics ] of dates) {
+        for (const [ metric, collectionInfo ] of metrics) {
+          if (collectionInfo['error']) {
+            errors.push(`Error: ${id} | ${date} | ${metric} | ${error}\n`)
+          }
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      console.log(`${errors.length} errors occurred`)
+      console.log(errors)
+    } else {
+      console.log('No errors occurred during collection')
+    }
+
   }
 
   rerender() {
 
-    process.stdout.clearLine();  // clear current text
-    process.stdout.cursorTo(0);  // move cursor to beginning of line
     console.clear();
 
-    const lines = this.export()
-    process.stdout.write(`${lines}\n`)
+    const bannerTitle = `${ USER_CONFIG.STUDY_NAME} Fbtrack Collection:`
+    const underline = [...bannerTitle].map(letter => '-').join('')
+    const banner = `${bannerTitle}\n${underline}\n`
+
+    process.stdout.write(`${ banner }\n${ this.export() }\n`)
 
   }
 
@@ -207,7 +265,7 @@ class Study {
   calculateDateBoundaries({ range, window, registrationDate }) {
 
     return range.length ?
-      dateBoundariesFromDates({ dates: range }) : // 1 or 2 date args -> [start, stop]
+      dateBoundariesFromDates({ dates: range, registrationDate }) :
       dateBoundariesFromWindowSize({
         windowSize: window,
         registrationDate: parseISO(registrationDate),
@@ -245,6 +303,7 @@ class Study {
 
     const participantQueryFns = []
     const collectionStats = new ProgressBar()
+
     targetParticipants.forEach(participant => {
 
       const [ dateStart, dateStop ] = this.calculateDateBoundaries({
@@ -255,23 +314,26 @@ class Study {
 
       collectionStats.addParticipant({
         participantId: participant.participantId,
-        dates: datesWithinBoundaries({ dates: [ dateStart, dateStop ] }),
+        dates: datesWithinBoundaries(dateStart, dateStop),
         metrics: [...FITBIT_CONFIG.ENDPOINTS.keys()],
       })
 
       participantQueryFns.push(
         async () => {
           for await (const stats of participant.query(dateStart, dateStop)) {
+
             collectionStats.updateParticipantStats(stats)
             collectionStats.rerender()
+
           }
         }
       )
 
     })
 
-    collectionStats.rerender()
     await this.runConcurrently(participantQueryFns, chunkSize)
+
+    collectionStats.logErrors()
 
   }
 

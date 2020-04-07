@@ -2,7 +2,7 @@ const path = require('path')
 const FitbitClient = require('fitbit-node')
 const { addSeconds, format, parseISO } = require('date-fns')
 
-const { 
+const {
   dates,
   http,
   io,
@@ -68,27 +68,27 @@ class Participant {
     this.participantId = record.participantId
     this.record = record
     this.queryStats = null
+
   }
- 
+
   async buildQueryPathsByDate(start, stop) {
 
-    const expectedDateStrings = datesWithinBoundaries({ start: parseISO(start), stop: parseISO(stop) }).map(d => format(d, ymdFormat))
-
+    const expectedDates = datesWithinBoundaries(start, stop)
     const filenames = await getFiles({
       directory: RAW_DATA_PATH,
       criterion: fname => fname.startsWith(this.participantId) &&
-                          expectedDateStrings.some(s => fname.includes(s)),
+                          expectedDates.some(d => fname.includes(format(d, ymdFormat))),
     })
 
     const missingMetricsByDate = await this.findUncapturedDates({
       filenames,
-      expectedDateStrings,
+      expectedDates,
       metrics: [...ENDPOINTS.keys()],
     })
 
-    const noMissingDataForDates = [...missingMetricsByDate.values()].every(metricsForDate => metricsForDate.size === 0)
+    const allDatesCollected = [...missingMetricsByDate.values()].every(metricsForDate => metricsForDate.size === 0)
 
-    if (noMissingDataForDates) {
+    if (allDatesCollected) {
       console.log(`All dates captured for participant ${this.participantId} in this date range.`)
       return new Map()
     }
@@ -104,6 +104,7 @@ class Participant {
 
     const queryPathsByDate = await this.buildQueryPathsByDate(start, stop)
 
+    // map: [ date => [ metric => queryPath ]]
     for (const [date, paths] of queryPathsByDate) {
 
       if (paths.size === 0) {
@@ -112,27 +113,43 @@ class Participant {
 
       for (const [metric, queryPath] of paths) {
 
-        const metricData = await this.queryFitbit(queryPath)
-        if (!metricData) {
-          continue;
-        }
+        let metadata
 
-        const filename = this.buildFilename({
-          date,
-          extension: 'json',
-          metric,
-          participantId: this.participantId,
-        })
+        try {
 
-        const outputPath = path.join(RAW_DATA_PATH, filename)
+          const metricData = await this.queryFitbit(queryPath)
+          const filename = this.buildFilename({
+            date: format(date, ymdFormat),
+            extension: 'json',
+            metric,
+            participantId: this.participantId,
+          })
+          const outputPath = path.join(RAW_DATA_PATH, filename)
 
-        await writeFilePromise(outputPath, JSON.stringify(metricData))
+          await writeFilePromise(outputPath, JSON.stringify(metricData))
 
-        const metadata = {
-          date,
-          metric,
-          participantId: this.participantId,
-          collected: true,
+          metadata = {
+            collected: true,
+            date,
+            error: null,
+            metric,
+            participantId: this.participantId,
+          }
+
+
+        } catch(e) {
+
+          // log to disk and store errors in collection progress stats
+          logger.error(`query error for ${participantId}: query for ${metric} data on ${date} failed:\n${ e }`)
+
+          metadata = {
+            collected: false,
+            date,
+            error: 'fail',
+            metric,
+            participantId: this.participantId,
+          }
+
         }
 
         yield metadata
@@ -145,19 +162,11 @@ class Participant {
 
   async queryFitbit(queryPath) {
 
-    let body
-    let response
-
-    try {
-
-      [ body, response ] = await fbClient.get(queryPath, this.record.accessToken)
-
-    } catch(e) {
-
-      logger.error(`attempt to query Fitbit failed:\n${e}`)
-      throw e
-
-    }
+    /*
+     * Error handling of unexpected events is handled in caller. 
+     * Refreshing access token, rate limiting handled here.
+     */
+    const [ body, response ] = await fbClient.get(queryPath, this.record.accessToken)
 
     if (isSuccess(response)) {
 
@@ -167,20 +176,13 @@ class Participant {
 
     if (accessTokenExpired(body)) {
 
-      logger.info(`queryFitbit - accessToken expired for participant ${this.participantId} ... refreshing`);
+      // this should go to a file
+      //logger.info(`queryFitbit - accessToken expired for participant ${this.participantId} ... refreshing`);
       await this.refreshAccessToken()
 
-      try {
+      const [ retryBody, retryResponse ] = await fbClient.get(queryPath, this.record.accessToken)
 
-        const [ retryBody, retryResponse ] = await fbClient.get(queryPath, this.record.accessToken)
-        return retryBody
-
-      } catch(e) {
-
-        logger.error(`queryFitbit - query after refreshAccessToken has failed: ${e}`)
-        throw e
-
-      }
+      return retryBody
 
     }
 
@@ -190,36 +192,33 @@ class Participant {
       const secondsToWait = parseInt(response.headers['retry-after']) + leeway
       const resumeTime = format(addSeconds(new Date(), secondsToWait), 'hh:mm')
 
-      logger.error(`queryFitbit error for participant ${this.participantId} - rate limit exceeded.`)
-      logger.error(`Waiting ${secondsToWait/60} minutes to resume ... Starting again at ${resumeTime}.\n`)
+      // this should go to stdout
+      logger.warn(`queryFitbit error for participant ${this.participantId} - rate limit exceeded.`)
+      logger.warn(`Waiting ${secondsToWait/60} minutes to resume ... Starting again at ${resumeTime}.\n`)
 
       await utils.sleep(secondsToWait + leeway)
 
-      try {
+      const [ retryBody, retryResponse ] = await fbClient.get(queryPath, this.record.accessToken)
 
-        const [ retryBody, retryResponse ] = await fbClient.get(queryPath, this.record.accessToken)
-        return retryBody
+      return retryBody
 
-      } catch(e) {
-
-        logger.error(`queryFitbit error: retry after rateLimitExceeded has failed: ${e}`)
-        throw e
-
-      }
+      //logger.error(`queryFitbit error: retry after rateLimitExceeded has failed: ${e}`)
+      //throw e
 
     }
 
     if (invalidRefreshToken(response)) {
 
-      // warning: this is bad news, and annoying to deal with.
-      // make sure database never can't accept bad data for an auth token.
       logger.error(`queryFitbit - InvalidRefreshToken Error for participant ${this.participantId}.`)
       logger.error('The participant needs to be re-authorized with the application.')
       logger.error(`skipping participant ${this.participantId}.`)
 
-      return
+      throw new Error(`invalid refresh token for participant ${this.participantId}`)
 
     }
+    
+    // what to do here?
+    return body
 
   }
 
@@ -258,20 +257,19 @@ class Participant {
 
   generateQueryPathsByDate({ metricsByDate, endpoints }) {
 
-    // 'metricToTemplatePathMap' is an example of where an explicit type system could
-    // liberate you from the ugly naming
     const memo = new Map()
 
-    for (const [dateString, metricToTemplatePathMap] of metricsByDate) {
+    for (const [date, metricToTemplatePathMap] of metricsByDate) {
 
-      if (!memo.has(dateString)) {
-        memo.set(dateString, new Map())
+      if (!memo.has(date)) {
+        memo.set(date, new Map())
       }
 
       for (const [metric, templatePathMap] of metricToTemplatePathMap) {
 
-        const populatedTemplate = endpoints.get(metric).replace('%DATE%', dateString)
-        memo.get(dateString).set(metric, populatedTemplate)
+        const formattedDate = format(date, ymdFormat)
+        const populatedTemplate = endpoints.get(metric).replace('%DATE%', formattedDate)
+        memo.get(date).set(metric, populatedTemplate)
 
       }
     }
@@ -280,21 +278,25 @@ class Participant {
 
   }
 
-  async findUncapturedDates({ filenames, expectedDateStrings, metrics }) {
+  async findUncapturedDates({ filenames, expectedDates, metrics }) {
 
     const missing = new Map()
 
-    for (const dateString of expectedDateStrings) {
-      missing.set(dateString, new Map())
+    for (const date of expectedDates) {
+      missing.set(date, new Map())
       for (const metric of metrics) {
-        missing.get(dateString).set(metric, true)
+        missing.get(date).set(metric, true)
       }
     }
 
 
+    // unfortunately, we need to go from formatted dates in filename back to date objects 
+    // so we find the map key that matches our filename date stamp when formatted properly
+
     for (const filename of filenames) {
       const [ id, dateString, metric, extension ] = filename.split(/[._]/)
-      missing.get(dateString).delete(metric)
+      const matchingDate = [...missing.keys()].find(date => format(date, ymdFormat) === dateString)
+      missing.get(matchingDate).delete(metric)
     }
 
     return missing
