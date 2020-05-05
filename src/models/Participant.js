@@ -291,8 +291,6 @@ class Participant {
 
     }
 
-    console.log('missing [pre] ', missing)
-
 
     // unfortunately, we need to go from formatted dates in filename back to date objects 
     // so we find the map key that matches our filename date stamp when formatted properly
@@ -302,7 +300,6 @@ class Participant {
       const matchingDate = [...missing.keys()].find(ds => ds === dateString)
       missing.get(matchingDate).delete(metric)
     }
-    console.log('missing [post] ', missing)
 
     return missing
 
