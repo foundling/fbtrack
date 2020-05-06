@@ -74,8 +74,6 @@ function dateBoundariesFromDates({ dates, registrationDate }) {
   const [ potentialStart, stop ] = dates
   const startUnixEpoch = new Date(Math.max(potentialStart, registrationDate))
   const start = parseISO(startUnixEpoch.toISOString())
-  console.log({ potentialStart, registrationDate })
-  console.log({ start, stop })
 
   return start && stop ? [ start, stop ] : [ start || stop, start || stop ]
 

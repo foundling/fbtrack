@@ -11,11 +11,12 @@ const {
 
 const {
   dates,
-  defaultLogger:logger,
   formatters,
   http,
   io
 } = require('../lib');
+
+const { defaultLogger: logger } = require('../lib/logger')
 
 const {
     dateRE,
@@ -41,8 +42,6 @@ const metrics = Object.keys(FITBIT_CONFIG.ENDPOINTS)
 
 async function main({ all = false, participantIds:targetIds = [], missingOnly = false }) {
 
-  // problem: you removed the 'all' case
-
   const allParticipantFiles = await getFiles({ directory: RAW_DATA_PATH })
   const participants = await db.getParticipants({ active: true })
 
@@ -54,6 +53,7 @@ async function main({ all = false, participantIds:targetIds = [], missingOnly = 
   for (const targetId of targetIds) {
 
     const participant = participants.find(({ participantId }) => participantId == targetId)
+
     if (!participant) {
       invalidParticipantIds.push(targetId)
       continue
@@ -64,7 +64,6 @@ async function main({ all = false, participantIds:targetIds = [], missingOnly = 
     const start = parseISO(registrationDate)
     const stop = subDays(new Date(), 1)
 
-    // what we have by date then by metric
     const byDateByMetric = participantFiles.reduce((memo, filename) => {
 
       const [ id, dateString, metric, extension ] = filename.split(/[_.]/)
@@ -78,7 +77,6 @@ async function main({ all = false, participantIds:targetIds = [], missingOnly = 
 
     }, {})
 
-    // dates we should expect
     const dateStringsToCheck = datesWithinBoundaries({ start, stop }).map(d => format(d, ymdFormat))
 
     report[participantId] = dateStringsToCheck.reduce((memo, dateString) => {
