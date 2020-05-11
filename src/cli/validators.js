@@ -78,7 +78,7 @@ const validators = {
 
   report: id,
   schedule: id,
-  signup: id,
+  register: id,
   undefined: (...args) => { throw new Error('no handler defined') }
 
 }

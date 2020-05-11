@@ -5,11 +5,11 @@ const { splitArgsOn } = require('../lib/formatters')
 
 const { validate, validators } = require('./validators')
 
-const { configure, schedule, signup, query, report, revoke, apistatus } = [
+const { configure, schedule, register, query, report, revoke, apistatus } = [
 
   'configure',
   'schedule',
-  'signup',
+  'register',
   'query',
   'report',
   'revoke',
@@ -27,9 +27,9 @@ const { configure, schedule, signup, query, report, revoke, apistatus } = [
 }, {})
 
 cli
-  .command('signup')
+  .command('register')
   .description('Initiate participant authorization process in Google Chrome.')
-  .action(signup)
+  .action(register)
 
 cli
   .command('configure')
