@@ -55,7 +55,7 @@ Now that you've created the Fitbit Oauth2 Web App and, if necessary, you've been
 
 
 ```console
-git clone git@github.com:foundling/fbtrack
+git clone https://github.com/foundling/fbtrack
 cd fbtrack
 npm install
 fbtrack="$(pwd)/bin"; echo 'export PATH=$PATH:'$fbtrack >> ~/.bashrc
