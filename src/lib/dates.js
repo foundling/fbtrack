@@ -4,6 +4,7 @@ const {
   format,
   isAfter,
   isBefore,
+  max,
   parseISO,
   subDays
 } = require('date-fns')
@@ -50,18 +51,16 @@ function dateBoundariesFromWindowSize({ windowSize, registrationDate, today=new 
   const windowOffset = windowSize - 1
   /* note: date ranges are calculated in terms of offsets.
    * windowSize is number of days, so subtract 1 to get offset */
-  const start = new Date(
-    Math.max(
-      subDays(stop, windowOffset),
-      registrationDate
-    )
-  )
+  const start = max([
+    subDays(stop, windowOffset),
+    registrationDate
+  ])
 
   return [ start, stop ]
 
 }
 
-function dateBoundariesFromDates({ dates, registrationDate }) {
+function dateBoundariesFromDates({ dates, registrationDate, participantId }) {
 
   if (!dates || dates.length < 1 || dates.length > 2) {
     throw new Error('Dates array requires exactly two elements. Received ', JSON.stringify(dates))
@@ -72,7 +71,18 @@ function dateBoundariesFromDates({ dates, registrationDate }) {
   }
 
   const [ potentialStart, stop ] = dates
-  const startUnixEpoch = new Date(Math.max(potentialStart, registrationDate))
+
+  if (isBefore(stop, registrationDate)) {
+    // probably need to warn about participant id here, but requires larger changes.
+    return []
+  }
+
+  if (isBefore(potentialStart, registrationDate)) {
+    console.warn('start date before registration date. using registration date as start date in range.')
+  }
+
+  const startUnixEpoch = max([potentialStart, registrationDate])
+  console.log(potentialStart, registrationDate, startUnixEpoch)
   const start = parseISO(startUnixEpoch.toISOString())
 
   return start && stop ? [ start, stop ] : [ start || stop, start || stop ]

@@ -281,12 +281,17 @@ class Study {
 
   calculateDateBoundaries({ range, window, registrationDate }) {
 
-    return range.length ?
-      dateBoundariesFromDates({ dates: range, registrationDate: parseISO(registrationDate) }) :
-      dateBoundariesFromWindowSize({
-        windowSize: window,
-        registrationDate: parseISO(registrationDate),
+    if (range.length > 0) {
+      return dateBoundariesFromDates({ 
+        dates: range,
+        registrationDate: parseISO(registrationDate) 
       })
+    }
+
+    return dateBoundariesFromWindowSize({
+      windowSize: window,
+      registrationDate: parseISO(registrationDate),
+    })
 
   }
 
