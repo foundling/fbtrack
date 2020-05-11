@@ -5,14 +5,10 @@ const { splitArgsOn } = require('../lib/formatters')
 
 const { validate, validators } = require('./validators')
 
-const { configure, schedule, register, query, report, revoke, apistatus } = [
+const { register, query, apistatus } = [
 
-  'configure',
-  'schedule',
   'register',
   'query',
-  'report',
-  'revoke',
   'apistatus',
 
 ].reduce(function(memo, cmd) {
@@ -31,10 +27,13 @@ cli
   .description('Initiate participant authorization process in Google Chrome.')
   .action(register)
 
+  /*
 cli
   .command('configure')
   .description('Configure the app parameters necessary for registering participants and collecting data')
   .action(configure)
+
+  */
 
 cli
   .command('query')
@@ -47,16 +46,19 @@ cli
   .option('-n, --chunk-size <chunkSize>','Number of participants to query simultaneously', Number)
   .action(query)
 
+  /*
 cli
   .command('revoke <participant_id>')
   .description('Revoke access token for a participant')
   .action(revoke)
+  */
 
 cli
   .command('apistatus')
   .description('Open a Google Chrome browser to the fitbit status page')
   .action(apistatus)
 
+  /*
 cli
   .command('report')
   .option('-a, --all', 'report on all active participants')
@@ -64,12 +66,15 @@ cli
   .option('-m, --missing-only', 'Filter report to show missing data')
   .description('Report missing files for participant(s)')
   .action(report)
+  */
 
+  /*
 cli
   .command('schedule')
   .option('-w, --weekday <...weekday>', 'recurring day and time of week', (value, previous) => previous.concat([value]), [])
   .description('Run fbtrack on a given time /day of week. Pass flag repeatedly for multiple days')
   .action(({parent}) => schedule({parent, weekday: parent.rawArgs.slice(3) }))
+  */
 
 module.exports = exports = {
 
