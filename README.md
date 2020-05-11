@@ -87,7 +87,7 @@ To get information on specific `fbtrack` sub-commands, use the `-h` or `--help` 
 
 ### Registering Participants
 
-Run `fbtrack signup` to register one or more participants.  This will open a web signup form running on your local machine at `http://localhost:3000`.
+Run `fbtrack register` to register one or more participants.  This will open a web registration form running on your local machine at `http://localhost:3000`.
 - Enter a participant id (`_` and `-` characters are currently not allowed).
 - Set the date field to a specific start date in the future or past, or use the default date which is the current day.
 - Finally, if you'd like to re-authorize a subject, you can check the 'reauthorize' box.  This will overwrite the database entry for that subject (but the existing data will remain).
