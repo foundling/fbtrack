@@ -23,6 +23,22 @@ function notify (el, msg) {
   el.innerHTML = `Error: ${msg}`;
 }
 
+const participantIdInvalid = (participantId) => {
+
+  if (!participantId) {
+
+    return 'Please enter a subject id.'
+
+  }
+
+  if (participantId.includes('_') || participantId.includes('-')) {
+
+      return 'Participant Id cannot include the following characters: - , _'
+
+  }
+
+}
+
 async function getAuthUrl(e) {
 
   e.preventDefault()
@@ -30,15 +46,17 @@ async function getAuthUrl(e) {
   const participantId = subjectIdInput.value.trim();
   const participantStartDate = participantStartDateInput.value;
   const reauthorize = reauthorizeCheckbox.checked;
+  const errorMessage = participantIdInvalid(participantId)
 
-  if (!participantId) {
+  if (errorMessage) {
 
-      notify(errorBox, 'Please enter a subject id.');
+    notify(errorBox, errorMessage)
 
   } else {
 
-    if (errorBox.classList.contains('.error'))
-        errorBox.classList.remove('.error');
+    if (errorBox.classList.contains('.error')) {
+      errorBox.classList.remove('.error');
+    }
 
     let redirectURI
 
