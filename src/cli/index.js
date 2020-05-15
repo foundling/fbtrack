@@ -5,8 +5,9 @@ const { splitArgsOn } = require('../lib/formatters')
 
 const { validate, validators } = require('./validators')
 
-const { register, query, apistatus } = [
+const { configure, register, query, apistatus } = [
 
+  'configure',
   'register',
   'query',
   'apistatus',
@@ -27,13 +28,10 @@ cli
   .description('Initiate participant authorization process in Google Chrome.')
   .action(register)
 
-  /*
 cli
   .command('configure')
   .description('Configure the app parameters necessary for registering participants and collecting data')
   .action(configure)
-
-  */
 
 cli
   .command('query')
