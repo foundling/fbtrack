@@ -5,7 +5,7 @@ const parsedFromConfig = require('dotenv').config({
 }).parsed
 
 const defaultUserConfig = {
-  CALLBACK_URL: null,
+  CALLBACK_URL: 'http://localhost:3000/store_subject_data',
   CLIENT_ID: null,
   CLIENT_SECRET: null,
   SCOPE: null,

@@ -5,7 +5,11 @@ const expressHandlebars = require('express-handlebars')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 
-const { APP_CONFIG } = require('../config').getConfig()
+const {
+  APP_CONFIG,
+  USER_CONFIG
+} = require('../config').getConfig()
+
 const routes = require('./routes')
 const { defaultLogger:logger } = require('../lib/logger')
 
@@ -30,7 +34,7 @@ app.use((req, res, next) => {
 // bind routes
 app.get('/', routes.index)
 app.post('/authorize', routes.authorize)
-app.get('/store_subject_data', routes.addParticipant) // leave url name for now, set in fb dev panel
+app.get(`/${USER_CONFIG.CALLBACK_PATH}`, routes.addParticipant)
 app.get('/quit', routes.stopServer)
 
 function start() {
