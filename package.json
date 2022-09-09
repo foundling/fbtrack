@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test-coverage": "tape src/**/test.*.js | tap-nyc",
-    "test": "tape src/**/test.*.js | tap-spec",
+    "test": "tape src/**/test.*.js | tap-arc",
     "postinstall": "node bin/fbtrack configure"
   },
   "keywords": [],
@@ -28,10 +28,10 @@
     "module-alias": "^2.2.2",
     "readline-sync": "^1.4.10",
     "sqlite": "^3.0.3",
+    "tap-arc": "^0.3.5",
     "tape-promise": "^4.0.0"
   },
   "devDependencies": {
-    "tap-spec": "^5.0.0",
     "tape": "^4.12.1"
   }
 }
