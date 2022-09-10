@@ -5,12 +5,12 @@ const { splitArgsOn } = require('../lib/formatters')
 
 const { validate, validators } = require('./validators')
 
-const { configure, register, query, apistatus } = [
+const { configure, register, query, apistatus, report } = [
 
   'configure',
   'register',
   'query',
-  'apistatus',
+  'apistatus'
 
 ].reduce(function(memo, cmd) {
 
@@ -56,7 +56,7 @@ cli
   .description('Open a Google Chrome browser to the fitbit status page')
   .action(apistatus)
 
-  /*
+/*
 cli
   .command('report')
   .option('-a, --all', 'report on all active participants')

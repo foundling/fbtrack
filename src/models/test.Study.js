@@ -53,7 +53,7 @@ const seedTestDataFlat = (dirPath) => {
     for (let part of TEST_FILE_PARTS) {
       const fitbitFile = `${pid}_${part}`
       // dont filter files here for valid ones, need to test that
-      fs.writeFileSync(path.join(dirPath, fitbitFile))
+      fs.writeFileSync(path.join(dirPath, fitbitFile),'')
     }
 
   }
@@ -78,7 +78,7 @@ const seedTestDataHierarchical = (dirPath) => {
     for (let part of TEST_FILE_PARTS) {
       const fitbitFile = `${pid}_${part}`
       if (isValidParticipantFilename(fitbitFile)) {
-        fs.writeFileSync(path.join(participantDir, fitbitFile))
+        fs.writeFileSync(path.join(participantDir, fitbitFile),'')
       }
     }
 
