@@ -25,8 +25,8 @@ const TEST_FILE_PARTS = [
   '.json',
 ]
 
-const { APP_CONFIG } = require('../config').getConfig()
-const { DB_PATH, DB_NAME } = APP_CONFIG
+const { APP } = require('../config').getConfig()
+const { DB_PATH, DB_NAME } = APP
 const Database = require('./Database')
 const database = new Database({ databaseName: 'test-databases/test-database-study' })
 

@@ -1,5 +1,5 @@
-const { USER_CONFIG, APP_CONFIG } = require('../config').getConfig();
-const windowSize = USER_CONFIG.WINDOW_SIZE;
+const { USER, APP } = require('../config').getConfig();
+const windowSize = USER.WINDOW_SIZE;
 
 
 const dates = require('../lib/dates')
@@ -23,7 +23,7 @@ const validators = {
   configure: id,
   query: async function(...args) {
 
-    const [{ all, chunkSize=APP_CONFIG.CHUNK_SIZE, participantIds, dateRange, windowSize, refresh }] = args
+    const [{ all, chunkSize=APP.CHUNK_SIZE, participantIds, dateRange, windowSize, refresh }] = args
 
     if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
       logger.error('-n, --chunk-size requires a non-negative integer argument.')

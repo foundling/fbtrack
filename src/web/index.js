@@ -1,13 +1,13 @@
 const { exec } = require('child_process')
 const path = require('path')
 const express = require('express')
-const expressHandlebars = require('express-handlebars')
+const { engine } = require('express-handlebars')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 
 const {
-  APP_CONFIG,
-  USER_CONFIG
+  APP,
+  USER
 } = require('../config').getConfig()
 
 const routes = require('./routes')
@@ -15,10 +15,10 @@ const { defaultLogger:logger } = require('../lib/logger')
 
 const app = express()
 
-app.engine('hbs', expressHandlebars({ defaultLayout: 'main' }))
+app.engine('hbs', engine({ defaultLayout: 'main' }))
 app.set('view engine', 'hbs')
 app.set('views', path.join(__dirname, 'views'))
-app.set('port', APP_CONFIG.SERVER_PORT)
+app.set('port', APP.SERVER_PORT)
 
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -34,12 +34,12 @@ app.use((req, res, next) => {
 // bind routes
 app.get('/', routes.index)
 app.post('/authorize', routes.authorize)
-app.get(`/${USER_CONFIG.CALLBACK_PATH}`, routes.addParticipant)
+app.get(`/${USER.CALLBACK_PATH}`, routes.addParticipant)
 app.get('/quit', routes.stopServer)
 
 function start() {
 
-  app.listen(APP_CONFIG.SERVER_PORT, () => {
+  app.listen(APP.SERVER_PORT, () => {
 
     const localUrl = `http://localhost:${app.get('port')}`
     logger.info(`Fbtrack Registration Server running at ${ localUrl }...`)

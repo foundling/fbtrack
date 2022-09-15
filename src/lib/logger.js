@@ -1,4 +1,4 @@
-const { APP_CONFIG } = require('../config').getConfig();
+const { APP } = require('../config').getConfig();
 const fs = require('fs');
 const format = require('date-fns/format');
 const { inspect, promisify } = require('util');
@@ -89,7 +89,7 @@ class Logger {
 }
 
 const defaultLogger = new Logger({
-  logDir: APP_CONFIG.LOGS_PATH,
+  logDir: APP.LOGS_PATH,
   label: true,
   config: {
     info: false,

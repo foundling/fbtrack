@@ -15,24 +15,24 @@ const { defaultLogger:logger } = require('../lib/logger')
 const config = require('../config').getConfig({ requiresUserSetup: true })
 
 const {
-  APP_CONFIG,
-  FITBIT_CONFIG,
-  USER_CONFIG,
+  APP,
+  FITBIT,
+  USER,
 } = config
 
 const {
   DB_NAME,
   DB_PATH,
   RAW_DATA_PATH,
-} = APP_CONFIG
+} = APP
 
 const {
   CLIENT_ID,
   CLIENT_SECRET,
   ENDPOINTS,
-} = FITBIT_CONFIG
+} = FITBIT
 
-const { WINDOW_SIZE } = USER_CONFIG
+const { WINDOW_SIZE } = USER
 
 const Database = require('./Database')
 

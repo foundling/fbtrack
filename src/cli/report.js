@@ -1,13 +1,13 @@
 const { format, parseISO, subDays } = require('date-fns')
 const { groupBy } = require('lodash')
 
-const { FITBIT_CONFIG, APP_CONFIG } = require('../config').getConfig()
+const { FITBIT, APP } = require('../config').getConfig()
 const {
   DB_NAME,
   DB_PATH,
   DB_FILENAME,
   RAW_DATA_PATH
-} = APP_CONFIG
+} = APP
 
 const {
   dates,
@@ -38,7 +38,7 @@ const makeList = listFormatter('•')
 
 const { Database, Study } = require('../models');
 const db = new Database({ databaseName: DB_NAME });
-const metrics = Object.keys(FITBIT_CONFIG.ENDPOINTS)
+const metrics = Object.keys(FITBIT.ENDPOINTS)
 
 async function main({ all = false, participantIds:targetIds = [], missingOnly = false }) {
 
