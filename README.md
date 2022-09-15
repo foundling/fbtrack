@@ -30,7 +30,7 @@ Fbtrack is a command-line utility supporting participant management and data col
 
 ## Requirements
 
-- You have an internet-connected Mac or Linux, with Google Chrome and Node.js 12+ installed. 
+- This application is built for Mac only, with Google Chrome and Node.js 12+ installed. 
 - You are registering subjects in person via the computer hosting fbtrack
 - You or the study administrator are willing to use the terminal on a very basic level.
 - You are creating [HIPAA](https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/index.html)-compliant participant ids that in no way identify your subjects.
