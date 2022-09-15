@@ -9,55 +9,26 @@ const {
   formatters,
   utils
 } = require('../lib')
-
 const { defaultLogger:logger } = require('../lib/logger')
-
 const config = require('../config').getConfig({ requiresUserSetup: true })
-
-const {
-  APP,
-  FITBIT,
-  USER,
-} = config
-
-const {
-  DB_NAME,
-  DB_PATH,
-  RAW_DATA_PATH,
-} = APP
-
-const {
-  CLIENT_ID,
-  CLIENT_SECRET,
-  ENDPOINTS,
-} = FITBIT
-
-const { WINDOW_SIZE } = USER
-
 const Database = require('./Database')
-
-const {
-  datesWithinBoundaries,
-  ymdFormat,
-} = dates
-
+const { datesWithinBoundaries, ymdFormat } = dates
 const {
   isSuccess,
   invalidRefreshToken,
   rateLimitExceeded,
   accessTokenExpired,
 } = http
-
 const {
   getFiles,
   writeFilePromise,
 } = io
 
-const db = new Database({ databaseName: DB_NAME })
+const db = new Database({ databaseName: config.APP.DB_NAME })
 
 const fbClient = new FitbitClient({
-  clientId: CLIENT_ID,
-  clientSecret: CLIENT_SECRET
+  clientId: config.FITBIT.CLIENT_ID,
+  clientSecret: config.FITBIT.CLIENT_SECRET
 })
 
 class Participant {
@@ -75,7 +46,7 @@ class Participant {
 
     const expectedDates = datesWithinBoundaries(start, stop)
     const filenames = await getFiles({
-      directory: RAW_DATA_PATH,
+      directory: config.APP.RAW_DATA_PATH,
       criterion: fname => fname.startsWith(this.participantId) &&
                           expectedDates.some(d => fname.includes(format(d, ymdFormat))),
     })
@@ -83,7 +54,7 @@ class Participant {
     const missingMetricsByDate = await this.findUncapturedDates({
       filenames,
       expectedDates,
-      metrics: [...ENDPOINTS.keys()],
+      metrics: [...config.FITBIT.ENDPOINTS.keys()],
     })
 
     const allDatesCollected = [...missingMetricsByDate.values()].every(metricsForDate => metricsForDate.size === 0)
@@ -95,7 +66,7 @@ class Participant {
 
     return this.generateQueryPathsByDate({
       metricsByDate: missingMetricsByDate,
-      endpoints: ENDPOINTS,
+      endpoints: config.FITBIT.ENDPOINTS,
     })
 
   }
@@ -124,7 +95,7 @@ class Participant {
             metric,
             participantId: this.participantId,
           })
-          const outputPath = path.join(RAW_DATA_PATH, filename)
+          const outputPath = path.join(config.APP.RAW_DATA_PATH, filename)
 
           await writeFilePromise(outputPath, JSON.stringify(metricData))
 

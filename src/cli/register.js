@@ -1,6 +1,6 @@
-const { APP } = require('../config').getConfig();
+const config = require('../config').getConfig();
 const { exec } = require('child_process')
-const server = require(APP.SERVER_PATH)
+const server = require(config.APP.SERVER_PATH)
 
 function main() {
   server.start(() => {})
@@ -9,8 +9,8 @@ function main() {
 function openAppInChrome(port) {
 
     exec(
-        `open -a '/Applications/Google Chrome.app' ${`http://localhost:${APP.SERVER_PORT}/start`}`, 
-        { 'cwd': APP.SERVER_PATH }, 
+        `open -a '/Applications/Google Chrome.app' ${`http://localhost:${config.APP.SERVER_PORT}/start`}`, 
+        { 'cwd': config.APP.SERVER_PATH }, 
         function(err) { 
             if (err) throw err; 
         }  

@@ -3,6 +3,7 @@ const fs = require('fs')
 const { format, parseISO, differenceInDays } = require('date-fns')
 const { cursorTo } = require('readline')
 
+const config = require('../config').getConfig({ requiresUserSetup: true })
 const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils')
 const { defaultLogger: logger } = require('../lib/logger')
 const { listFormatter } = require('../lib/formatters')
@@ -20,16 +21,11 @@ const {
 
 const Participant = require('./Participant')
 
-const {
-  APP,
-  FITBIT,
-  USER,
-} = require('../config').getConfig({ requiresUserSetup: true })
 
 const defaultQueryArgs = {
   participant: { ids: [], all: false },
   dates: { range: [], window: null },
-  chunkSize: APP.CHUNK_SIZE,
+  chunkSize: config.APP.CHUNK_SIZE,
 }
 
 const makeList = listFormatter('•')
@@ -89,7 +85,7 @@ class QueryStats {
       let errorsCollected = 0
       let metricsCollected = 0
 
-      const metricsExpected = participantDates.size * FITBIT.ENDPOINTS.size
+      const metricsExpected = participantDates.size * config.FITBIT.ENDPOINTS.size
 
       for (const [date, metrics] of participantDates) {
 
@@ -120,7 +116,7 @@ class QueryStats {
 
       let errorsCollected = 0
       let metricsCollected = 0
-      const metricsExpected = participantDates.size * FITBIT.ENDPOINTS.size
+      const metricsExpected = participantDates.size * config.FITBIT.ENDPOINTS.size
 
       for (const [date, metrics] of participantDates) {
         for (const [metric, collectionInfo] of metrics) {
@@ -336,7 +332,7 @@ class Study {
       queryStats.addParticipant({
         participantId: participant.participantId,
         dates: datesWithinBoundaries(dateStart, dateStop),
-        metrics: [...FITBIT.ENDPOINTS.keys()],
+        metrics: [...config.FITBIT.ENDPOINTS.keys()],
       })
 
       participantQueryFns.push(
