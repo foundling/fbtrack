@@ -20,7 +20,7 @@ const validators = {
   configure: id,
   query: async function(...args) {
 
-    const [{ all, chunkSize=config.app.CHUNK_SIZE, participantIds, dateRange, windowSize=config.user.WINDOW_SIZE, refresh }] = args
+    const [{ all, chunkSize=config.app.CHUNK_SIZE, participantIds, dateRange, windowSize=null, refresh }] = args
 
     if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
       logger.error('-n, --chunk-size requires a non-negative integer argument.')
