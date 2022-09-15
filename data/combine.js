@@ -9,27 +9,32 @@ readdirP('./raw').then(async filenames => {
 
     const memo = {};
 
-    return filenames.filter(filename => !filename.endsWith('.json') || filename === 'combined.json')
-        .reduce(filename => {
+    for (let filename of filenames) {
 
-            
+        if (!(filename.endsWith('.json') && !filename.startsWith('combined')))
+            continue;
 
-            const [ userId, captureDate, metric, fileExtension ] = filename.split(/[_\.]/);
+        const [ userId, captureDate, metric, fileExtension ] = filename.split(/[_\.]/);
 
-            if (! memo[ captureDate ] ) {
-                memo[ captureDate ] = {};
-            }
+
+        try {
 
             const fileContent = await readFileP(`./raw/${filename}`, 'utf-8');
             const data = JSON.parse(fileContent);
 
-            memo[ captureDate ][ metric ] = data;
+            if (!memo[captureDate]) {
+                memo[captureDate] = {};
+            }
+            memo[captureDate][metric] = data;
 
+        } catch (e) {
+            throw e;
+        }
+    }
 
-        return memo;
+    return memo;
 
-        }, []);
-
+})
 .then(async combined => {
     await writeFileP('./raw/combined.json', JSON.stringify(combined, null, 4))
 })

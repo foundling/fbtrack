@@ -47,12 +47,27 @@ const getAverageForDateRange = (startDate, endDate) => (data) => {
 
 readFileP('./raw/combined.json', 'utf-8')
 .then(JSON.parse)
+.then(data => {
+    const results = Object.entries(data)
+        .filter(([dateKey, dateResults]) => dateInWindow('2022-08-15','2022-09-15')(dateKey))
+        .map(([dateKey, dateResults]) => {
+
+            const { max, min } = dateResults['activities-heartrate']['activities-heart'].find(record => 
+                Boolean(record?.value?.heartRateZones?.find(r => r.name === 'Peak'))
+            )?.value.heartRateZones.find(z => z.name === 'Peak') || {};
+
+            return {
+                date: dateKey,
+                restingHeartRate: dateResults['activities-heartrate']['activities-heart'].find(record => Boolean(record.value.restingHeartRate))?.value?.restingHeartRate,
+                peakHeartRate: { max, min }
+            }
+
+        }); 
+    console.log(results);
+})
 //.then(getAverageForDateRange(startDate, endDate))
-.then(getHROver(89).forDateRange(startDate, endDate))
+//.then(getHROver(89).forDateRange(startDate, endDate))
 .then(console.log)
 .catch(e => {
     throw e;
 });
-
-
-
