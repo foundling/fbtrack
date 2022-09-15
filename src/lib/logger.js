@@ -89,7 +89,7 @@ class Logger {
 }
 
 const defaultLogger = new Logger({
-  logDir: config.APP.LOGS_PATH,
+  logDir: config.app.LOGS_PATH,
   label: true,
   config: {
     info: false,

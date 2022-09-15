@@ -34,7 +34,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
 
   return { 
 
-    USER: {
+    user: {
       CALLBACK_URL,
       CLIENT_ID,
       CLIENT_SECRET,
@@ -43,7 +43,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
       WINDOW_SIZE,
     } = (parsedFromConfig || defaultUserConfig),
 
-    APP: {
+    app: {
       DB_NAME: (parsedFromConfig || defaultUserConfig).STUDY_NAME,
       DB_PATH: path.join(__dirname, 'db'),
       SERVER_PATH: path.join(__dirname, 'web'),
@@ -53,7 +53,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
       CHUNK_SIZE: 3,
     },
 
-    FITBIT: {
+    fitbit: {
       AUTH_URI: 'https://www.fitbit.com/oauth2/authorize',
       ACCESS_TOKEN_URI: 'https://api.fitbit.com/oauth2/token',
       CALLBACK_URL,
@@ -64,7 +64,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
       SCOPE,
     },
 
-    SERVER: {
+    server: {
       PORT: 3000
     }
 

@@ -20,7 +20,7 @@ const validators = {
   configure: id,
   query: async function(...args) {
 
-    const [{ all, chunkSize=config.APP.CHUNK_SIZE, participantIds, dateRange, windowSize=config.USER.WINDOW_SIZE, refresh }] = args
+    const [{ all, chunkSize=config.app.CHUNK_SIZE, participantIds, dateRange, windowSize=config.user.WINDOW_SIZE, refresh }] = args
 
     if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
       logger.error('-n, --chunk-size requires a non-negative integer argument.')
@@ -62,7 +62,7 @@ const validators = {
 
     } else if (windowSize == null) {
 
-      logger.info(`No date range or window flag passed. Using default window size of ${ config.USER.WINDOW_SIZE } days`)
+      logger.info(`No date range or window flag passed. Using default window size of ${ config.user.WINDOW_SIZE } days`)
 
     } else if (isNaN(windowSize) || windowSize <= 0) {
 

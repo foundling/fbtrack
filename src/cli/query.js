@@ -5,18 +5,18 @@ const { Database, Study } = require('../models')
 
 async function main({ participantIds=[], all=false, dateRange=[], windowSize=null, chunkSize }) {
 
-  const db = new Database({ databaseName: config.USER.STUDY_NAME })
+  const db = new Database({ databaseName: config.user.STUDY_NAME })
   await db.init()
 
   if (dateRange.length === 0 && windowSize == null) {
-    windowSize = Number(config.USER.WINDOW_SIZE)
+    windowSize = Number(config.user.WINDOW_SIZE)
   }
 
   const study = new Study({
       // bug
-    name: config.USER.STUDY_NAME,
+    name: config.user.STUDY_NAME,
     database: db,
-    dataPath: config.APP.RAW_DATA_PATH,
+    dataPath: config.app.RAW_DATA_PATH,
     flat: true, // participant fitbit .json files stored in a single dir
   })
 

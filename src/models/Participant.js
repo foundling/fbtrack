@@ -24,11 +24,11 @@ const {
   writeFilePromise,
 } = io
 
-const db = new Database({ databaseName: config.APP.DB_NAME })
+const db = new Database({ databaseName: config.app.DB_NAME })
 
 const fbClient = new FitbitClient({
-  clientId: config.FITBIT.CLIENT_ID,
-  clientSecret: config.FITBIT.CLIENT_SECRET
+  clientId: config.fitbit.CLIENT_ID,
+  clientSecret: config.fitbit.CLIENT_SECRET
 })
 
 class Participant {
@@ -46,7 +46,7 @@ class Participant {
 
     const expectedDates = datesWithinBoundaries(start, stop)
     const filenames = await getFiles({
-      directory: config.APP.RAW_DATA_PATH,
+      directory: config.app.RAW_DATA_PATH,
       criterion: fname => fname.startsWith(this.participantId) &&
                           expectedDates.some(d => fname.includes(format(d, ymdFormat))),
     })
@@ -54,7 +54,7 @@ class Participant {
     const missingMetricsByDate = await this.findUncapturedDates({
       filenames,
       expectedDates,
-      metrics: [...config.FITBIT.ENDPOINTS.keys()],
+      metrics: [...config.fitbit.ENDPOINTS.keys()],
     })
 
     const allDatesCollected = [...missingMetricsByDate.values()].every(metricsForDate => metricsForDate.size === 0)
@@ -66,7 +66,7 @@ class Participant {
 
     return this.generateQueryPathsByDate({
       metricsByDate: missingMetricsByDate,
-      endpoints: config.FITBIT.ENDPOINTS,
+      endpoints: config.fitbit.ENDPOINTS,
     })
 
   }
@@ -95,7 +95,7 @@ class Participant {
             metric,
             participantId: this.participantId,
           })
-          const outputPath = path.join(config.APP.RAW_DATA_PATH, filename)
+          const outputPath = path.join(config.app.RAW_DATA_PATH, filename)
 
           await writeFilePromise(outputPath, JSON.stringify(metricData))
 

@@ -25,7 +25,7 @@ const Participant = require('./Participant')
 const defaultQueryArgs = {
   participant: { ids: [], all: false },
   dates: { range: [], window: null },
-  chunkSize: config.APP.CHUNK_SIZE,
+  chunkSize: config.app.CHUNK_SIZE,
 }
 
 const makeList = listFormatter('•')
@@ -85,7 +85,7 @@ class QueryStats {
       let errorsCollected = 0
       let metricsCollected = 0
 
-      const metricsExpected = participantDates.size * config.FITBIT.ENDPOINTS.size
+      const metricsExpected = participantDates.size * config.fitbit.ENDPOINTS.size
 
       for (const [date, metrics] of participantDates) {
 
@@ -116,7 +116,7 @@ class QueryStats {
 
       let errorsCollected = 0
       let metricsCollected = 0
-      const metricsExpected = participantDates.size * config.FITBIT.ENDPOINTS.size
+      const metricsExpected = participantDates.size * config.fitbit.ENDPOINTS.size
 
       for (const [date, metrics] of participantDates) {
         for (const [metric, collectionInfo] of metrics) {
@@ -332,7 +332,7 @@ class Study {
       queryStats.addParticipant({
         participantId: participant.participantId,
         dates: datesWithinBoundaries(dateStart, dateStop),
-        metrics: [...config.FITBIT.ENDPOINTS.keys()],
+        metrics: [...config.fitbit.ENDPOINTS.keys()],
       })
 
       participantQueryFns.push(
