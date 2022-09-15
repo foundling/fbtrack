@@ -1,8 +1,5 @@
-const path = require('path')
-
-const parsedFromConfig = require('dotenv').config({
-  path: path.join(__dirname, '..', 'USER_CONFIG.env')
-}).parsed
+const path = require('path');
+const dotenv = require('dotenv');
 
 const defaultUserConfig = {
   CALLBACK_URL: 'http://localhost:3000/store_subject_data',
@@ -11,7 +8,7 @@ const defaultUserConfig = {
   SCOPE: null,
   STUDY_NAME: null,
   WINDOW_SIZE: 3,
-}
+};
 
 const ENDPOINTS = new Map([
   [ "sleep",                "/sleep/date/%DATE%.json" ],
@@ -24,6 +21,11 @@ const ENDPOINTS = new Map([
 
 function getConfig (requiresUserSetup = false) {
 
+    const parsedFromConfig = dotenv.config({
+      path: path.join(__dirname, '..', 'USER_CONFIG.env')
+    }).parsed;
+
+
   if (requiresUserSetup && !parsedFromConfig) {
     console.log(`\nERROR: Could not find configuration file ${path.join(__dirname, '..', 'USER_CONFIG.env')}.
 If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
@@ -32,7 +34,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
 
   return { 
 
-    USER_CONFIG: {
+    user: {
       CALLBACK_URL,
       CLIENT_ID,
       CLIENT_SECRET,
@@ -41,7 +43,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
       WINDOW_SIZE,
     } = (parsedFromConfig || defaultUserConfig),
 
-    APP_CONFIG: {
+    app: {
       DB_NAME: (parsedFromConfig || defaultUserConfig).STUDY_NAME,
       DB_PATH: path.join(__dirname, 'db'),
       SERVER_PATH: path.join(__dirname, 'web'),
@@ -51,7 +53,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
       CHUNK_SIZE: 3,
     },
 
-    FITBIT_CONFIG: {
+    fitbit: {
       AUTH_URI: 'https://www.fitbit.com/oauth2/authorize',
       ACCESS_TOKEN_URI: 'https://api.fitbit.com/oauth2/token',
       CALLBACK_URL,
@@ -62,7 +64,7 @@ If you haven't yet configured fbtrack, please run 'fbtrack configure'.\n`)
       SCOPE,
     },
 
-    SERVER_CONFIG: {
+    server: {
       PORT: 3000
     }
 

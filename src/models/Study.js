@@ -3,14 +3,16 @@ const fs = require('fs')
 const { format, parseISO, differenceInDays } = require('date-fns')
 const { cursorTo } = require('readline')
 
+const config = require('../config').getConfig({ requiresUserSetup: true })
 const { isValidParticipantFilename, parseParticipantFilename } = require('../lib/utils')
 const { defaultLogger: logger } = require('../lib/logger')
 const { listFormatter } = require('../lib/formatters')
 const {
   datesWithinBoundaries,
   dateBoundariesFromWindowSize,
-  dateBoundariesFromDates,
+  calculateStartAndStopDates,
   ymdFormat,
+  formatDateYYYYMMDD
 } = require('../lib/dates')
 
 const {
@@ -20,16 +22,10 @@ const {
 
 const Participant = require('./Participant')
 
-const {
-  APP_CONFIG,
-  FITBIT_CONFIG,
-  USER_CONFIG,
-} = require('../config').getConfig({ requiresUserSetup: true })
-
 const defaultQueryArgs = {
   participant: { ids: [], all: false },
-  dates: { range: [], window: null },
-  chunkSize: APP_CONFIG.CHUNK_SIZE,
+  dates: { dateStart: null, dateStop: null, windowSize: null },
+  chunkSize: config.app.CHUNK_SIZE,
 }
 
 const makeList = listFormatter('•')
@@ -44,12 +40,11 @@ class QueryStats {
 
   addParticipant({ participantId, dates, metrics }) {
 
-    // in: dates are objects
     this.participants.set(participantId, new Map())
 
     for (const date of dates) {
 
-      const dateAsKey = format(date, ymdFormat)
+      const dateAsKey = formatDateYYYYMMDD(date)
 
       this.participants
         .get(participantId)
@@ -72,7 +67,9 @@ class QueryStats {
 
   updateParticipantStats({ participantId, date, metric, collected, error }) {
 
-    this.participants.get(participantId).get(date)
+    this.participants
+      .get(participantId)
+      .get(date)
       .get(metric)
       .set('collected', collected)
       .set('error', error)
@@ -89,7 +86,7 @@ class QueryStats {
       let errorsCollected = 0
       let metricsCollected = 0
 
-      const metricsExpected = participantDates.size * FITBIT_CONFIG.ENDPOINTS.size
+      const metricsExpected = participantDates.size * config.fitbit.ENDPOINTS.size
 
       for (const [date, metrics] of participantDates) {
 
@@ -120,7 +117,7 @@ class QueryStats {
 
       let errorsCollected = 0
       let metricsCollected = 0
-      const metricsExpected = participantDates.size * FITBIT_CONFIG.ENDPOINTS.size
+      const metricsExpected = participantDates.size * config.fitbit.ENDPOINTS.size
 
       for (const [date, metrics] of participantDates) {
         for (const [metric, collectionInfo] of metrics) {
@@ -279,23 +276,7 @@ class Study {
 
   }
 
-  calculateDateBoundaries({ range, window, registrationDate }) {
-
-    if (range.length > 0) {
-      return dateBoundariesFromDates({ 
-        dates: range,
-        registrationDate: parseISO(registrationDate) 
-      })
-    }
-
-    return dateBoundariesFromWindowSize({
-      windowSize: window,
-      registrationDate: parseISO(registrationDate),
-    })
-
-  }
-
-  async query({ participant={ ids, all }, dates={ range, window }, chunkSize } = defaultQueryArgs) {
+  async query({ participant={ ids, all }, dates, chunkSize } = defaultQueryArgs) {
 
     // if ids are there, get list of ids matching current participants, reporting any not matched.
     // if all flag is there, use participant ids we have
@@ -305,8 +286,7 @@ class Study {
 
     if (missing.length > 0) {
 
-      const warning = `the following participants were queried
-                        but are not in the database: \n${makeList(missing)}`
+      const warning = `the following participants were queried but are not in the database: \n${makeList(missing)}`
       logger.warn(warning)
 
     }
@@ -327,21 +307,15 @@ class Study {
 
     targetParticipants.forEach(participant => {
 
-      const [ dateStart, dateStop ] = this.calculateDateBoundaries({
-        range: dates.range,
-        window: dates.window,
-        registrationDate: participant.record.registrationDate
-      })
-
       queryStats.addParticipant({
         participantId: participant.participantId,
-        dates: datesWithinBoundaries(dateStart, dateStop),
-        metrics: [...FITBIT_CONFIG.ENDPOINTS.keys()],
+        dates: datesWithinBoundaries(dates.dateStart, dates.dateStop),
+        metrics: [...config.fitbit.ENDPOINTS.keys()],
       })
 
       participantQueryFns.push(
         async () => {
-          for await (const stats of participant.query(dateStart, dateStop)) {
+          for await (const stats of participant.query(dates.dateStart, dates.dateStop)) {
 
             queryStats.updateParticipantStats(stats)
             queryStats.rerender()

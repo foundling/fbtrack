@@ -1,7 +1,4 @@
-const { USER_CONFIG, APP_CONFIG } = require('../config').getConfig();
-const windowSize = USER_CONFIG.WINDOW_SIZE;
-
-
+const config = require('../config').getConfig();
 const dates = require('../lib/dates')
 const { defaultLogger: logger } = require('../lib/logger')
 
@@ -23,7 +20,7 @@ const validators = {
   configure: id,
   query: async function(...args) {
 
-    const [{ all, chunkSize=APP_CONFIG.CHUNK_SIZE, participantIds, dateRange, windowSize, refresh }] = args
+    const [{ all, chunkSize=config.app.CHUNK_SIZE, participantIds, dateRange, windowSize=null, refresh }] = args
 
     if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
       logger.error('-n, --chunk-size requires a non-negative integer argument.')
@@ -48,9 +45,15 @@ const validators = {
     if (dateRange && dateRange.length > 0) {
 
       if (dateRange.length > 2) {
-        logger.error('Invalid Date range.  please provide a max of two dates, separated by "..."')
+        logger.error(`Invalid --date arguments.  ${dateRange.length} arguments were provided, please provide a max of two dates.`)
         process.exit(1)
       }
+
+      if (dateRange.length === 2 && new Date(dateRange[0]) > new Date(dateRange[1])) {
+        logger.error('Invalid --date arguments.  2 dates supplied, but first (start date) occurs after second (stop date).')
+        process.exit(1)
+      }
+
 
       if (windowSize != null) {
         logger.error('Provide a window size or a date range, but not both.')
@@ -65,7 +68,7 @@ const validators = {
 
     } else if (windowSize == null) {
 
-      logger.info(`No date range or window flag passed. Using default window size of ${ WINDOW_SIZE } days`)
+      logger.info(`No date range or window flag passed. Using default window size of ${ config.user.WINDOW_SIZE } days`)
 
     } else if (isNaN(windowSize) || windowSize <= 0) {
 

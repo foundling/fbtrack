@@ -1,6 +1,6 @@
 const path = require('path')
-const FitbitClient = require('fitbit-node')
 const { addSeconds, format, parseISO } = require('date-fns')
+const FitbitClient = require('fitbit-node')
 
 const {
   dates,
@@ -10,54 +10,26 @@ const {
   utils
 } = require('../lib')
 
-const { defaultLogger:logger } = require('../lib/logger')
-
+const { defaultLogger: logger } = require('../lib/logger')
 const config = require('../config').getConfig({ requiresUserSetup: true })
-
-const {
-  APP_CONFIG,
-  FITBIT_CONFIG,
-  USER_CONFIG,
-} = config
-
-const {
-  DB_NAME,
-  DB_PATH,
-  RAW_DATA_PATH,
-} = APP_CONFIG
-
-const {
-  CLIENT_ID,
-  CLIENT_SECRET,
-  ENDPOINTS,
-} = FITBIT_CONFIG
-
-const { WINDOW_SIZE } = USER_CONFIG
-
 const Database = require('./Database')
-
-const {
-  datesWithinBoundaries,
-  ymdFormat,
-} = dates
-
+const { datesWithinBoundaries, ymdFormat, formatDateYYYYMMDD } = dates
 const {
   isSuccess,
   invalidRefreshToken,
   rateLimitExceeded,
   accessTokenExpired,
 } = http
-
 const {
   getFiles,
   writeFilePromise,
 } = io
 
-const db = new Database({ databaseName: DB_NAME })
+const db = new Database({ databaseName: config.app.DB_NAME })
 
 const fbClient = new FitbitClient({
-  clientId: CLIENT_ID,
-  clientSecret: CLIENT_SECRET
+  clientId: config.fitbit.CLIENT_ID,
+  clientSecret: config.fitbit.CLIENT_SECRET
 })
 
 class Participant {
@@ -75,27 +47,25 @@ class Participant {
 
     const expectedDates = datesWithinBoundaries(start, stop)
     const filenames = await getFiles({
-      directory: RAW_DATA_PATH,
-      criterion: fname => fname.startsWith(this.participantId) &&
-                          expectedDates.some(d => fname.includes(format(d, ymdFormat))),
+      directory: config.app.RAW_DATA_PATH,
+      criterion: fname => fname.startsWith(this.participantId) && expectedDates.some(d => fname.includes(formatDateYYYYMMDD(d))),
     })
 
-    const missingMetricsByDate = await this.findUncapturedDates({
+    const missingMetricsByDate = this.findUncapturedDates({
       filenames,
       expectedDates,
-      metrics: [...ENDPOINTS.keys()],
+      metrics: [...config.fitbit.ENDPOINTS.keys()],
     })
 
     const allDatesCollected = [...missingMetricsByDate.values()].every(metricsForDate => metricsForDate.size === 0)
 
     if (allDatesCollected) {
-      console.log(`All dates captured for participant ${this.participantId} in this date range.`)
       return new Map()
     }
 
     return this.generateQueryPathsByDate({
       metricsByDate: missingMetricsByDate,
-      endpoints: ENDPOINTS,
+      endpoints: config.fitbit.ENDPOINTS,
     })
 
   }
@@ -124,7 +94,7 @@ class Participant {
             metric,
             participantId: this.participantId,
           })
-          const outputPath = path.join(RAW_DATA_PATH, filename)
+          const outputPath = path.join(config.app.RAW_DATA_PATH, filename)
 
           await writeFilePromise(outputPath, JSON.stringify(metricData))
 
@@ -189,7 +159,7 @@ class Participant {
 
       const leeway = 60
       const secondsToWait = parseInt(response.headers['retry-after']) + leeway
-      const resumeTime = format(addSeconds(new Date(), secondsToWait), 'hh:mm')
+      const resumeTime = formatDateYYYYMMDD(addSeconds(new Date(), secondsToWait), 'hh:mm')
 
       // this should go to stdout
       logger.warn(`queryFitbit error for participant ${this.participantId} - rate limit exceeded.`)
@@ -200,9 +170,6 @@ class Participant {
       const [ retryBody, retryResponse ] = await fbClient.get(queryPath, this.record.accessToken)
 
       return retryBody
-
-      //logger.error(`queryFitbit error: retry after rateLimitExceeded has failed: ${e}`)
-      //throw e
 
     }
 
@@ -271,18 +238,18 @@ class Participant {
 
       }
     }
-
     return memo
 
   }
 
-  async findUncapturedDates({ filenames, expectedDates, metrics }) {
+  findUncapturedDates({ filenames, expectedDates, metrics }) {
 
     const missing = new Map()
 
     for (const date of expectedDates) {
 
-      const formattedDate = format(date, ymdFormat) 
+      const formattedDate = formatDateYYYYMMDD(date);
+
       missing.set(formattedDate, new Map())
 
       for (const metric of metrics) {
@@ -292,12 +259,11 @@ class Participant {
     }
 
 
-    // unfortunately, we need to go from formatted dates in filename back to date objects 
-    // so we find the map key that matches our filename date stamp when formatted properly
+    const missingKeys = [...missing.keys()];
 
     for (const filename of filenames) {
       const [ id, dateString, metric, extension ] = filename.split(/[._]/)
-      const matchingDate = [...missing.keys()].find(ds => ds === dateString)
+      const matchingDate = missingKeys.find(ds => ds === dateString)
       missing.get(matchingDate).delete(metric)
     }
 

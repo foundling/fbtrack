@@ -7,9 +7,9 @@ features:
         - move data/combine.js code to src/lib/io.js
     - update 'report' sub-command with new subject/participant models
     - 'report' sub-command to show:
-        - subjects' registration date, date range collected (+ any missing dates)
+        - subjects' registration date, date range collected (+ any missing dates) 
     - allow any valid date string to 'fbtrack query -d <start>...<stop>', not just '/' separator
-    - let user pass subject id via cli to web (optional), by running 'fbt signup <subjectId>`.
+    - let user pass subject id via cli to web (optional), by running 'fbt signup <subjectId>`. 
     - React app for data visualization
         - try basic plugin-architecture for end-user analysis
     - allow multiple studies
@@ -33,7 +33,6 @@ bugs:
     - prevent refresh token errors. got a 400 invalid refresh token, with an old refresh token in db.
 
 refactor:
-    - date boundary code very unclear.
     - validation logic in src/cli/validators.js is a bit hard to read.
     - rename database from <study_name>.sqlite to <study_name>.db.
     - restructure lib directory, organization of files doesn't make that much sense.
