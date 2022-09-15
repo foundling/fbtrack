@@ -7,8 +7,11 @@ architectural
   - main logger instance that can log info, errors, etc. as well as log to file
   - figure out what should be logged to a file to debug failures later on.
 
+- separate data directory from app 
+
 regressions:
 - re-running query when all data in window is collected
+
 
 backlog
 - write cli sub-command to 'bundle' collected data
