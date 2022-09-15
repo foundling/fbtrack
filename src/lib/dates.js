@@ -73,6 +73,7 @@ function dateBoundariesFromDates({ dates, registrationDate, participantId }) {
   const [ potentialStart, stop ] = dates
 
   if (isBefore(stop, registrationDate)) {
+    console.warn('end date before registration date. using registration date as start date in range.')
     // probably need to warn about participant id here, but requires larger changes.
     return []
   }
