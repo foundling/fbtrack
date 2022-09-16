@@ -1,6 +1,6 @@
 const path = require('path')
-const FitbitClient = require('fitbit-node')
 const { addSeconds, format, parseISO } = require('date-fns')
+const FitbitClient = require('fitbit-node')
 
 const {
   dates,
@@ -9,7 +9,8 @@ const {
   formatters,
   utils
 } = require('../lib')
-const { defaultLogger:logger } = require('../lib/logger')
+
+const { defaultLogger: logger } = require('../lib/logger')
 const config = require('../config').getConfig({ requiresUserSetup: true })
 const Database = require('./Database')
 const { datesWithinBoundaries, ymdFormat } = dates
@@ -171,9 +172,6 @@ class Participant {
       const [ retryBody, retryResponse ] = await fbClient.get(queryPath, this.record.accessToken)
 
       return retryBody
-
-      //logger.error(`queryFitbit error: retry after rateLimitExceeded has failed: ${e}`)
-      //throw e
 
     }
 

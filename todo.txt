@@ -1,26 +1,38 @@
 TO-DO LIST 
 ----------
 
-architectural
+features:
 
-- logging:
-  - main logger instance that can log info, errors, etc. as well as log to file
-  - figure out what should be logged to a file to debug failures later on.
+    - command to aggregate all data per subject into '<subect_id>-combined.json' file
+        - move data/combine.js code to src/lib/io.js
+    - update 'report' sub-command with new subject/participant models
+    - 'report' sub-command to show:
+        - subjects' registration date, date range collected (+ any missing dates) 
+    - allow any valid date string to 'fbtrack query -d <start>...<stop>', not just '/' separator
+    - let user pass subject id via cli to web (optional), by running 'fbt signup <subjectId>`. 
+    - React app for data visualization
+        - try basic plugin-architecture for end-user analysis
+    - allow multiple studies
+    - restructure date query interface:
+        - forget about '..' in between dates.
+        - 'fbtrack query -d <start> <stop>' queries whole range, regardless of registration date
+        - 'fbtrack query -d <stop>' uses registration_date as <start>
 
-- separate data directory from app 
+    architectural changes:
+        - cross operating system compatibilty. feasible?
+        - put data directory in configurable 'userspace'
+        - consider running fbtrack as a daemon
 
-regressions:
-- re-running query when all data in window is collected
+bugs:
+    - 'fbtrack query -p -a' should throw, instead sets participant ids to ['-a']
+    - study api: is allowing either a flat data dir or subject_id based data subdirs worth it?
+    - handle edge case where '_' in participant id (possibly disallow this via FE/BE validation).
+    - prevent refresh token errors. got a 400 invalid refresh token, with an old refresh token in db.
 
-
-backlog
-- write cli sub-command to 'bundle' collected data
-x signup ui: allow override checkbox (plus confirm) to overwrite subjectId in db (re-registration)
-- add quit button to main page.
-- update error message to point out reauth checkbox if that's useful
-- update report cli command with new subject/participant models
-- cli interface issue: -p -a doesn't throw, but it means participant ids are ['-a']
-- study api: is allowing either a flat data dir or subject_id based data subdirs worth it?
-- handle edge case where '_' in participant id
-- prevent refresh token errors. got a 400 invalid refresh token, with an old refresh token in db.
-- let user pass subject id via cli to web (optional), by running 'fbt signup <subjectId>`. 
+refactor:
+    - date boundary code very unclear.
+    - validation logic in src/cli/validators.js is a bit hard to read.
+    - rename database from <study_name>.sqlite to <study_name>.db.
+    - restructure lib directory, organization of files doesn't make that much sense.
+    - move src/models/Database.js to src/db/Database.js
+    - move src/db/statements into their appropriate methods in src/db/Database.js

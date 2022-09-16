@@ -11,6 +11,7 @@ const {
 
 
 // e.g. 201_2020-01-10_activities-calories.json
+// TODO: validate subject ids to disallow '_'
 const filenamePattern = /^.+_[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[^.]*\.json$/
 const ymdFormat = 'yyyy-MM-dd' // this is fitbit's resource url format
 const dateRE = /[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
@@ -19,8 +20,11 @@ const dateREStrict = /^[2][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/
 function datesWithinBoundaries(start, stop) {
 
   /*
+   * TODO: better fn docs needed generally!
+   *
    * - range is inclusive
    * - returns dates
+   *
    */
 
   if (differenceInDays(stop, start) < 0) {
@@ -60,6 +64,7 @@ function dateBoundariesFromWindowSize({ windowSize, registrationDate, today=new 
 
 }
 
+// TODO: refactor, confusing
 function dateBoundariesFromDates({ dates, registrationDate, participantId }) {
 
   if (!dates || dates.length < 1 || dates.length > 2) {
@@ -74,7 +79,6 @@ function dateBoundariesFromDates({ dates, registrationDate, participantId }) {
 
   if (isBefore(stop, registrationDate)) {
     console.warn('end date before registration date. using registration date as start date in range.')
-    // probably need to warn about participant id here, but requires larger changes.
     return []
   }
 
@@ -83,7 +87,6 @@ function dateBoundariesFromDates({ dates, registrationDate, participantId }) {
   }
 
   const startUnixEpoch = max([potentialStart, registrationDate])
-  console.log(potentialStart, registrationDate, startUnixEpoch)
   const start = parseISO(startUnixEpoch.toISOString())
 
   return start && stop ? [ start, stop ] : [ start || stop, start || stop ]
