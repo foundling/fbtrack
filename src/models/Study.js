@@ -160,13 +160,15 @@ class QueryStats {
     }
 
     return (errors.length > 0) ?
-      `\nErrors: ${ errors.length } errors occurred:\n${ errors.join('\n') }` : 
+      `\nErrors: ${ errors.length } errors occurred:\n${ errors.join('\n') }` :
       ''
 
   }
 
   rerender() {
 
+    // TODO: progress should tell me x/y metrics retrieved, written, etc. more than just a number
+    // event emitter a good pattern for this?
     cursorTo(process.stdout, 0);
     process.stdout.write(`fbtrack query progress: ${ this.progress }`)
 
