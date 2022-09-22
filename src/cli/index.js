@@ -23,6 +23,7 @@ const { configure, register, query, apistatus, report } = [
 
 }, {})
 
+cli.version('0.0.1', '-v, --version', 'output the current version information')
 cli
   .command('register')
   .description('Initiate participant authorization process in Google Chrome.')
@@ -38,10 +39,10 @@ cli
   .description('Query the FitBit API for participant(s)')
   .option('-a, --all', 'query fitbit for all participants, no participant id is required')
   .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participants', splitArgsOn(','))
-  .option('-w, --window-size <windowSize>', 'window size', Number)
+  .option('-w, --window-size <windowSize>', 'window size')
   .option('-r, --refresh', 'refresh oauth token')
   .option('-d, --date-range <dates...>', 'specify a date or date range in the format of yyyy-mm-dd')
-  .option('-n, --chunk-size <chunkSize>', 'Number of participants to query simultaneously', Number)
+  .option('-n, --chunk-size <chunkSize>', 'Number of participants to query simultaneously')
   .action(query)
 
   /*
