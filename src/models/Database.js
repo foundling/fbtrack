@@ -1,15 +1,15 @@
 const sqlite = require('sqlite')
 const path = require('path')
 const { MissingParameterError, requireParam } = require('../lib/utils');
-const { APP_CONFIG } = require('../config').getConfig({ requiresUserSetup: true })
+const config = require('../config').getConfig({ requiresUserSetup: true })
 
-const { participants } = require(path.join(APP_CONFIG.DB_PATH, 'statements'))
+const { participants } = require(path.join(config.app.DB_PATH, 'statements'))
 
 class Database {
 
   constructor({ databaseName }) {
 
-    this.databaseName = path.join(APP_CONFIG.DB_PATH, databaseName)
+    this.databaseName = path.join(config.app.DB_PATH, databaseName)
     this.dbPromise = sqlite.open(`${ this.databaseName }.sqlite`, { Promise, cached: true })
 
   }

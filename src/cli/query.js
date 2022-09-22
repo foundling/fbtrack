@@ -1,29 +1,24 @@
-const { parseISO } = require('date-fns')
-const { 
-  APP_CONFIG,
-  USER_CONFIG
-} = require('../config').getConfig({ requiresUserSetup: true });
-
+const { parse, parseISO, subDays } = require('date-fns')
+const config = require('../config').getConfig({ requiresUserSetup: true });
+const { calculateStartAndStopDates } = require('../lib/dates');
 const { Database, Study } = require('../models')
 
 async function main({ participantIds=[], all=false, dateRange=[], windowSize=null, chunkSize }) {
 
-  const db = new Database({ databaseName: USER_CONFIG.STUDY_NAME })
+
+  const db = new Database({ databaseName: config.user.STUDY_NAME })
   await db.init()
 
-  if (dateRange.length === 0 && windowSize == null) {
-    windowSize = Number(USER_CONFIG.WINDOW_SIZE)
-  }
-
   const study = new Study({
-    name: STUDY_NAME,
+    name: config.user.STUDY_NAME,
     database: db,
-    dataPath: APP_CONFIG.RAW_DATA_PATH,
-    flat: true, // participant fitbit .json files stored in a single dir
+    dataPath: config.app.RAW_DATA_PATH,
+    flat: true,
   })
 
   await study.init()
 
+  const [ dateStart, dateStop ] = calculateStartAndStopDates(dateRange, windowSize);
   const queryOptions = {
     chunkSize,
     participant: {
@@ -31,8 +26,9 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=nul
       all // boolean flag
     },
     dates: {
-      range: dateRange.map(parseISO), // [start date, stop date], [] and [start date] are ok.
-      window: windowSize // increasing dates starting windowSize # days before yesterday
+      dateStart,
+      dateStop,
+      windowSize: windowSize,
     }
   }
 

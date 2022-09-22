@@ -9,7 +9,7 @@ const {
   subDays
 } = require('date-fns')
 
-const { FITBIT_CONFIG } = require('../config').getConfig();
+const { FITBIT } = require('../config').getConfig();
 const { generateQueryPathsByDate } = require('./query')
 
 const { dates, io } = require('../lib')

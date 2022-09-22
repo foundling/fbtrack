@@ -40,8 +40,8 @@ cli
   .option('-p, --participant-ids <participantIds>', 'a comma-delimited list of participants', splitArgsOn(','))
   .option('-w, --window-size <windowSize>', 'window size', Number)
   .option('-r, --refresh', 'refresh oauth token')
-  .option('-d, --date-range <start>..<stop>','specify a date or date range in the format of yyyy-mm-dd', splitArgsOn('..'))
-  .option('-n, --chunk-size <chunkSize>','Number of participants to query simultaneously', Number)
+  .option('-d, --date-range <dates...>', 'specify a date or date range in the format of yyyy-mm-dd')
+  .option('-n, --chunk-size <chunkSize>', 'Number of participants to query simultaneously', Number)
   .action(query)
 
   /*

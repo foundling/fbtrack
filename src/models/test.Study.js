@@ -5,6 +5,7 @@ const path = require('path')
 const tape = require('tape')
 const { default: tapePromise } = require('tape-promise')
 
+const config = require('../config').getConfig()
 const Study = require('./Study')
 const TEST_DATA_DIR = path.join(__dirname, 'test-data')
 const TEST_PARTICIPANT_IDS = ['test1','test2']
@@ -25,13 +26,9 @@ const TEST_FILE_PARTS = [
   '.json',
 ]
 
-const { APP_CONFIG } = require('../config').getConfig()
-const { DB_PATH, DB_NAME } = APP_CONFIG
 const Database = require('./Database')
 const database = new Database({ databaseName: 'test-databases/test-database-study' })
-
 const test = tapePromise(tape)
-
 const rmDir = (path) => execSync(`rm -rf ${path}`, { encoding: 'utf8' })
 
 const seedTestDataFlat = (dirPath) => {

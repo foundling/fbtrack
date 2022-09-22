@@ -1,18 +1,14 @@
 const qs = require('querystring')
-const {
-  FITBIT_CONFIG,
-  APP_CONFIG,
-  USER_CONFIG,
-} = require('../config').getConfig({ requiresUserSetup: true })
+const config = require('../config').getConfig({ requiresUserSetup: true })
 
 const FitBitApiClient = require('fitbit-node')
 const { format } = require('date-fns')
 const Database = require('../models/Database')
 
-const db = new Database({ databaseName: APP_CONFIG.DB_NAME })
+const db = new Database({ databaseName: config.app.DB_NAME })
 const client = new FitBitApiClient({
-  clientId: FITBIT_CONFIG.CLIENT_ID,
-  clientSecret: FITBIT_CONFIG.CLIENT_SECRET
+  clientId: config.fitbit.CLIENT_ID,
+  clientSecret: config.fitbit.CLIENT_SECRET
 })
 const { defaultLogger: logger } = require('../lib/logger')
 
@@ -25,7 +21,7 @@ const {
 const index = (req, res) => {
   res.render('signup', {
     layout: 'main.hbs',
-    studyName: USER_CONFIG.STUDY_NAME
+    studyName: config.user.STUDY_NAME
   })
 };
 
@@ -68,7 +64,7 @@ const authorize = async (req, res) => {
 
     const state = qs.encode({ participantId, participantStartDate })
     const prompt = 'login consent'
-    const redirectURI = client.getAuthorizeUrl(FITBIT_CONFIG.SCOPE, FITBIT_CONFIG.CALLBACK_URL, prompt, state)
+    const redirectURI = client.getAuthorizeUrl(config.fitbit.SCOPE, config.fitbit.CALLBACK_URL, prompt, state)
 
     await res.json({ data: { redirectURI } })
 
@@ -100,7 +96,7 @@ async function addParticipant(req, res) {
     tokens = {
       access_token,
       refresh_token
-    } = await client.getAccessToken(code, FITBIT_CONFIG.CALLBACK_URL)
+    } = await client.getAccessToken(code, config.fitbit.CALLBACK_URL)
 
   } catch(e) {
 
