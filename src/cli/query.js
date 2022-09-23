@@ -12,8 +12,7 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=con
   const study = new Study({
     name: config.user.STUDY_NAME,
     database: db,
-    dataPath: config.app.RAW_DATA_PATH,
-    flat: true,
+    dataPath: config.app.RAW_DATA_PATH
   })
 
   await study.init()
