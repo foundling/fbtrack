@@ -113,6 +113,8 @@ class QueryStats {
     const header = 'Fbtrack Collection Summary:\n'
     let lines = []
 
+      console.log(this.participants.get('maya2'))
+    // TODO: update metrics expected to exclude dates captured.
     for (const [ id, participantDates ] of this.participants) {
 
       let errorsCollected = 0
@@ -131,6 +133,7 @@ class QueryStats {
         }
       }
 
+      // FIXME: collected count doesn't account for dates already captured. 
       const nextLine = [
         `participant id: ${id}`,
         `collected: ${metricsCollected}/${metricsExpected}`,
@@ -297,7 +300,6 @@ class Study {
     const targetParticipants = all ?
       this.participants :
       ids.reduce((memo, id) => {
-        // alternative to a map and filter
         if (this.participants.get(id)) {
           memo.set(id, this.participants.get(id))
         }

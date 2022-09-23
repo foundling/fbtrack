@@ -39,37 +39,10 @@ class Participant {
     this.files = files
     this.participantId = record.participantId
     this.record = record
-    this.queryStats = null
 
   }
 
-  async buildQueryPathsByDate(start, stop) {
-
-    const expectedDates = datesWithinBoundaries(start, stop)
-    const filenames = await getFiles({
-      directory: config.app.RAW_DATA_PATH,
-      criterion: fname => fname.startsWith(this.participantId) && expectedDates.some(d => fname.includes(formatDateYYYYMMDD(d))),
-    })
-
-    const missingMetricsByDate = this.findUncapturedDates({
-      filenames,
-      expectedDates,
-      metrics: [...config.fitbit.ENDPOINTS.keys()],
-    })
-
-    const allDatesCollected = [...missingMetricsByDate.values()].every(metricsForDate => metricsForDate.size === 0)
-
-    if (allDatesCollected) {
-      return new Map()
-    }
-
-    return this.generateQueryPathsByDate({
-      metricsByDate: missingMetricsByDate,
-      endpoints: config.fitbit.ENDPOINTS,
-    })
-
-  }
-
+  // FIXME: why async generator here?
   async * query(start, stop) {
 
     const queryPathsByDate = await this.buildQueryPathsByDate(start, stop)
@@ -221,11 +194,30 @@ class Participant {
 
   }
 
-  generateQueryPathsByDate({ metricsByDate, endpoints }) {
+  async buildQueryPathsByDate(start, stop) {
+
+    const expectedDates = datesWithinBoundaries(start, stop)
+    const filenames = await getFiles({
+      directory: config.app.RAW_DATA_PATH,
+      criterion: fname => fname.startsWith(this.participantId) && expectedDates.some(d => fname.includes(formatDateYYYYMMDD(d))),
+    })
+
+    const missingMetricsByDate = this.findUncapturedDates({
+      filenames,
+      expectedDates,
+      metrics: [...config.fitbit.ENDPOINTS.keys()],
+    })
+
+    const allDatesCollected = [...missingMetricsByDate.values()].every(metricsForDate => metricsForDate.size === 0)
+
+    if (allDatesCollected) {
+      return new Map()
+    }
 
     const memo = new Map()
+    const endpoints = config.fitbit.ENDPOINTS;
 
-    for (const [date, metricToTemplatePathMap] of metricsByDate) {
+    for (const [date, metricToTemplatePathMap] of missingMetricsByDate) {
 
       if (!memo.has(date)) {
         memo.set(date, new Map())
@@ -247,17 +239,13 @@ class Participant {
     const missing = new Map()
 
     for (const date of expectedDates) {
-
       const formattedDate = formatDateYYYYMMDD(date);
-
       missing.set(formattedDate, new Map())
 
       for (const metric of metrics) {
         missing.get(formattedDate).set(metric, true)
       }
-
     }
-
 
     const missingKeys = [...missing.keys()];
 

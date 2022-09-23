@@ -10,7 +10,6 @@ const {
 } = require('date-fns')
 
 const { FITBIT } = require('../config').getConfig();
-const { generateQueryPathsByDate } = require('./query')
 
 const { dates, io } = require('../lib')
 
