@@ -42,15 +42,13 @@ class Participant {
 
   }
 
-  // FIXME: why async generator here?
-  // to return a value on every iteration loop?
   async * query(start, stop) {
 
     const queryPathsByDate = await this.buildQueryPathsByDate(start, stop)
 
     let endpointCount = 0;
-    for (let paths of queryPathsByDate) {
-        for (let path of paths) {
+    for (let [date, dateToPathsMap] of queryPathsByDate) {
+        for (let paths of [...dateToPathsMap.values()]) {
             ++endpointCount;
         }
     }
@@ -99,6 +97,7 @@ class Participant {
             error: 'fail',
             metric,
             participantId: this.participantId,
+            endpointCount
           }
 
         }

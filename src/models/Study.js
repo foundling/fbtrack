@@ -105,12 +105,12 @@ class Study {
 
   }
 
-  async query({ participant={ ids, all }, dates, chunkSize=config.app.CHUNK_SIZE } = defaultQueryArgs) {
+  async query({ participants={ ids, all }, dates, chunkSize=config.app.CHUNK_SIZE } = defaultQueryArgs) {
 
     // if ids are there, get list of ids matching current participants, reporting any not matched.
     // if all flag is there, use participant ids we have
 
-    const { ids, all } = participant
+    const { ids, all } = participants
     const invalidParticipants = all ? [] : ids.filter(id => !this.participants.has(id))
 
     if (invalidParticipants.length > 0) {
@@ -131,23 +131,12 @@ class Study {
       }, new Map())
 
     const participantQueryFns = []
-    const queryStats = new QueryStats()
 
     targetParticipants.forEach(participant => {
-
-      queryStats.addParticipant({
-        participantId: participant.participantId,
-        dates: datesWithinBoundaries(dates.dateStart, dates.dateStop),
-        metrics: [...config.fitbit.ENDPOINTS.keys()],
-      })
 
       participantQueryFns.push(
         async () => {
           for await (const stats of participant.query(dates.dateStart, dates.dateStop)) {
-
-            queryStats.updateParticipantStats(stats)
-            queryStats.rerender(stats)
-
           }
         }
       )
@@ -155,8 +144,6 @@ class Study {
     })
 
     await this.runConcurrently(participantQueryFns, chunkSize)
-
-    process.stdout.write(`\n${queryStats.stats}\n${queryStats.errors}`)
 
   }
 
@@ -220,7 +207,7 @@ class QueryStats {
 
   }
 
-  get progress() {
+  getProgress() {
 
     let total = 0;
     let current = 0;
@@ -254,7 +241,6 @@ class QueryStats {
     // TODO: update metrics expected to exclude dates captured.
     for (const [ id, participantDates ] of this.participants) {
 
-        console.log('p dates: ', { participantDates });
       let errorsCollected = 0
       let metricsCollected = 0
       const metricsExpected = participantDates.size * config.fitbit.ENDPOINTS.size
@@ -311,7 +297,7 @@ class QueryStats {
     // TODO: progress should tell me x/y metrics retrieved, written, etc. more than just a number
     // event emitter a good pattern for this?
     cursorTo(process.stdout, 0);
-    process.stdout.write(`fbtrack query progress: ${ this.progress }`)
+    process.stdout.write(`fbtrack query progress: ${ this.getProgress(stats.endpointCount) }`)
 
   }
 

@@ -20,7 +20,7 @@ async function main({ participantIds=[], all=false, dateRange=[], windowSize=con
   const [ dateStart, dateStop ] = calculateStartAndStopDates(dateRange, windowSize);
   const queryOptions = {
     chunkSize,
-    participant: {
+    participants: {
       ids: participantIds,
       all // boolean flag
     },
