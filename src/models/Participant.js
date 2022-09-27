@@ -42,10 +42,6 @@ class Participant {
 
   }
 
-  get queryStats() {
-    
-  }
-
   getQueryCount(queryPaths) {
       let count = 0;
 
@@ -63,6 +59,7 @@ class Participant {
     const queryPathsByDate = await this.buildQueryPathsByDate(start, stop)
     const expectedQueryCount = this.getQueryCount(queryPathsByDate)
     let currentQueryCount = 0;
+    const errorList = [];
 
     for (const [date, paths] of queryPathsByDate) {
 
@@ -72,50 +69,59 @@ class Participant {
 
       for (const [metric, queryPath] of paths) {
 
-        let metadata
 
         try {
 
-          const metricData = await this.queryFitbit(queryPath)
+          const { error, body } = await this.queryFitbit(queryPath)
           ++currentQueryCount;
-          const filename = this.buildFilename({
-            date: date,
-            extension: 'json',
-            metric,
-            participantId: this.participantId,
-          })
-          const outputPath = path.join(config.app.RAW_DATA_PATH, filename)
 
-          await writeFilePromise(outputPath, JSON.stringify(metricData))
+          if (error) {
 
-          metadata = {
-            collected: true,
-            date,
-            error: null,
-            metric,
-            participantId: this.participantId,
-            currentQueryCount,
-            expectedQueryCount
+              errorList.push(...body.errors);
+
+              const errors = body.errors.map(e => e.message);
+
+              yield {
+                collected: false,
+                date,
+                errors: errors,
+                metric,
+                participantId: this.participantId,
+                currentQueryCount,
+                expectedQueryCount
+              }
+
+
+          } else {
+
+              const filename = this.buildFilename({
+                date: date,
+                extension: 'json',
+                metric,
+                participantId: this.participantId,
+              })
+              const outputPath = path.join(config.app.RAW_DATA_PATH, filename)
+
+
+              await writeFilePromise(outputPath, JSON.stringify(body))
+
+              yield {
+                collected: true,
+                date,
+                errors: [],
+                metric,
+                participantId: this.participantId,
+                currentQueryCount,
+                expectedQueryCount
+              }
+
           }
+
 
         } catch(e) {
-
-          // log to disk and store errors in collection progress stats
-          logger.error(`query error for ${participantId}: query for ${metric} data on ${date} failed:\n${ e }`)
-
-          metadata = {
-            collected: false,
-            date,
-            error: 'fail',
-            metric,
-            participantId: this.participantId,
-            currentQueryCount,
-            expectedQueryCount
-          }
-
+            throw e;
         }
 
-        yield metadata
 
       }
 
@@ -133,52 +139,55 @@ class Participant {
 
     if (isSuccess(response)) {
 
-      return body
+      return { error: false, body }
 
     }
 
     if (accessTokenExpired(body)) {
 
-      // this should go to a file
-      //logger.info(`queryFitbit - accessToken expired for participant ${this.participantId} ... refreshing`);
       await this.refreshAccessToken()
 
       const [ retryBody, retryResponse ] = await fbClient.get(queryPath, this.record.accessToken)
 
-      return retryBody
+      //throw new Error(`access token expired for participant ${this.participantId}`)
+      return { error: true, body: retryBody };
 
     }
 
     if (rateLimitExceeded(response)) {
 
+      // TODO: this needs some consideration. if we use pm2 as a daemon, it should behave one way
+      // but if run as a cli, depends if querying more than one participant.
       const leeway = 60
       const secondsToWait = parseInt(response.headers['retry-after']) + leeway
       const resumeTime = formatDateYYYYMMDD(addSeconds(new Date(), secondsToWait), 'hh:mm')
 
+      // TODO: pass these warnings up so they can be logged at the end.
       // this should go to stdout
-      logger.warn(`queryFitbit error for participant ${this.participantId} - rate limit exceeded.`)
-      logger.warn(`Waiting ${secondsToWait/60} minutes to resume ... Starting again at ${resumeTime}.\n`)
+      //logger.warn(`queryFitbit error for participant ${this.participantId} - rate limit exceeded.`)
+      //logger.warn(`Waiting ${secondsToWait/60} minutes to resume ... Starting again at ${resumeTime}.\n`)
 
       await utils.sleep(secondsToWait + leeway)
 
       const [ retryBody, retryResponse ] = await fbClient.get(queryPath, this.record.accessToken)
 
-      return retryBody
+      return { error: false, body: retryBody };
 
     }
 
     if (invalidRefreshToken(response)) {
 
-      logger.error(`queryFitbit - InvalidRefreshToken Error for participant ${this.participantId}.`)
-      logger.error('The participant needs to be re-authorized with the application.')
-      logger.error(`skipping participant ${this.participantId}.`)
+      // TODO: pass these warnings up so they can be logged at the end.
+      //logger.error(`queryFitbit - InvalidRefreshToken Error for participant ${this.participantId}.`)
+      //logger.error('The participant needs to be re-authorized with the application.')
+      //logger.error(`skipping participant ${this.participantId}.`)
 
-      throw new Error(`invalid refresh token for participant ${this.participantId}`)
+      // TODO: escalate this error to participant.query level
+      //throw new Error(`invalid refresh token for participant ${this.participantId}`)
 
     }
     
-    // what to do here?
-    return body
+    return { error: false, body }
 
   }
 
@@ -204,7 +213,7 @@ class Participant {
 
     } catch(e) {
 
-      logger.error(`Error - attempt to refresh Access Token failed: ${e}`)
+      //logger.error(`Error - attempt to refresh Access Token failed: ${e}`)
 
     }
   }

@@ -138,24 +138,39 @@ class Study {
 
         async () => {
 
-          let errors = [];
-          for await (const queryData of participant.query(dates.dateStart, dates.dateStop)) {
+          const uniqueErrors = new Map();
+          let errorCount = 0; 
+          try {
 
-              const {
-                  expectedQueryCount: total,
-                  currentQueryCount: current,
-                  error,
-              } = queryData; 
+            const queries = participant.query(dates.dateStart, dates.dateStop);
+            for await (const queryData of queries) {
 
-              if (error) {
-                  errors.push(error);
-              }
+                const {
+                    expectedQueryCount: total,
+                    currentQueryCount: current,
+                    errors,
+                } = queryData; 
 
-              cursorTo(process.stdout, 0);
-              process.stdout.write(`participant: ${participant.participantId} | ${ current }/${ total } metrics collected | errors: ${errors.length} `);
+                if (errors.length) {
+                    errorCount += 1;
+                    errors.forEach(e => uniqueErrors.set(e, true));
+                }
 
+                cursorTo(process.stdout, 0);
+                process.stdout.write(`participant: ${participant.participantId} | ${ current }/${ total } metrics collected | errors: ${errorCount} `);
+
+            }
+
+
+
+          } catch(e) {
+            console.log('catching error from participant.query', e);
+            throw e; 
           }
-          process.stdout.write('\n');
+
+          if (uniqueErrors.size) {
+            logger.error(`\nThe following Errors occurred:\n${[...uniqueErrors.keys()].join('\n')}\n`);
+          }
 
         }
 
@@ -168,6 +183,10 @@ class Study {
   }
 
   async runConcurrently(funcs, chunkSize) {
+      /* To prevent server overload, 
+       * limit number of maximum unresolved requests 
+       * to chunkSize. 
+       */ 
 
     while (funcs.length > 0) {
 
