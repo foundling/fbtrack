@@ -135,10 +135,30 @@ class Study {
     targetParticipants.forEach(participant => {
 
       participantQueryFns.push(
+
         async () => {
-          for await (const stats of participant.query(dates.dateStart, dates.dateStop)) {
+
+          let errors = [];
+          for await (const queryData of participant.query(dates.dateStart, dates.dateStop)) {
+
+              const {
+                  expectedQueryCount: total,
+                  currentQueryCount: current,
+                  error,
+              } = queryData; 
+
+              if (error) {
+                  errors.push(error);
+              }
+
+              cursorTo(process.stdout, 0);
+              process.stdout.write(`participant: ${participant.participantId} | ${ current }/${ total } metrics collected | errors: ${errors.length} `);
+
           }
+          process.stdout.write('\n');
+
         }
+
       )
 
     })
@@ -155,154 +175,10 @@ class Study {
       await Promise.all(chunk.map(f => f()))
 
     }
+    console.log();
 
   }
 
 }
-
-
-class QueryStats {
-
-  constructor() {
-
-    this.participants = new Map()
-
-  }
-
-  addParticipant({ participantId, dates, metrics }) {
-
-    this.participants.set(participantId, new Map())
-
-    for (const date of dates) {
-
-      const dateAsKey = formatDateYYYYMMDD(date)
-
-      this.participants
-        .get(participantId)
-        .set(dateAsKey, new Map())
-
-      for (const metric of metrics) {
-
-        this.participants
-          .get(participantId)
-          .get(dateAsKey)
-          .set(metric, new Map([
-            [ 'collected', false ],
-            [ 'error', undefined ]
-          ]))
-
-      }
-    }
-
-  }
-
-  updateParticipantStats({ participantId, date, metric, collected, error }) {
-
-    this.participants
-      .get(participantId)
-      .get(date)
-      .get(metric)
-      .set('collected', collected)
-      .set('error', error)
-
-  }
-
-  getProgress() {
-
-    let total = 0;
-    let current = 0;
-
-    for (const [ id, participantDates ] of this.participants) {
-
-      let errorsCollected = 0
-      let metricsCollected = 0
-      const metricsExpected = participantDates.size * config.fitbit.ENDPOINTS.size
-
-      for (const [date, metrics] of participantDates) {
-        for (const [metric, collectionInfo] of metrics) {
-          ++total
-          if (collectionInfo.get('collected')) {
-            ++current
-          }
-        }
-      }
-
-    }
-
-    return `${ Math.floor(current/total * 100) }%`
-
-  }
-
-  get stats() {
-
-    const header = 'Fbtrack Collection Summary:\n'
-    let lines = []
-
-    // TODO: update metrics expected to exclude dates captured.
-    for (const [ id, participantDates ] of this.participants) {
-
-      let errorsCollected = 0
-      let metricsCollected = 0
-      const metricsExpected = participantDates.size * config.fitbit.ENDPOINTS.size
-
-      for (const [date, metrics] of participantDates) {
-        for (const [metric, collectionInfo] of metrics) {
-
-          if (collectionInfo.get('collected')) {
-            metricsCollected += 1
-          } else if (collectionInfo.get('error')) {
-            errorsCollected += 1
-          }
-
-        }
-      }
-
-      // FIXME: collected count doesn't account for dates already captured. 
-      const nextLine = [
-        `participant id: ${id}`,
-        `collected: ${metricsCollected}/${metricsExpected}`,
-        `errors encountered: ${errorsCollected}`,
-      ].join(' | ')
-
-      lines.push(nextLine)
-
-    }
-
-    return `${header}${makeList(lines)}`
-
-  }
-
-  get errors() {
-
-    const errors = []
-
-    for (const [ id, dates ] of this.participants) {
-      for (const [ date, metrics ] of dates) {
-        for (const [ metric, collectionInfo ] of metrics) {
-          if (collectionInfo['error']) {
-            errors.push(`Error: ${id} | ${date} | ${metric} | ${error}\n`)
-          }
-        }
-      }
-    }
-
-    return (errors.length > 0) ?
-      `\nErrors: ${ errors.length } errors occurred:\n${ errors.join('\n') }` :
-      ''
-
-  }
-
-  rerender(stats) {
-
-    // TODO: progress should tell me x/y metrics retrieved, written, etc. more than just a number
-    // event emitter a good pattern for this?
-    cursorTo(process.stdout, 0);
-    process.stdout.write(`fbtrack query progress: ${ this.getProgress(stats.endpointCount) }`)
-
-  }
-
-}
-
-
 
 module.exports = exports = exports = Study

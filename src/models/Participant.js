@@ -42,18 +42,28 @@ class Participant {
 
   }
 
+  get queryStats() {
+    
+  }
+
+  getQueryCount(queryPaths) {
+      let count = 0;
+
+      for (let [date, paths] of queryPaths) {
+          for (let path of paths) {
+              ++count;
+          }
+      }
+
+      return count;
+  }
+
   async * query(start, stop) {
 
     const queryPathsByDate = await this.buildQueryPathsByDate(start, stop)
+    const expectedQueryCount = this.getQueryCount(queryPathsByDate)
+    let currentQueryCount = 0;
 
-    let endpointCount = 0;
-    for (let [date, dateToPathsMap] of queryPathsByDate) {
-        for (let paths of [...dateToPathsMap.values()]) {
-            ++endpointCount;
-        }
-    }
-
-    // map: [ date => [ metric => queryPath ]]
     for (const [date, paths] of queryPathsByDate) {
 
       if (paths.size === 0) {
@@ -67,6 +77,7 @@ class Participant {
         try {
 
           const metricData = await this.queryFitbit(queryPath)
+          ++currentQueryCount;
           const filename = this.buildFilename({
             date: date,
             extension: 'json',
@@ -83,7 +94,8 @@ class Participant {
             error: null,
             metric,
             participantId: this.participantId,
-            endpointCount
+            currentQueryCount,
+            expectedQueryCount
           }
 
         } catch(e) {
@@ -97,7 +109,8 @@ class Participant {
             error: 'fail',
             metric,
             participantId: this.participantId,
-            endpointCount
+            currentQueryCount,
+            expectedQueryCount
           }
 
         }
